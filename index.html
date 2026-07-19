@@ -143,7 +143,7 @@ button{cursor:pointer;font-family:inherit;}
 
   <!-- ===================== LOGIN ===================== -->
   <div id="login-screen" class="hidden">
-    <div class="mascot">🐱</div>
+    <div class="mascot"><img src="https://i.postimg.cc/W3K6dFRh/Logo.png" alt="logo" style="width:110px;height:110px;border-radius:28px;box-shadow:var(--shadow);object-fit:cover;"></div>
     <h1 id="login-app-name">ບັນທຶກລາຍຈ່າຍດ້ວຍໃບເສັດ</h1>
     <p>ຕິດຕາມລາຍຮັບ-ລາຍຈ່າຍແບບໜ້າຮັກ 💛</p>
     <div class="login-box">
@@ -161,7 +161,7 @@ button{cursor:pointer;font-family:inherit;}
   <div id="main-app" class="hidden">
 
     <div class="topbar">
-      <div class="logo"><span id="topbar-logo">🐱</span> <span id="topbar-name">ບັນທຶກລາຍຈ່າຍ</span></div>
+      <div class="logo"><img id="topbar-logo" src="https://i.postimg.cc/W3K6dFRh/Logo.png" alt="logo"> <span id="topbar-name">ບັນທຶກລາຍຈ່າຍ</span></div>
       <button class="hamburger" onclick="openMenu('admin')">☰</button>
     </div>
 
@@ -221,6 +221,7 @@ button{cursor:pointer;font-family:inherit;}
     <div class="page" id="page-menu">
       <div class="section-title">🌸 ເມນູທັງໝົດ</div>
       <div class="card">
+        <div class="link-row" onclick="openMenu('dashboard')">📊 Dashboard ພາບລວມ <span>›</span></div>
         <div class="link-row" onclick="openMenu('budget')">💰 ງົບປະມານ <span>›</span></div>
         <div class="link-row" onclick="openMenu('goals')">🚩 ເປົ້າໝາຍອອມເງິນ <span>›</span></div>
         <div class="link-row" onclick="openMenu('installments')">🏷️ ຜ່ອນຊຳລະ <span>›</span></div>
@@ -388,7 +389,7 @@ function applyTheme() {
   document.documentElement.style.setProperty('--text', s.textColor || '#5B4636');
   document.getElementById('topbar-name').innerText = s.appName || 'ບັນທຶກລາຍຈ່າຍ';
   document.getElementById('login-app-name').innerText = s.appName || 'ບັນທຶກລາຍຈ່າຍດ້ວຍໃບເສັດ';
-  document.getElementById('topbar-logo').innerText = s.logoUrl ? '' : '🐱';
+  document.getElementById('topbar-logo').src = s.logoUrl || 'https://i.postimg.cc/W3K6dFRh/Logo.png';
 }
 
 // ---------------- AUTH ----------------
@@ -699,12 +700,121 @@ function doTransfer() {
 function openMenu(section) {
   document.getElementById('modal-generic').classList.add('show');
   const c = document.getElementById('generic-content');
+  if (section === 'dashboard') { c.innerHTML = renderDashboardSection(); setTimeout(drawDashboardChart, 50); }
   if (section === 'budget') c.innerHTML = renderBudgetSection();
   if (section === 'goals') c.innerHTML = renderGoalsSection();
   if (section === 'installments') c.innerHTML = renderInstallmentsSection();
   if (section === 'tags') c.innerHTML = renderTagsSection();
   if (section === 'reports') { c.innerHTML = renderReportsSection(); setTimeout(drawReportChart, 50); }
   if (section === 'admin') c.innerHTML = renderAdminSection();
+}
+
+// ---------------- DASHBOARD (ໜ້າພາບລວມສະຫຼຸບ 5 ຢ່າງ) ----------------
+function renderDashboardSection() {
+  const now = new Date();
+  const monthKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  const isThisMonth = (t) => String(t.date).slice(0, 7) === monthKey;
+
+  // 1) ລາຍຮັບປະຈຳເດືອນ
+  const monthlyIncome = STATE.transactions.filter(t => t.type === 'income' && isThisMonth(t))
+    .reduce((s, t) => s + Number(t.amount), 0);
+
+  // 2) ລາຍຈ່າຍປະຈຳວັນ (ມື້ນີ້)
+  const today = todayStr();
+  const dailyExpense = STATE.transactions.filter(t => t.type === 'expense' && String(t.date).slice(0, 10) === today)
+    .reduce((s, t) => s + Number(t.amount), 0);
+
+  // 3) ລາຍຈ່າຍປະຈຳເດືອນ
+  const monthlyExpenseTx = STATE.transactions.filter(t => t.type === 'expense' && isThisMonth(t));
+  const monthlyExpense = monthlyExpenseTx.reduce((s, t) => s + Number(t.amount), 0);
+
+  // 4) ສະເລ່ຍລາຍຈ່າຍຕໍ່ວັນ (ຂອງເດືອນນີ້) ທຽບກັບມາດຕະຖານ (dailyBudget)
+  const dayOfMonth = now.getDate();
+  const avgDailyExpense = monthlyExpense / dayOfMonth;
+  const dailyStandard = Number(STATE.settings.dailyBudget || 700);
+  const diffPct = dailyStandard ? Math.round(((avgDailyExpense - dailyStandard) / dailyStandard) * 100) : 0;
+  const isOver = avgDailyExpense > dailyStandard;
+  const avgColor = isOver ? 'var(--red)' : 'var(--green)';
+  const avgLabel = isOver
+    ? `ສູງກວ່າມາດຕະຖານ ${Math.abs(diffPct)}% ⚠️`
+    : `ຕ່ຳກວ່າມາດຕະຖານ ${Math.abs(diffPct)}% ✅`;
+
+  // 5) ອັດຕາເງິນອອມ + ຄຳແນະນຳ
+  const savings = monthlyIncome - monthlyExpense;
+  const savingsRate = monthlyIncome ? Math.round((savings / monthlyIncome) * 100) : 0;
+
+  // ຫາໝວດໝູ່ທີ່ໃຊ້ຈ່າຍຫຼາຍສຸດຂອງເດືອນນີ້ ເພື່ອແນະນຳຈຸດທີ່ຄວນຫຼຸດ
+  const catTotals = {};
+  monthlyExpenseTx.forEach(t => {
+    const cat = catById(t.categoryId);
+    const key = cat ? cat.name : 'ອື່ນໆ';
+    catTotals[key] = (catTotals[key] || 0) + Number(t.amount);
+  });
+  const topCatEntry = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
+  const topCatName = topCatEntry ? topCatEntry[0] : null;
+  const topCatAmt = topCatEntry ? topCatEntry[1] : 0;
+
+  let advice, adviceColor;
+  if (monthlyIncome === 0) {
+    advice = 'ຍັງບໍ່ມີຂໍ້ມູນລາຍຮັບປະຈຳເດືອນນີ້ — ບັນທຶກລາຍຮັບກ່ອນເພື່ອໃຫ້ຄິດອັດຕາການອອມໄດ້ຖືກຕ້ອງ';
+    adviceColor = 'var(--text-light)';
+  } else if (savingsRate >= 20) {
+    advice = `ດີຫຼາຍ! ທ່ານອອມໄດ້ ${savingsRate}% ຂອງລາຍຮັບ (ມາດຕະຖານທົ່ວໄປແນະນຳ 20%) ຮັກສາລະດັບນີ້ໄວ້ຕໍ່ໄປເດີ 🌟`;
+    adviceColor = 'var(--green)';
+  } else if (savingsRate >= 0) {
+    advice = `ທ່ານອອມໄດ້ພຽງ ${savingsRate}% ຂອງລາຍຮັບ (ຕ່ຳກວ່າມາດຕະຖານ 20%). ${topCatName ? 'ໝວດທີ່ໃຊ້ຈ່າຍຫຼາຍສຸດຄື "' + topCatName + '" (' + fmt(topCatAmt) + ' ກີບ) — ລອງກຳນົດງົບຈຳກັດສະເພາະໝວດນີ້ ຫຼື ຫຼຸດ 10-15% ຈາກໝວດນີ້ກ່ອນ' : 'ລອງກຳນົດງົບປະຈຳວັນ ແລະ ບັນທຶກທຸກລາຍຈ່າຍໃຫ້ຄົບ'}`;
+    adviceColor = 'var(--yellow)';
+  } else {
+    advice = `ເດືອນນີ້ລາຍຈ່າຍສູງກວ່າລາຍຮັບ ${fmt(Math.abs(savings))} ກີບ ⚠️. ${topCatName ? 'ໝວດ "' + topCatName + '" ໃຊ້ໄປແລ້ວ ' + fmt(topCatAmt) + ' ກີບ ຄວນຫຼຸດກ່ອນເປັນອັນດັບທຳອິດ' : 'ຄວນທົບທວນລາຍຈ່າຍທັງໝົດແລ້ວຕັດອັນທີ່ບໍ່ຈຳເປັນອອກ'}`;
+    adviceColor = 'var(--red)';
+  }
+
+  return `<div class="modal-title">📊 Dashboard ພາບລວມ</div>
+
+    <div class="card">
+      <div class="label" style="font-size:12px;color:var(--text-light);">1️⃣ ລາຍຮັບປະຈຳເດືອນ (${monthKey})</div>
+      <div class="num" style="font-size:22px;font-weight:800;color:var(--green);">${fmt(monthlyIncome)} ກີບ</div>
+    </div>
+
+    <div class="card">
+      <div class="label" style="font-size:12px;color:var(--text-light);">2️⃣ ລາຍຈ່າຍປະຈຳວັນ (ມື້ນີ້)</div>
+      <div class="num" style="font-size:22px;font-weight:800;color:var(--red);">${fmt(dailyExpense)} ກີບ</div>
+    </div>
+
+    <div class="card">
+      <div class="label" style="font-size:12px;color:var(--text-light);">3️⃣ ລາຍຈ່າຍປະຈຳເດືອນ</div>
+      <div class="num" style="font-size:22px;font-weight:800;color:var(--red);">${fmt(monthlyExpense)} ກີບ</div>
+      <canvas id="dashboard-chart" height="180" style="margin-top:10px;"></canvas>
+    </div>
+
+    <div class="card">
+      <div class="label" style="font-size:12px;color:var(--text-light);">4️⃣ ສະເລ່ຍລາຍຈ່າຍຕໍ່ວັນ (ເດືອນນີ້) ທຽບກັບມາດຕະຖານ ${fmt(dailyStandard)} ກີບ/ວັນ</div>
+      <div class="num" style="font-size:20px;font-weight:800;">${fmt(avgDailyExpense)} ກີບ/ວັນ</div>
+      <div style="font-size:13px;font-weight:700;color:${avgColor};margin-top:4px;">${avgLabel}</div>
+    </div>
+
+    <div class="card">
+      <div class="label" style="font-size:12px;color:var(--text-light);">5️⃣ 🐷 ອັດຕາເງິນອອມ ແລະ ຄຳແນະນຳ</div>
+      <div class="num" style="font-size:20px;font-weight:800;color:${adviceColor};">${monthlyIncome ? savingsRate + '%' : '—'}</div>
+      <div style="font-size:13px;color:var(--text);margin-top:6px;line-height:1.5;">${advice}</div>
+    </div>`;
+}
+function drawDashboardChart() {
+  const now = new Date();
+  const monthKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  const catTotals = {};
+  STATE.transactions.filter(t => t.type === 'expense' && String(t.date).slice(0, 7) === monthKey).forEach(t => {
+    const cat = catById(t.categoryId);
+    const key = cat ? cat.name : 'ອື່ນໆ';
+    catTotals[key] = (catTotals[key] || 0) + Number(t.amount);
+  });
+  const ctx = document.getElementById('dashboard-chart');
+  if (!ctx || !Object.keys(catTotals).length) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: { labels: Object.keys(catTotals), datasets: [{ data: Object.values(catTotals), backgroundColor: '#F5C842', borderRadius: 8 }] },
+    options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { font: { size: 9 } } } } }
+  });
 }
 
 function renderBudgetSection() {
