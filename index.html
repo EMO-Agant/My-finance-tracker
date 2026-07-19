@@ -148,10 +148,12 @@ button{cursor:pointer;font-family:inherit;}
     <p>ຕິດຕາມລາຍຮັບ-ລາຍຈ່າຍແບບໜ້າຮັກ 💛</p>
     <div class="login-box">
       <div id="user-chip-list" style="margin-bottom:14px;"></div>
-      <input id="login-name" placeholder="ຊື່ຂອງທ່ານ">
-      <input id="login-pin" placeholder="PIN (4 ໂຕເລກ)" type="password" maxlength="6">
+      <input id="login-pin" placeholder="ລະຫັດຜ່ານ (PIN)" type="password" maxlength="6">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-light);margin:-4px 0 14px;">
+        <input type="checkbox" id="login-remember" style="width:auto;margin:0;"> ຈື່ຈຳການເຂົ້າສູ່ລະບົບ
+      </label>
       <button class="btn-primary" onclick="doLogin()">ເຂົ້າສູ່ລະບົບ</button>
-      <p style="font-size:11px;color:var(--text-light);margin-top:10px;">ບັນຊີເລີ່ມຕົ້ນ: Admin / PIN 0000</p>
+      <p style="font-size:11px;color:var(--text-light);margin-top:10px;">ບັນຊີເລີ່ມຕົ້ນ PIN: 0000</p>
     </div>
   </div>
 
@@ -170,6 +172,7 @@ button{cursor:pointer;font-family:inherit;}
           <div>
             <div style="font-size:13px;color:var(--text-light);">ຍອດຄົງເຫຼືອ</div>
             <div class="balance-amount" id="ov-balance">0 ກີບ</div>
+            <div id="ov-other-currencies" style="font-size:12px;color:var(--text-light);"></div>
           </div>
           <div class="mascot-bubble" id="ov-mascot-msg">ສູ້ໆນະ 💪</div>
         </div>
@@ -281,6 +284,11 @@ button{cursor:pointer;font-family:inherit;}
       <input id="wallet-name" placeholder="ຊື່ກະເປົາ">
       <input id="wallet-icon" placeholder="ໄອຄອນ (emoji) ເຊັ່ນ 💵">
       <input id="wallet-balance" type="number" placeholder="ຍອດເລີ່ມຕົ້ນ">
+      <select id="wallet-currency">
+        <option value="LAK">ກີບ (LAK)</option>
+        <option value="THB">฿ ບາດ (THB)</option>
+        <option value="USD">$ ໂດລາ (USD)</option>
+      </select>
       <button class="btn-primary" onclick="saveWalletUI()">ບັນທຶກ</button>
     </div>
   </div>
@@ -300,6 +308,7 @@ button{cursor:pointer;font-family:inherit;}
  * ⚙️ ຕັ້ງຄ່າ API — ປ່ຽນເປັນ URL /exec ຂອງ deployment Apps Script ຂອງທ່ານ
  * ===================================================================== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbyLR_IZOCDmENoGXzJuftHlVuSCxwMRF4z2fnJs52_kwv2SaKyNQa7KxPsH9WkR3w8v/exec';
+const CURRENCY_SYMBOLS = { LAK: 'ກີບ', THB: '฿', USD: '$' };
 
 /**
  * ຟັງຊັນກາງສຳລັບເອີ້ນ Apps Script API ແທນ google.script.run ເກົ່າ.
@@ -352,8 +361,15 @@ window.onload = function () {
 function onDataLoaded(data) {
   STATE = data;
   applyTheme();
-  // ຍັງບໍ່ login -> ໂຊວ໌ໜ້າ login (ບໍ່ auto-login ອີກຕໍ່ໄປ, ຕ້ອງໃສ່ຊື່/PIN ຈິງໆ
-  // ເພາະ session ບໍ່ໄດ້ຜູກກັບ Google account ອີກຕໍ່ໄປໃນຮູບແບບ static frontend)
+  const saved = localStorage.getItem('savedSession');
+  if (saved) {
+    try {
+      const user = JSON.parse(saved);
+      const stillExists = (STATE.users || []).some(function (u) { return u.id === user.id; });
+      if (stillExists) { CURRENT_USER = user; enterApp(); return; }
+    } catch (e) {}
+    localStorage.removeItem('savedSession');
+  }
   document.getElementById('login-screen').classList.remove('hidden');
   renderUserChips();
 }
@@ -361,12 +377,8 @@ function onDataLoaded(data) {
 function renderUserChips() {
   const list = document.getElementById('user-chip-list');
   list.innerHTML = (STATE.users || []).map(function (u) {
-    return '<button type="button" class="user-chip" onclick="quickFillLogin(\'' + u.name.replace(/'/g,"") + '\')">' + (u.avatar || '🐱') + ' ' + u.name + '</button>';
+    return '<span class="user-chip">' + (u.avatar || '🐱') + ' ' + u.name + '</span>';
   }).join('');
-}
-function quickFillLogin(name) {
-  document.getElementById('login-name').value = name;
-  document.getElementById('login-pin').focus();
 }
 
 function applyTheme() {
@@ -381,21 +393,29 @@ function applyTheme() {
 
 // ---------------- AUTH ----------------
 function doLogin() {
-  const name = document.getElementById('login-name').value.trim();
   const pin = document.getElementById('login-pin').value.trim();
-  if (!name || !pin) { showToast('ກະລຸນາປ້ອນຊື່ ແລະ PIN'); return; }
+  const remember = document.getElementById('login-remember').checked;
+  if (!pin) { showToast('ກະລຸນາປ້ອນລະຫັດຜ່ານ'); return; }
   showLoading(true);
-  callApi('login', { name: name, pin: pin }).then(function (res) {
+  callApi('login', { pin: pin }).then(function (res) {
     showLoading(false);
     if (!res.success) { showToast(res.message); return; }
     CURRENT_USER = res.user;
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('main-app').classList.remove('hidden');
-    document.getElementById('bottom-nav').classList.remove('hidden');
-    renderAll();
+    if (remember) localStorage.setItem('savedSession', JSON.stringify(res.user));
+    else localStorage.removeItem('savedSession');
+    enterApp();
   }).catch(function () { showLoading(false); });
 }
-function logout() { location.reload(); }
+function enterApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('main-app').classList.remove('hidden');
+  document.getElementById('bottom-nav').classList.remove('hidden');
+  renderAll();
+}
+function logout() {
+  localStorage.removeItem('savedSession');
+  location.reload();
+}
 
 // ---------------- RELOAD HELPER ----------------
 function reloadData(cb) {
@@ -431,8 +451,13 @@ function fmt(n) { return Number(n || 0).toLocaleString('en-US', { maximumFractio
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 
 function renderOverview() {
-  const totalBalance = STATE.wallets.reduce((s, w) => s + Number(w.balance || 0), 0);
-  document.getElementById('ov-balance').innerText = fmt(totalBalance) + ' ກີບ';
+  const byCurrency = {};
+  STATE.wallets.forEach(w => { const c = w.currency || 'LAK'; byCurrency[c] = (byCurrency[c] || 0) + Number(w.balance || 0); });
+  document.getElementById('ov-balance').innerText = fmt(byCurrency['LAK'] || 0) + ' ກີບ';
+  document.getElementById('ov-other-currencies').innerText = Object.keys(byCurrency)
+    .filter(c => c !== 'LAK')
+    .map(c => fmt(byCurrency[c]) + ' ' + (CURRENCY_SYMBOLS[c] || c))
+    .join(' · ');
 
   const today = todayStr();
   const txToday = STATE.transactions.filter(t => String(t.date).slice(0, 10) === today);
@@ -459,7 +484,7 @@ function renderOverview() {
     <div class="wallet-card" style="background:${w.color || '#FFF3CE'}22;">
       <div class="icon">${w.icon || '💰'}</div>
       <div class="name">${w.name}</div>
-      <div class="amt">${fmt(w.balance)} ກີບ</div>
+      <div class="amt">${fmt(w.balance)} ${CURRENCY_SYMBOLS[w.currency] || 'ກີບ'}</div>
     </div>`).join('') || '<div class="empty-hint">ຍັງບໍ່ມີກະເປົາເງິນ</div>';
 
   const recent = [...STATE.transactions].sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)).slice(0, 6);
@@ -506,7 +531,7 @@ function renderWalletsPage() {
       <button class="del" onclick="removeWallet('${w.id}')">✕</button>
       <div class="icon">${w.icon || '💰'}</div>
       <div class="name">${w.name}</div>
-      <div class="amt">${fmt(w.balance)} ກີບ</div>
+      <div class="amt">${fmt(w.balance)} ${CURRENCY_SYMBOLS[w.currency] || 'ກີບ'}</div>
     </div>`).join('') || '<div class="empty-hint">ຍັງບໍ່ມີກະເປົາເງິນ</div>';
 }
 function removeWallet(id) {
@@ -652,7 +677,8 @@ function saveWalletUI() {
   const balance = parseFloat(document.getElementById('wallet-balance').value) || 0;
   if (!name) { showToast('ປ້ອນຊື່ກະເປົາ'); return; }
   showLoading(true);
-  callApi('saveWallet', { obj: { name, icon, color: '#F5C842', balance, type: 'custom' } })
+  const currency = document.getElementById('wallet-currency').value;
+  callApi('saveWallet', { obj: { name, icon, color: '#F5C842', balance, type: 'custom', currency: currency } })
     .then(function () { return callApi('getAllData'); })
     .then(function (data) { showLoading(false); STATE = data; renderAll(); closeModal('modal-wallet'); })
     .catch(function () { showLoading(false); });
@@ -834,6 +860,14 @@ function renderAdminSection() {
   html += `<div class="card"><b>ພາບລວມທັງລະບົບ</b><div style="font-size:12px;color:var(--text-light);margin-top:6px;">
     ຜູ້ໃຊ້ທັງໝົດ: ${STATE.users.length} · ກະເປົາເງິນ: ${STATE.wallets.length} · ທຸລະກຳ: ${STATE.transactions.length}
   </div></div>`;
+  const recentLogins = [...(STATE.loginLogs || [])]
+    .sort(function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp); })
+    .slice(0, 15);
+  html += `<div class="card"><b>🔔 ໃຜເຂົ້າລະບົບຫຼ້າສຸດ</b>` +
+    (recentLogins.map(function (l) {
+      return `<div class="link-row"><span>${l.userName} <span class="role-tag">${l.role}</span></span>
+        <span style="font-size:11px;color:var(--text-light);">${new Date(l.timestamp).toLocaleString('lo-LA')}</span></div>`;
+    }).join('') || '<div class="empty-hint">ຍັງບໍ່ມີການເຂົ້າສູ່ລະບົບ</div>') + `</div>`;
   if (isAdmin) {
     html += `<div class="card">
       <b>🎨 ໂຕນສີ / ໂລໂກ້ / ຊື່ແອັບ</b>
