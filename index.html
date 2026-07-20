@@ -452,31 +452,57 @@ let pendingScanItems = [];
 
 // ---------------- INIT ----------------
 window.onload = function () {
-  // ✅ ບໍ່ສະແດງໜ້າ login ທັນທີ - ລໍຖ້າກວດ session ກ່ອນ ເພື່ອບໍ່ໃຫ້ກະພິບ
   const saved = localStorage.getItem('savedSession');
+  const cachedState = localStorage.getItem('cachedState');
 
+  // ✅ ຖ້າມີທັງ session ແລະ ຂໍ້ມູນທີ່ຈື່ໄວ້ຄັ້ງກ່ອນ → ສະແດງໜ້າຫຼັກທັນທີ (ບໍ່ລໍໂຫຼດ)
+  if (saved && cachedState) {
+    try {
+      const user = JSON.parse(saved);
+      STATE = JSON.parse(cachedState);
+      CURRENT_USER = user;
+      applyTheme();
+      enterApp(); // ✅ ເຫັນໜ້າຫຼັກທັນທີ ດ້ວຍຂໍ້ມູນເກົ່າ (cache)
+    } catch (e) {
+      localStorage.removeItem('savedSession');
+      localStorage.removeItem('cachedState');
+    }
+  } else {
+    // ບໍ່ມີ cache → ຕ້ອງລໍໂຫຼດ, ສະແດງ loading spinner ລະຫວ່າງລໍ
+    showLoading(true);
+  }
+
+  // ✅ ບໍ່ວ່າຈະມີ cache ຫຼືບໍ່ ກໍໄປດຶງຂໍ້ມູນຫຼ້າສຸດຢູ່ເບື້ອງຫຼັງສະເໝີ
   callApi('getAllData').then(function (data) {
     STATE = data;
+    localStorage.setItem('cachedState', JSON.stringify(data)); // ✅ ອັບເດດ cache ໃໝ່
     applyTheme();
     renderUserChips();
+    showLoading(false);
 
     if (saved) {
       try {
         const user = JSON.parse(saved);
         if ((STATE.users || []).some(u => u.id === user.id)) {
           CURRENT_USER = user;
-          enterApp();          // ✅ ຂ້າມໜ້າ login ໄປເລີຍ ບໍ່ກະພິບ
+          enterApp();
+          renderAll(); // ✅ ອັບເດດໜ້າຈໍດ້ວຍຂໍ້ມູນຫຼ້າສຸດ (ຖ້າກ່ອນໜ້ານີ້ໃຊ້ cache)
           return;
         } else {
           localStorage.removeItem('savedSession');
+          localStorage.removeItem('cachedState');
         }
-      } catch (e) { localStorage.removeItem('savedSession'); }
+      } catch (e) {}
     }
-    // ບໍ່ມີ session ທີ່ຈື່ໄວ້ (ຫຼື session ໝົດອາຍຸ) → ສະແດງໜ້າ login
-    document.getElementById('login-screen').classList.remove('hidden');
+    if (!saved) {
+      document.getElementById('login-screen').classList.remove('hidden');
+    }
   }).catch(function () {
-    showToast('ໂຫຼດຂໍ້ມູນລົ້ມເຫຼວ, ກະລຸນາລອງໃໝ່');
-    document.getElementById('login-screen').classList.remove('hidden');
+    showLoading(false);
+    if (!saved || !cachedState) {
+      showToast('ໂຫຼດຂໍ້ມູນລົ້ມເຫຼວ, ກະລຸນາລອງໃໝ່');
+      document.getElementById('login-screen').classList.remove('hidden');
+    }
   });
 };
 
@@ -507,6 +533,7 @@ function doLogin() {
     if (!res.success) { showToast(res.message); return; }
     CURRENT_USER = res.user;
     localStorage.setItem('savedSession', JSON.stringify(res.user)); // ✅ ຈື່ໄວ້ອັດຕະໂນມັດທຸກຄັ້ງ
+    localStorage.setItem('cachedState', JSON.stringify(STATE)); // ✅ ຈື່ຂໍ້ມູນໄວ້ນຳ ເພື່ອໃຫ້ຄັ້ງໜ້າໂຫຼດໄວ
     enterApp();
   }).catch(function () { showLoading(false); });
 }
@@ -518,6 +545,7 @@ function enterApp() {
 }
 function logout() {
   localStorage.removeItem('savedSession');
+  localStorage.removeItem('cachedState');
   location.reload();
 }
 
