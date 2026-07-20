@@ -144,7 +144,7 @@ button{cursor:pointer;font-family:inherit;}
 .badge{display:inline-block;font-size:11px;background:#E4F4EC;color:#3AAFA9;padding:3px 10px;border-radius:10px;margin-right:4px;}
 .hidden{display:none !important;}
 .empty-hint{text-align:center;color:var(--text-light);font-size:13px;padding:20px;}
-.color-row{display:flex;gap:10px;margin-bottom:14px;}
+.color-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
 .color-swatch{width:32px;height:32px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px #eee;}
 .link-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid #F3EAD0;font-size:14px;}
 .role-tag{font-size:11px;background:#F3EAD0;padding:2px 8px;border-radius:8px;}
@@ -177,6 +177,23 @@ button{cursor:pointer;font-family:inherit;}
 .tag-bubble .tb-name{font-weight:700;line-height:1.15;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90%;}
 .tag-bubble .tb-amt{opacity:.7;line-height:1.1;}
 
+/* ---------- 🆕 LOGIN USER PICKER ---------- */
+.login-users-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:22px;margin-bottom:6px;}
+.login-user-chip{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:8px 6px;border-radius:16px;border:2px solid transparent;width:74px;transition:.15s;}
+.login-user-chip:active{background:#FFF3CE;}
+.login-user-chip.selected{border-color:var(--primary);background:#FFF3CE;}
+.login-user-avatar{width:54px;height:54px;border-radius:50%;background:#FFF3CE;display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden;box-shadow:var(--shadow);}
+.login-user-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+.login-user-name{font-size:11px;color:var(--text);max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ---------- 🆕 PROFILE / PERSONAL THEME ---------- */
+.profile-avatar-big{width:88px;height:88px;border-radius:50%;background:#FFF3CE;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.profile-avatar-big img{width:100%;height:100%;object-fit:cover;}
+.icon-pick-row{display:flex;gap:8px;align-items:center;}
+.icon-pick-row input{flex:1;text-align:center;}
+.icon-pick-btn{flex-shrink:0;background:#FFF3CE;border:2px solid var(--primary);color:var(--primary-dark);border-radius:14px;padding:0 16px;height:48px;font-size:18px;}
+.wallpaper-preview{width:100%;border-radius:14px;margin-bottom:10px;max-height:140px;object-fit:cover;display:block;}
+
 /* ---------- LOADING / TOAST ---------- */
 #global-loading{position:fixed;inset:0;background:rgba(255,248,231,.85);display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:9999;font-size:14px;color:var(--text-light);}
 #global-loading.show{display:flex;}
@@ -197,6 +214,10 @@ button{cursor:pointer;font-family:inherit;}
     </div>
     <h1 id="login-app-name">ບັນທຶກລາຍຈ່າຍດ້ວຍໃບເສັດ</h1>
     <p>ຕິດຕາມລາຍຮັບ-ລາຍຈ່າຍແບບໜ້າຮັກ 💛</p>
+
+    <!-- 🆕 ເລືອກໂປຣໄຟລ໌ຂອງທ່ານກ່ອນ ແລ້ວປ້ອນ PIN -->
+    <div class="login-users-grid" id="login-users-grid"></div>
+
     <div class="login-box">
       <input id="login-pin" placeholder="ລະຫັດຜ່ານ (PIN)" type="password" maxlength="6">
       <button class="btn-primary" onclick="doLogin()">ເຂົ້າສູ່ລະບົບ</button>
@@ -295,11 +316,14 @@ button{cursor:pointer;font-family:inherit;}
     <div class="page" id="page-menu">
       <div class="section-title">🌸 ເມນູທັງໝົດ</div>
       <div class="card">
+        <div class="link-row" onclick="openMenu('profile')">👤 ໂປຣໄຟລ໌ຂອງຂ້ອຍ <span>›</span></div>
+        <div class="link-row" onclick="openMenu('mytheme')">🎨 ແຕ່ງໜ້າແອັບຂອງຂ້ອຍ <span>›</span></div>
+        <div class="link-row" onclick="openMenu('categories')">🍰 ໝວດໝູ່ຂອງຂ້ອຍ <span>›</span></div>
         <div class="link-row" onclick="openMenu('budget')">💰 ງົບປະມານ <span>›</span></div>
         <div class="link-row" onclick="openMenu('goals')">🚩 ເປົ້າໝາຍອອມເງິນ <span>›</span></div>
         <div class="link-row" onclick="openMenu('installments')">🏷️ ຜ່ອນຊຳລະ <span>›</span></div>
         <div class="link-row" onclick="openMenu('tags')">🏷️ ແທັກຕິດຕາມ <span>›</span></div>
-        <div class="link-row" onclick="openMenu('admin')">⚙️ ຕັ້ງຄ່າລະບົບ / Admin <span>›</span></div>
+        <div class="link-row" id="menu-admin-link" onclick="openMenu('admin')">⚙️ ຕັ້ງຄ່າລະບົບ / Admin <span>›</span></div>
         <div class="link-row" onclick="logout()">🚪 ອອກຈາກລະບົບ <span>›</span></div>
       </div>
     </div>
@@ -371,7 +395,10 @@ button{cursor:pointer;font-family:inherit;}
       <button class="modal-close" onclick="closeModal('modal-wallet')">✕</button>
       <div class="modal-title" id="wallet-modal-title">👛 ເພີ່ມກະເປົາເງິນ</div>
       <input id="wallet-name" placeholder="ຊື່ກະເປົາ">
-      <input id="wallet-icon" placeholder="ໄອຄອນ (emoji) ເຊັ່ນ 💵">
+      <div class="icon-pick-row" style="margin-bottom:12px;">
+        <input id="wallet-icon" placeholder="ໄອຄອນ (emoji) ເຊັ່ນ 💵">
+        <button type="button" class="icon-pick-btn" onclick="openEmojiPicker('wallet-icon')">🙂</button>
+      </div>
       <input id="wallet-balance" type="number" placeholder="ຍອດເລີ່ມຕົ້ນ">
       <select id="wallet-currency">
         <option value="LAK">ກີບ (LAK)</option>
@@ -409,6 +436,15 @@ button{cursor:pointer;font-family:inherit;}
         <a id="slip-view-openfull" href="#" target="_blank" class="btn-outline" style="display:block;text-align:center;text-decoration:none;">🔗 ເປີດຮູບເຕັມ</a>
         <button class="btn-primary" style="width:auto;padding:12px 18px;" onclick="editFromSlipView()">✏️ ແກ້ໄຂ</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ===================== 🆕 MODAL: EMOJI PICKER ===================== -->
+  <div class="modal-overlay" id="modal-emoji-picker">
+    <div class="modal-sheet">
+      <button class="modal-close" onclick="closeModal('modal-emoji-picker')">✕</button>
+      <div class="modal-title">🙂 ເລືອກໄອຄອນ</div>
+      <div class="cat-grid" id="emoji-picker-grid" style="grid-template-columns:repeat(6,1fr);"></div>
     </div>
   </div>
 
@@ -507,7 +543,24 @@ window.onload = function () {
 
 
 function renderUserChips() {
-  // ✅ ເອົາລາຍຊື່ຜູ້ໃຊ້ອອກຈາກໜ້າ login ແລ້ວ (ບໍ່ສະແດງອີກ)
+  // 🆕 ສະແດງກຣິດຜູ້ໃຊ້ (ຮູບໂປຣໄຟລ໌ / emoji) ຢູ່ໜ້າ login ໃຫ້ເລືອກກ່ອນໃສ່ PIN
+  const grid = document.getElementById('login-users-grid');
+  if (!grid) return;
+  grid.innerHTML = (STATE.users || []).map(function (u) {
+    const avatarHtml = u.avatarUrl ? '<img src="' + u.avatarUrl + '" alt="">' : (u.avatar || '🐱');
+    return '<div class="login-user-chip" id="login-chip-' + u.id + '" onclick="selectLoginUser(\'' + u.id + '\')">' +
+      '<div class="login-user-avatar">' + avatarHtml + '</div>' +
+      '<div class="login-user-name">' + u.name + '</div></div>';
+  }).join('');
+}
+
+let selectedLoginUserId = null;
+function selectLoginUser(id) {
+  selectedLoginUserId = id;
+  document.querySelectorAll('.login-user-chip').forEach(function (el) { el.classList.remove('selected'); });
+  const chip = document.getElementById('login-chip-' + id);
+  if (chip) chip.classList.add('selected');
+  document.getElementById('login-pin').focus();
 }
 
 function applyTheme() {
@@ -517,6 +570,29 @@ function applyTheme() {
   document.documentElement.style.setProperty('--text', s.textColor || '#5B4636');
   document.getElementById('topbar-name').innerText = s.appName || 'ບັນທຶກລາຍຈ່າຍ';
   document.getElementById('login-app-name').innerText = s.appName || 'ບັນທຶກລາຍຈ່າຍດ້ວຍໃບເສັດ';
+}
+
+// 🆕 ແຕ່ງໜ້າແອັບສ່ວນຕົວຂອງຜູ້ໃຊ້ທີ່ Login ຢູ່ (ສີສັນ + ພື້ນຫລັງ wallpaper)
+// override ຢູ່ຝັ່ງ browser ຂອງຕົນເອງເທົ່ານັ້ນ, ບໍ່ກະທົບ theme ກາງຂອງ admin
+function applyPersonalTheme() {
+  if (!CURRENT_USER) return;
+  const root = document.documentElement.style;
+  if (CURRENT_USER.themeColor) {
+    root.setProperty('--primary', CURRENT_USER.themeColor);
+  } else if (STATE.settings && STATE.settings.primaryColor) {
+    root.setProperty('--primary', STATE.settings.primaryColor);
+  }
+  const appEl = document.getElementById('app');
+  if (!appEl) return;
+  if (CURRENT_USER.bgWallpaperUrl) {
+    appEl.style.backgroundImage = "linear-gradient(rgba(255,248,231,.55),rgba(255,248,231,.55)), url('" + CURRENT_USER.bgWallpaperUrl + "')";
+    appEl.style.backgroundSize = 'cover';
+    appEl.style.backgroundPosition = 'center';
+    appEl.style.backgroundAttachment = 'fixed';
+    appEl.style.backgroundRepeat = 'no-repeat';
+  } else {
+    appEl.style.backgroundImage = '';
+  }
 }
 
 // ---------------- AUTH ----------------
@@ -537,6 +613,13 @@ function enterApp() {
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('main-app').classList.remove('hidden');
   document.getElementById('bottom-nav').classList.remove('hidden');
+  applyPersonalTheme(); // 🆕 ນຳໃຊ້ສີ/ພື້ນຫລັງສ່ວນຕົວທັນທີທີ່ເຂົ້າແອັບ
+  // 🆕 ເຊື່ອງເມນູ Admin ຖ້າບໍ່ແມ່ນ admin/manager
+  const adminLink = document.getElementById('menu-admin-link');
+  if (adminLink) {
+    const canSeeAdmin = CURRENT_USER && (CURRENT_USER.role === 'admin' || CURRENT_USER.role === 'manager');
+    adminLink.classList.toggle('hidden', !canSeeAdmin);
+  }
   renderAll();   // ✅ ປ່ຽນຈາກ reloadData() ເປັນອັນນີ້ - ໃຊ້ຂໍ້ມູນທີ່ໂຫຼດໄວ້ແລ້ວ ບໍ່ຕ້ອງດຶງຊ້ຳ ບໍ່ມີ loading ອີກຄັ້ງ
 }
 function logout() {
@@ -1355,6 +1438,9 @@ function openMenu(section) {
   if (section === 'installments') c.innerHTML = renderInstallmentsSection();
   if (section === 'tags') c.innerHTML = renderTagsSection();
   if (section === 'admin') c.innerHTML = renderAdminSection();
+  if (section === 'profile') c.innerHTML = renderProfileSection();
+  if (section === 'mytheme') c.innerHTML = renderMyThemeSection();
+  if (section === 'categories') { c.innerHTML = renderCategoriesSection(); setTimeout(renderCatColorSwatches, 30); }
 }
 
 function renderBudgetSection() {
@@ -1466,6 +1552,269 @@ function addTagUI() {
   callApi('saveTag', { obj: { name, icon: '🏷️', startDate: todayStr(), endDate: '' } })
     .then(function () { return callApi('getAllData'); })
     .then(function (data) { showLoading(false); STATE = data; openMenu('tags'); })
+    .catch(function () { showLoading(false); });
+}
+
+// ---------------- 🆕 CATEGORIES (ໜ້າໃຫ້ຜູ້ໃຊ້ຈັດການໝວດໝູ່ຂອງຕົນເອງ) ----------------
+function renderCategoriesSection() {
+  const rows = STATE.categories.map(c => `
+    <div class="link-row"><span>${c.icon} ${c.name}</span>
+      <button class="del-x" onclick="removeCategoryUI('${c.id}')" title="ລົບໝວດໝູ່">🗑️</button>
+    </div>`).join('') || '<div class="empty-hint">ຍັງບໍ່ມີໝວດໝູ່</div>';
+  return `<div class="modal-title">🍰 ໝວດໝູ່ລາຍຈ່າຍ/ລາຍຮັບ</div>
+    <div class="card">${rows}</div>
+    <div class="card">
+      <div style="font-size:13px;color:var(--text-light);margin-bottom:6px;">ເພີ່ມໝວດໝູ່ໃໝ່</div>
+      <div class="icon-pick-row" style="margin-bottom:12px;">
+        <input id="cat-icon" placeholder="emoji" value="🍰">
+        <button type="button" class="icon-pick-btn" onclick="openEmojiPicker('cat-icon')">🙂</button>
+      </div>
+      <input id="cat-name" placeholder="ຊື່ໝວດໝູ່">
+      <div class="color-row" id="cat-color-row"></div>
+      <input id="cat-color-selected" type="hidden" value="#F5C842">
+      <button class="btn-primary" onclick="addCategoryUI()">+ ເພີ່ມໝວດໝູ່</button>
+    </div>`;
+}
+const CATEGORY_COLOR_PRESETS = ['#F28482','#F6BD60','#84A59D','#B39DDB','#8EB8E5','#7FC8A9','#D9A441','#E76F51'];
+function renderCatColorSwatches() {
+  const row = document.getElementById('cat-color-row');
+  if (!row) return;
+  row.innerHTML = CATEGORY_COLOR_PRESETS.map(c =>
+    `<div class="color-swatch" style="background:${c};cursor:pointer;" onclick="document.getElementById('cat-color-selected').value='${c}';"></div>`
+  ).join('');
+}
+function addCategoryUI() {
+  const icon = document.getElementById('cat-icon').value.trim() || '🍰';
+  const name = document.getElementById('cat-name').value.trim();
+  const color = document.getElementById('cat-color-selected').value || '#F5C842';
+  if (!name) { showToast('ປ້ອນຊື່ໝວດໝູ່'); return; }
+  showLoading(true);
+  callApi('saveCategory', { obj: { name, icon, color, isDefault: false } })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; openMenu('categories'); renderAll(); })
+    .catch(function () { showLoading(false); });
+}
+function removeCategoryUI(id) {
+  if (!confirm('ລົບໝວດໝູ່ນີ້?')) return;
+  showLoading(true);
+  callApi('deleteCategory', { id: id })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; openMenu('categories'); renderAll(); })
+    .catch(function () { showLoading(false); });
+}
+
+// ---------------- 🆕 EMOJI PICKER (ໃຊ້ຮ່ວມກັນທົ່ວແອັບ) ----------------
+const EMOJI_PRESETS = [
+  '😀','😺','🐶','🐱','🐰','🐼','🦊','🐻','🐨','🦁','🐯','🐸','🐷','🐮','🐔','🦄',
+  '🐢','🐬','🍜','🍕','🍔','🍰','🍩','🍦','☕','🧋','🍺','🍎','🥗','🍣','💰','💵',
+  '💳','🏦','💎','🚗','🚕','✈️','🚆','⛽','🏠','🛒','👕','💄','📚','💊','🎮','🎁',
+  '❤️','⭐','🌟','🌈','🌴','⚽','🎬','📱','💻','🔥','✨','🐷','🎓','🧴'
+];
+let _emojiTargetId = null;
+function openEmojiPicker(targetId) {
+  _emojiTargetId = targetId;
+  document.getElementById('emoji-picker-grid').innerHTML = EMOJI_PRESETS.map(e =>
+    `<div class="cat-item" onclick="pickEmojiForTarget('${e}')"><span class="em">${e}</span></div>`
+  ).join('');
+  document.getElementById('modal-emoji-picker').classList.add('show');
+}
+function pickEmojiForTarget(emoji) {
+  if (_emojiTargetId === 'profile-avatar-emoji') {
+    pickAvatarEmoji(emoji);
+  } else {
+    const el = document.getElementById(_emojiTargetId);
+    if (el) el.value = emoji;
+  }
+  closeModal('modal-emoji-picker');
+}
+
+// ---------------- 🆕 PROFILE (ໂປຣໄຟລ໌ຂອງຜູ້ໃຊ້ທີ່ Login ຢູ່) ----------------
+function renderProfileSection() {
+  const u = CURRENT_USER;
+  const avatarHtml = u.avatarUrl
+    ? `<img src="${u.avatarUrl}" alt="avatar">`
+    : `<span style="font-size:44px;">${u.avatar || '🐱'}</span>`;
+  return `<div class="modal-title">👤 ໂປຣໄຟລ໌ຂອງຂ້ອຍ</div>
+  <div class="card" style="text-align:center;">
+    <div class="profile-avatar-big">${avatarHtml}</div>
+    <div style="font-weight:700;font-size:16px;">${u.name}</div>
+    <div class="role-tag" style="display:inline-block;margin-top:4px;">${u.role}</div>
+    <div class="slip-upload-row" style="margin-top:14px;">
+      <span class="slip-upload-icon">📷</span>
+      <label class="slip-upload-label" for="profile-avatar-file">ອັບໂຫລດຮູບໂປຣໄຟລ໌ໃໝ່</label>
+      <input type="file" id="profile-avatar-file" accept="image/*" onchange="handleAvatarFile(event)">
+    </div>
+    <button class="btn-outline" style="margin-top:10px;" onclick="openEmojiPicker('profile-avatar-emoji')">🙂 ຫຼືເລືອກ Emoji ແທນຮູບ</button>
+  </div>
+  <div class="card">
+    <div style="font-size:13px;color:var(--text-light);margin-bottom:4px;">ຊື່ສະແດງ</div>
+    <input id="profile-name" value="${u.name}">
+    <button class="btn-primary" onclick="saveProfileBasic()">ບັນທຶກຊື່</button>
+  </div>
+  <div class="card">
+    <div style="font-size:13px;color:var(--text-light);margin-bottom:4px;">ປ່ຽນລະຫັດຜ່ານ (PIN)</div>
+    <input id="profile-current-pin" type="password" placeholder="ລະຫັດເກົ່າ" maxlength="6">
+    <input id="profile-new-pin" type="password" placeholder="ລະຫັດໃໝ່" maxlength="6">
+    <input id="profile-confirm-pin" type="password" placeholder="ຢືນຢັນລະຫັດໃໝ່" maxlength="6">
+    <button class="btn-primary" onclick="changePin()">ບັນທຶກລະຫັດໃໝ່</button>
+  </div>`;
+}
+
+function saveProfileBasic() {
+  const name = document.getElementById('profile-name').value.trim();
+  if (!name) { showToast('ປ້ອນຊື່'); return; }
+  showLoading(true);
+  callApi('updateOwnProfile', { obj: { id: CURRENT_USER.id, name: name } })
+    .then(function (res) {
+      showLoading(false);
+      if (res.success) {
+        CURRENT_USER.name = res.user.name;
+        localStorage.setItem('savedSession', JSON.stringify(CURRENT_USER));
+        showToast('✅ ບັນທຶກຊື່ແລ້ວ');
+        openMenu('profile');
+      } else {
+        showToast(res.message || 'ຜິດພາດ');
+      }
+    })
+    .catch(function () { showLoading(false); });
+}
+
+function changePin() {
+  const cur = document.getElementById('profile-current-pin').value.trim();
+  const np = document.getElementById('profile-new-pin').value.trim();
+  const cp = document.getElementById('profile-confirm-pin').value.trim();
+  if (!cur || !np) { showToast('ກະລຸນາປ້ອນລະຫັດໃຫ້ຄົບ'); return; }
+  if (np !== cp) { showToast('ລະຫັດໃໝ່ບໍ່ຕົງກັນ'); return; }
+  showLoading(true);
+  callApi('updateOwnProfile', { obj: { id: CURRENT_USER.id, currentPin: cur, newPin: np } })
+    .then(function (res) {
+      showLoading(false);
+      if (res.success) {
+        showToast('✅ ປ່ຽນລະຫັດຜ່ານແລ້ວ');
+        closeModal('modal-generic');
+      } else {
+        showToast(res.message || 'ຜິດພາດ');
+      }
+    })
+    .catch(function () { showLoading(false); });
+}
+
+function handleAvatarFile(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const base64 = e.target.result.split(',')[1];
+    showLoading(true);
+    callApi('uploadAvatar', { base64Data: base64, mimeType: file.type, fileName: 'avatar_' + CURRENT_USER.id + '_' + Date.now() + '.jpg' })
+      .then(function (res) { return callApi('updateOwnProfile', { obj: { id: CURRENT_USER.id, avatarUrl: res.url } }); })
+      .then(function (res) {
+        showLoading(false);
+        if (res.success) {
+          CURRENT_USER.avatarUrl = res.user.avatarUrl;
+          localStorage.setItem('savedSession', JSON.stringify(CURRENT_USER));
+          showToast('✅ ອັບເດດຮູບໂປຣໄຟລ໌ແລ້ວ');
+          openMenu('profile');
+        }
+      })
+      .catch(function () { showLoading(false); });
+  };
+  reader.readAsDataURL(file);
+}
+
+function pickAvatarEmoji(emoji) {
+  showLoading(true);
+  callApi('updateOwnProfile', { obj: { id: CURRENT_USER.id, avatar: emoji, avatarUrl: '' } })
+    .then(function (res) {
+      showLoading(false);
+      if (res.success) {
+        CURRENT_USER.avatar = res.user.avatar;
+        CURRENT_USER.avatarUrl = '';
+        localStorage.setItem('savedSession', JSON.stringify(CURRENT_USER));
+        showToast('✅ ປ່ຽນອາວາຕານແລ້ວ');
+        openMenu('profile');
+      }
+    })
+    .catch(function () { showLoading(false); });
+}
+
+// ---------------- 🆕 MY THEME (ແຕ່ງໜ້າແອັບສ່ວນຕົວ: wallpaper + ສີ) ----------------
+const PERSONAL_COLOR_PRESETS = ['#F5C842','#7FC8A9','#8EB8E5','#F28482','#B39DDB','#F6BD60','#3AAFA9','#E76F51'];
+function renderMyThemeSection() {
+  const u = CURRENT_USER;
+  return `<div class="modal-title">🎨 ແຕ່ງໜ້າແອັບຂອງຂ້ອຍ</div>
+  <div class="card">
+    <div style="font-size:13px;color:var(--text-light);margin-bottom:8px;">ພື້ນຫລັງ (Wallpaper) - ເຫັນສະເພາະຝັ່ງທ່ານ</div>
+    ${u.bgWallpaperUrl ? `<img class="wallpaper-preview" src="${u.bgWallpaperUrl}" alt="wallpaper">` : ''}
+    <div class="slip-upload-row">
+      <span class="slip-upload-icon">🖼️</span>
+      <label class="slip-upload-label" for="wallpaper-file">ອັບໂຫລດຮູບພື້ນຫລັງໃໝ່</label>
+      <input type="file" id="wallpaper-file" accept="image/*" onchange="handleWallpaperFile(event)">
+    </div>
+    ${u.bgWallpaperUrl ? `<button class="btn-outline" style="margin-top:10px;" onclick="removeWallpaper()">🗑️ ລຶບພື້ນຫລັງ</button>` : ''}
+  </div>
+  <div class="card">
+    <div style="font-size:13px;color:var(--text-light);margin-bottom:8px;">ສີສັນຫຼັກ (ສ່ວນຕົວ)</div>
+    <div class="color-row">
+      ${PERSONAL_COLOR_PRESETS.map(c => `<div class="color-swatch" style="background:${c};cursor:pointer;" onclick="savePersonalColor('${c}')"></div>`).join('')}
+      <input type="color" value="${u.themeColor || '#F5C842'}" onchange="savePersonalColor(this.value)" style="width:32px;height:32px;padding:0;border:none;border-radius:50%;cursor:pointer;">
+    </div>
+    <div style="font-size:11px;color:var(--text-light);">ສີນີ້ຈະນຳໃຊ້ສະເພາະໜ້າຈໍຂອງທ່ານເທົ່ານັ້ນ ບໍ່ກະທົບຄົນອື່ນ</div>
+  </div>`;
+}
+
+function handleWallpaperFile(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const base64 = e.target.result.split(',')[1];
+    showLoading(true);
+    callApi('uploadWallpaper', { base64Data: base64, mimeType: file.type, fileName: 'wallpaper_' + CURRENT_USER.id + '_' + Date.now() + '.jpg' })
+      .then(function (res) { return callApi('updateOwnProfile', { obj: { id: CURRENT_USER.id, bgWallpaperUrl: res.url } }); })
+      .then(function (res) {
+        showLoading(false);
+        if (res.success) {
+          CURRENT_USER.bgWallpaperUrl = res.user.bgWallpaperUrl;
+          localStorage.setItem('savedSession', JSON.stringify(CURRENT_USER));
+          applyPersonalTheme();
+          showToast('✅ ອັບເດດພື້ນຫລັງແລ້ວ');
+          openMenu('mytheme');
+        }
+      })
+      .catch(function () { showLoading(false); });
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeWallpaper() {
+  showLoading(true);
+  callApi('updateOwnProfile', { obj: { id: CURRENT_USER.id, bgWallpaperUrl: '' } })
+    .then(function (res) {
+      showLoading(false);
+      if (res.success) {
+        CURRENT_USER.bgWallpaperUrl = '';
+        localStorage.setItem('savedSession', JSON.stringify(CURRENT_USER));
+        applyPersonalTheme();
+        showToast('✅ ລຶບພື້ນຫລັງແລ້ວ');
+        openMenu('mytheme');
+      }
+    })
+    .catch(function () { showLoading(false); });
+}
+
+function savePersonalColor(color) {
+  showLoading(true);
+  callApi('updateOwnProfile', { obj: { id: CURRENT_USER.id, themeColor: color } })
+    .then(function (res) {
+      showLoading(false);
+      if (res.success) {
+        CURRENT_USER.themeColor = color;
+        localStorage.setItem('savedSession', JSON.stringify(CURRENT_USER));
+        applyPersonalTheme();
+        showToast('✅ ປ່ຽນສີສ່ວນຕົວແລ້ວ');
+      }
+    })
     .catch(function () { showLoading(false); });
 }
 
