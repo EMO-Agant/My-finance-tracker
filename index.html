@@ -449,28 +449,29 @@ let pendingScanItems = [];
 
 // ---------------- INIT ----------------
 window.onload = function () {
-  showLoading(true);
+  document.getElementById('login-screen').classList.remove('hidden'); // ✅ ສະແດງທັນທີ
   callApi('getAllData').then(function (data) {
-    showLoading(false);
-    onDataLoaded(data);
-  }).catch(function () { showLoading(false); });
+    STATE = data;
+    applyTheme();
+    renderUserChips();
+    // ຖ້າມີ session ທີ່ຈື່ໄວ້, login ອັດຕະໂນມັດ
+    const saved = localStorage.getItem('savedSession');
+    if (saved) {
+      try {
+        const user = JSON.parse(saved);
+        if ((STATE.users || []).some(u => u.id === user.id)) {
+          CURRENT_USER = user;
+          enterApp();
+        } else {
+          localStorage.removeItem('savedSession');
+        }
+      } catch (e) { localStorage.removeItem('savedSession'); }
+    }
+  }).catch(function () {
+    showToast('ໂຫຼດຂໍ້ມູນລົ້ມເຫຼວ, ກະລຸນາລອງໃໝ່');
+  });
 };
 
-function onDataLoaded(data) {
-  STATE = data;
-  applyTheme();
-  const saved = localStorage.getItem('savedSession');
-  if (saved) {
-    try {
-      const user = JSON.parse(saved);
-      const stillExists = (STATE.users || []).some(function (u) { return u.id === user.id; });
-      if (stillExists) { CURRENT_USER = user; enterApp(); return; }
-    } catch (e) {}
-    localStorage.removeItem('savedSession');
-  }
-  document.getElementById('login-screen').classList.remove('hidden');
-  renderUserChips();
-}
 
 function renderUserChips() {
   const list = document.getElementById('user-chip-list');
@@ -507,7 +508,7 @@ function enterApp() {
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('main-app').classList.remove('hidden');
   document.getElementById('bottom-nav').classList.remove('hidden');
-  renderAll();
+  reloadData();   // ✅ ປ່ຽນຈາກ renderAll() ເປັນອັນນີ້ - ໂຫຼດຂໍ້ມູນສົດໆກ່ອນສະແດງ
 }
 function logout() {
   localStorage.removeItem('savedSession');
