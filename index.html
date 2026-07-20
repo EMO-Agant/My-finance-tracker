@@ -772,8 +772,10 @@ function populateCategoryGrid() {
     </div>`).join('');
 }
 function selectCategory(id) {
-  document.getElementById('manual-cat-selected').value = id;
-  document.querySelectorAll('#manual-cat-grid .cat-item').forEach(el => el.classList.toggle('selected', el.dataset.id === id));
+  const current = document.getElementById('manual-cat-selected').value;
+  const newVal = (current === id) ? '' : id;   // ກົດຄືນ = ຍົກເລີກ
+  document.getElementById('manual-cat-selected').value = newVal;
+  document.querySelectorAll('#manual-cat-grid .cat-item').forEach(el => el.classList.toggle('selected', el.dataset.id === newVal));
 }
 
 // ---------------- ADD / EDIT TRANSACTION ----------------
@@ -805,6 +807,7 @@ function openEditTx(id) {
   document.getElementById('manual-currency').value = t.currency || (w ? w.currency : 'LAK') || 'LAK';
   document.getElementById('manual-date').value = String(t.date).slice(0, 10);
   document.getElementById('manual-note').value = t.note || '';
+  document.getElementById('manual-cat-selected').value = '';
   selectCategory(t.categoryId || '');
   document.getElementById('manual-tag').value = t.tagId || '';
   document.getElementById('manual-edit-id').value = t.id;
