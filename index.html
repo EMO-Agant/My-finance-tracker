@@ -312,8 +312,8 @@ button{cursor:pointer;font-family:inherit;}
     <button data-page="overview" onclick="showPage('overview')"><span class="nav-icon">🏠</span>ພາບລວມ</button>
     <button data-page="reports" onclick="showPage('reports')"><span class="nav-icon">📊</span>ລາຍງານ</button>
     <button class="fab-add" onclick="openAddTx()">+</button>
-    <button data-page="wallets" onclick="showPage('wallets')"><span class="nav-icon">👛</span>ກະເປົາ</button>
     <button data-page="transactions" onclick="showPage('transactions')"><span class="nav-icon">📋</span>ທຸລະກຳ</button>
+    <button data-page="wallets" onclick="showPage('wallets')"><span class="nav-icon">👛</span>ກະເປົາ</button>
     <button data-page="menu" onclick="showPage('menu')"><span class="nav-icon">☰</span>ເມນູ</button>
   </div>
 
@@ -452,7 +452,7 @@ let pendingScanItems = [];
 
 // ---------------- INIT ----------------
 window.onload = function () {
-  document.getElementById('login-screen').classList.remove('hidden'); // ✅ ສະແດງທັນທີ
+  document.getElementById('login-screen').classList.remove('hidden');
   callApi('getAllData').then(function (data) {
     STATE = data;
     applyTheme();
@@ -464,15 +464,13 @@ window.onload = function () {
         const user = JSON.parse(saved);
         if ((STATE.users || []).some(u => u.id === user.id)) {
           CURRENT_USER = user;
-          enterApp();
+          enterApp();          // 👈 ຂ້າມໜ້າ login ໄປເລີຍ
         } else {
           localStorage.removeItem('savedSession');
         }
       } catch (e) { localStorage.removeItem('savedSession'); }
     }
-  }).catch(function () {
-    showToast('ໂຫຼດຂໍ້ມູນລົ້ມເຫຼວ, ກະລຸນາລອງໃໝ່');
-  });
+  })
 };
 
 
