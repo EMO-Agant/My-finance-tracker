@@ -452,25 +452,32 @@ let pendingScanItems = [];
 
 // ---------------- INIT ----------------
 window.onload = function () {
-  document.getElementById('login-screen').classList.remove('hidden');
+  // ✅ ບໍ່ສະແດງໜ້າ login ທັນທີ - ລໍຖ້າກວດ session ກ່ອນ ເພື່ອບໍ່ໃຫ້ກະພິບ
+  const saved = localStorage.getItem('savedSession');
+
   callApi('getAllData').then(function (data) {
     STATE = data;
     applyTheme();
     renderUserChips();
-    // ຖ້າມີ session ທີ່ຈື່ໄວ້, login ອັດຕະໂນມັດ
-    const saved = localStorage.getItem('savedSession');
+
     if (saved) {
       try {
         const user = JSON.parse(saved);
         if ((STATE.users || []).some(u => u.id === user.id)) {
           CURRENT_USER = user;
-          enterApp();          // 👈 ຂ້າມໜ້າ login ໄປເລີຍ
+          enterApp();          // ✅ ຂ້າມໜ້າ login ໄປເລີຍ ບໍ່ກະພິບ
+          return;
         } else {
           localStorage.removeItem('savedSession');
         }
       } catch (e) { localStorage.removeItem('savedSession'); }
     }
-  })
+    // ບໍ່ມີ session ທີ່ຈື່ໄວ້ (ຫຼື session ໝົດອາຍຸ) → ສະແດງໜ້າ login
+    document.getElementById('login-screen').classList.remove('hidden');
+  }).catch(function () {
+    showToast('ໂຫຼດຂໍ້ມູນລົ້ມເຫຼວ, ກະລຸນາລອງໃໝ່');
+    document.getElementById('login-screen').classList.remove('hidden');
+  });
 };
 
 
