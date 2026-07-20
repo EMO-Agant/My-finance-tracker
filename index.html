@@ -709,15 +709,16 @@ function populateTagSelect() {
   document.getElementById('manual-tag').innerHTML = opts;
 }
 
-function populateCategoryGrid() {
-  document.getElementById('manual-cat-grid').innerHTML = STATE.categories.map(c => `
-    <div class="cat-item" data-id="${c.id}" onclick="selectCategory('${c.id}')">
-      <span class="em">${c.icon}</span>${c.name}
-    </div>`).join('');
-}
 function selectCategory(id) {
   document.getElementById('manual-cat-selected').value = id;
   document.querySelectorAll('#manual-cat-grid .cat-item').forEach(el => el.classList.toggle('selected', el.dataset.id === id));
+}
+
+function switchAddTab(tab) {
+  document.getElementById('seg-manual').classList.toggle('active', tab === 'manual');
+  document.getElementById('seg-scan').classList.toggle('active', tab === 'scan');
+  document.getElementById('tab-manual').classList.toggle('hidden', tab !== 'manual');
+  document.getElementById('tab-scan').classList.toggle('hidden', tab !== 'scan');
 }
 
 // ---------------- ADD TRANSACTION ----------------
@@ -741,6 +742,14 @@ function setTxType(type) {
   document.getElementById('type-expense').classList.toggle('active', type === 'expense');
   document.getElementById('type-income').classList.toggle('active', type === 'income');
 }
+
+function switchAddTab(tab) {
+  document.getElementById('seg-manual').classList.toggle('active', tab === 'manual');
+  document.getElementById('seg-scan').classList.toggle('active', tab === 'scan');
+  document.getElementById('tab-manual').classList.toggle('hidden', tab !== 'manual');
+  document.getElementById('tab-scan').classList.toggle('hidden', tab !== 'scan');
+}
+
 function saveManualTx() {
   const walletId = document.getElementById('manual-wallet').value;
   const amount = parseFloat(document.getElementById('manual-amount').value);
