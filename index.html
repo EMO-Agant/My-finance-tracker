@@ -1240,12 +1240,16 @@ function renderAndRefreshReports(){
   setTimeout(drawActiveReportChart, 50);
 }
 function drawActiveReportChart(){
-  if (reportState.tab === 'category') drawCategoryChart();
-  else if (reportState.tab === 'tag') { drawTagBubbles(); drawTagTable(); }
-  else if (reportState.tab === 'time') drawTimeChart();
-  else if (reportState.tab === 'networth') drawNetWorthChart();
-  else if (reportState.tab === 'goals') drawGoalsReport();
-  else if (reportState.tab === 'installments') drawInstallmentsReport();
+  try {
+    if (reportState.tab === 'category') drawCategoryChart();
+    else if (reportState.tab === 'tag') { drawTagBubbles(); drawTagTable(); }
+    else if (reportState.tab === 'time') drawTimeChart();
+    else if (reportState.tab === 'networth') drawNetWorthChart();
+    else if (reportState.tab === 'goals') drawGoalsReport();
+    else if (reportState.tab === 'installments') drawInstallmentsReport();
+  } catch (err) {
+    console.error('ວາດລາຍງານຜິດພາດ:', err);
+  }
 }
 
 function renderReportsSection(){
@@ -1304,7 +1308,11 @@ function renderReportsSection(){
       <div class="card"><div style="font-weight:700;margin-bottom:6px;">ແຍກຕາມແທັກ</div><div id="tag-table"></div></div>`;
   } else if (reportState.tab === 'time'){
     html += `<div class="card"><div style="font-weight:700;margin-bottom:6px;">ລາຍຈ່າຍ-ລາຍຮັບ 6 ເດືອນຫຼ້າສຸດ</div><canvas id="time-chart" height="220"></canvas></div>`;
-} else if (reportState.tab === 'goals'){
+  } else if (reportState.tab === 'networth'){
+    html += `<div class="card"><div class="report-donut-wrap"><canvas id="networth-chart" height="240"></canvas>
+      <div class="report-donut-center" id="networth-center"></div></div></div>
+      <div class="card" id="networth-table"></div>`;
+  } else if (reportState.tab === 'goals'){
     html += `<div id="goals-report-wrap"></div>`;
   } else if (reportState.tab === 'installments'){
     html += `<div id="installments-report-wrap"></div>`;
@@ -1420,6 +1428,9 @@ function drawTimeChart(){
 }
 
 function drawNetWorthChart(){
+  const centerEl = document.getElementById('networth-center');
+  const tableEl = document.getElementById('networth-table');
+  if (!centerEl || !tableEl) return;   // 🆕 ກັນ error ຖ້າ element ຍັງບໍ່ທັນຖືກສ້າງ
   const total = STATE.wallets.reduce((s,w)=>s+Number(w.balance||0),0);
   const colors = ['#F28482','#F6BD60','#84A59D','#B39DDB','#8EB8E5','#7FC8A9','#D9A441'];
   const ctx = document.getElementById('networth-chart');
