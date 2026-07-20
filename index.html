@@ -237,17 +237,6 @@ button{cursor:pointer;font-family:inherit;}
           </div>
         </div>
       </div>
-      <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
-        <span>📊 ສະຫຼຸບລາຍງານ</span>
-        <button class="btn-outline" style="width:auto;padding:6px 12px;font-size:12px;" onclick="openMenu('reports')">ເບິ່ງທັງໝົດ ›</button>
-      </div>
-      <div class="card">
-        <div class="report-donut-wrap">
-          <canvas id="ov-report-chart" height="180"></canvas>
-          <div class="report-donut-center" id="ov-report-center"></div>
-        </div>
-        <div class="cat-legend" id="ov-report-legend"></div>
-      </div>
       <div class="section-title">👛 ກະເປົາເງິນ</div>
       <div class="wallet-grid" id="ov-wallet-grid"></div>
 
@@ -276,7 +265,10 @@ button{cursor:pointer;font-family:inherit;}
         <button class="btn-primary" onclick="doTransfer()">ໂອນເງິນ</button>
       </div>
     </div>
-
+    <!-- ---------- REPORTS (ໜ້າໃໝ່) ---------- -->
+    <div class="page" id="page-reports">
+      <div id="reports-content"></div>
+    </div>
     <!-- ---------- MENU (ฮับรวม budget/goals/installments/tags/reports) ---------- -->
     <div class="page" id="page-menu">
       <div class="section-title">🌸 ເມນູທັງໝົດ</div>
@@ -285,7 +277,6 @@ button{cursor:pointer;font-family:inherit;}
         <div class="link-row" onclick="openMenu('goals')">🚩 ເປົ້າໝາຍອອມເງິນ <span>›</span></div>
         <div class="link-row" onclick="openMenu('installments')">🏷️ ຜ່ອນຊຳລະ <span>›</span></div>
         <div class="link-row" onclick="openMenu('tags')">🏷️ ແທັກຕິດຕາມ <span>›</span></div>
-        <div class="link-row" onclick="openMenu('reports')">📊 ສະຫຼຸບລາຍງານ <span>›</span></div>
         <div class="link-row" onclick="openMenu('admin')">⚙️ ຕັ້ງຄ່າລະບົບ / Admin <span>›</span></div>
         <div class="link-row" onclick="logout()">🚪 ອອກຈາກລະບົບ <span>›</span></div>
       </div>
@@ -296,6 +287,7 @@ button{cursor:pointer;font-family:inherit;}
   <!-- ===================== BOTTOM NAV ===================== -->
   <div class="fab-nav hidden" id="bottom-nav">
     <button data-page="overview" onclick="showPage('overview')"><span class="nav-icon">🏠</span>ພາບລວມ</button>
+    <button data-page="reports" onclick="showPage('reports')"><span class="nav-icon">📊</span>ລາຍງານ</button>  <!-- ← ເພີ່ມໃໝ່ -->
     <button data-page="transactions" onclick="showPage('transactions')"><span class="nav-icon">📋</span>ທຸລະກຳ</button>
     <button class="fab-add" onclick="openAddTx()">+</button>
     <button data-page="wallets" onclick="showPage('wallets')"><span class="nav-icon">👛</span>ກະເປົາ</button>
@@ -500,9 +492,9 @@ function closeModal(id) { document.getElementById(id).classList.remove('show'); 
 function renderAll() {
   renderOverview();
   renderDashboard();
-  renderOverviewReportPreview();
   renderTransactions();
   renderWalletsPage();
+  renderReportsPage();
   populateCategoryGrid();
   populateWalletSelects();
   populateTagSelect();
@@ -838,7 +830,7 @@ function reportFilteredTx(){
 
 function setReportTab(tab){ reportState.tab = tab; renderAndRefreshReports(); }
 function renderAndRefreshReports(){
-  document.getElementById('generic-content').innerHTML = renderReportsSection();
+  document.getElementById('reports-content').innerHTML = renderReportsSection();   // ← ປ່ຽນຈາກ generic-content
   setTimeout(drawActiveReportChart, 50);
 }
 function drawActiveReportChart(){
@@ -907,6 +899,11 @@ function renderReportsSection(){
       <div class="card" id="networth-table"></div>`;
   }
   return html;
+}
+
+function renderReportsPage() {
+  document.getElementById('reports-content').innerHTML = renderReportsSection();
+  setTimeout(drawActiveReportChart, 50);
 }
 
 function drawCategoryChart(){
@@ -998,7 +995,6 @@ function openMenu(section) {
   if (section === 'goals') c.innerHTML = renderGoalsSection();
   if (section === 'installments') c.innerHTML = renderInstallmentsSection();
   if (section === 'tags') c.innerHTML = renderTagsSection();
-  if (section === 'reports') { c.innerHTML = renderReportsSection(); setTimeout(drawActiveReportChart, 50); }
   if (section === 'admin') c.innerHTML = renderAdminSection();
 }
 
