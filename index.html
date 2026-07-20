@@ -93,9 +93,12 @@ button{cursor:pointer;font-family:inherit;}
 .slip-type-badge{padding:3px 12px;border-radius:10px;color:#fff;font-size:12px;font-weight:700;}
 
 /* ---------- SLIP UPLOAD (in add/edit tx form) ---------- */
-.slip-upload-row{margin-top:6px;background:#FFFDF5;border:1px dashed #eee0c0;border-radius:14px;padding:12px;text-align:center;}
-.slip-upload-label{font-size:13px;color:var(--text-light);display:block;margin-bottom:8px;}
-#manual-slip-preview img{max-width:100%;border-radius:12px;margin-top:8px;max-height:180px;object-fit:contain;}
+.slip-upload-row{margin-top:6px;background:#FFFDF5;border:2px dashed #d8cdb0;border-radius:16px;padding:24px 16px;text-align:center;cursor:pointer;transition:.2s;position:relative;}
+.slip-upload-row:hover, .slip-upload-row.dragover{background:#FFF3CE;border-color:var(--primary);}
+.slip-upload-row input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;margin:0;padding:0;}
+.slip-upload-icon{font-size:28px;display:block;margin-bottom:6px;}
+.slip-upload-label{font-size:13px;color:var(--text-light);display:block;margin-bottom:0;}
+#manual-slip-preview img{max-width:100%;border-radius:12px;margin-top:10px;max-height:180px;object-fit:contain;}
 
 .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;}
 .tabs button{background:#F3EAD0;border:none;border-radius:14px;padding:8px 14px;font-size:13px;white-space:nowrap;color:var(--text);}
@@ -341,8 +344,9 @@ button{cursor:pointer;font-family:inherit;}
         <div class="cat-grid" id="manual-cat-grid"></div>
         <input id="manual-cat-selected" type="hidden">
         <select id="manual-tag" style="margin-top:10px;"><option value="">ບໍ່ໃສ່ແທັກ</option></select>
-        <div class="slip-upload-row">
-          <label class="slip-upload-label" for="manual-slip-file">📎 ອັບໂຫລດ Slip / ໃບບິນ (ຖ້າມີ)</label>
+        <div class="slip-upload-row" id="slip-drop-zone">
+          <span class="slip-upload-icon">☁️</span>
+          <label class="slip-upload-label" for="manual-slip-file">ກົດເພື່ອເລືອກຮູບ Slip (ບໍ່ບັງຄັບ)</label>
           <input type="file" id="manual-slip-file" accept="image/*" onchange="handleManualSlipFile(event)">
           <div id="manual-slip-preview"></div>
         </div>
