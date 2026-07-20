@@ -198,7 +198,6 @@ button{cursor:pointer;font-family:inherit;}
     <h1 id="login-app-name">ບັນທຶກລາຍຈ່າຍດ້ວຍໃບເສັດ</h1>
     <p>ຕິດຕາມລາຍຮັບ-ລາຍຈ່າຍແບບໜ້າຮັກ 💛</p>
     <div class="login-box">
-      <div id="user-chip-list" style="margin-bottom:14px;"></div>
       <input id="login-pin" placeholder="ລະຫັດຜ່ານ (PIN)" type="password" maxlength="6">
       <button class="btn-primary" onclick="doLogin()">ເຂົ້າສູ່ລະບົບ</button>
       <p style="font-size:11px;color:var(--text-light);margin-top:10px;">ບັນຊີເລີ່ມຕົ້ນ PIN: 0000</p>
@@ -508,10 +507,7 @@ window.onload = function () {
 
 
 function renderUserChips() {
-  const list = document.getElementById('user-chip-list');
-  list.innerHTML = (STATE.users || []).map(function (u) {
-    return '<span class="user-chip">' + (u.avatar || '🐱') + ' ' + u.name + '</span>';
-  }).join('');
+  // ✅ ເອົາລາຍຊື່ຜູ້ໃຊ້ອອກຈາກໜ້າ login ແລ້ວ (ບໍ່ສະແດງອີກ)
 }
 
 function applyTheme() {
