@@ -279,9 +279,10 @@ button{cursor:pointer;font-family:inherit;}
       <div class="wallet-grid" id="wallets-page-grid"></div>
       <div class="section-title">🔄 ໂອນເງິນລະຫວ່າງກະເປົາ</div>
       <div class="card">
-        <select id="tr-from"></select>
-        <select id="tr-to"></select>
-        <input id="tr-amount" type="number" placeholder="ຈຳນວນເງິນ">
+        <select id="tr-from" onchange="updateTransferPreview()"></select>
+        <select id="tr-to" onchange="updateTransferPreview()"></select>
+        <input id="tr-amount" type="number" placeholder="ຈຳນວນເງິນ" oninput="updateTransferPreview()">
+        <div id="tr-preview" style="font-size:13px;color:var(--text-light);margin:-4px 0 12px;"></div>
         <button class="btn-primary" onclick="doTransfer()">ໂອນເງິນ</button>
       </div>
     </div>
@@ -747,7 +748,7 @@ function removeWallet(id) {
 }
 
 function populateWalletSelects() {
-  const opts = STATE.wallets.map(w => `<option value="${w.id}">${w.icon} ${w.name}</option>`).join('');
+  const opts = STATE.wallets.map(w => `<option value="${w.id}">${w.icon} ${w.name} (${CURRENCY_SYMBOLS[w.currency] || 'ກີບ'})</option>`).join('');
   ['manual-wallet', 'scan-wallet', 'tr-from', 'tr-to'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = opts;
@@ -759,7 +760,37 @@ function populateWalletSelects() {
       if (w && w.currency) document.getElementById('manual-currency').value = w.currency;
     };
   }
+  if (document.getElementById('tr-preview')) updateTransferPreview();
 }
+
+// 🆕 ອັດຕາແລກປ່ຽນຝັ່ງໜ້າບ້ານ (fallback ຄືກັນກັບ backend)
+function getExchangeRates() {
+  return {
+    LAK: 1,
+    THB: Number(STATE.settings.rateTHB) || 650,
+    USD: Number(STATE.settings.rateUSD) || 21000
+  };
+}
+
+// 🆕 ສະແດງຕົວຢ່າງຈຳນວນເງິນທີ່ຈະໄດ້ຮັບ ຫຼັງແປງສະກຸນ
+function updateTransferPreview() {
+  const preview = document.getElementById('tr-preview');
+  if (!preview) return;
+  const fromEl = document.getElementById('tr-from');
+  const toEl = document.getElementById('tr-to');
+  const fromW = walletById(fromEl.value);
+  const toW = walletById(toEl.value);
+  const amount = parseFloat(document.getElementById('tr-amount').value) || 0;
+  if (!fromW || !toW || !amount) { preview.innerHTML = ''; return; }
+  const fromCurr = fromW.currency || 'LAK';
+  const toCurr = toW.currency || 'LAK';
+  if (fromCurr === toCurr) { preview.innerHTML = ''; return; }
+  const rates = getExchangeRates();
+  const converted = (amount * rates[fromCurr]) / rates[toCurr];
+  preview.innerHTML = '💱 ' + fmt(amount) + ' ' + (CURRENCY_SYMBOLS[fromCurr] || '') +
+    ' ≈ <b style="color:var(--text);">' + fmt(converted) + ' ' + (CURRENCY_SYMBOLS[toCurr] || '') + '</b>';
+}
+
 function populateTagSelect() {
   const opts = '<option value="">ບໍ່ໃສ່ແທັກ</option>' + STATE.tags.map(t => `<option value="${t.id}">${t.icon || '🏷️'} ${t.name}</option>`).join('');
   document.getElementById('manual-tag').innerHTML = opts;
@@ -1013,6 +1044,7 @@ function saveWalletUI() {
     .then(function (data) { showLoading(false); STATE = data; renderAll(); closeModal('modal-wallet'); })
     .catch(function () { showLoading(false); });
 }
+
 function doTransfer() {
   const from = document.getElementById('tr-from').value;
   const to = document.getElementById('tr-to').value;
@@ -1020,8 +1052,16 @@ function doTransfer() {
   if (!from || !to || !amount || from === to) { showToast('ກະລຸນາເລືອກກະເປົາ ແລະ ຈຳນວນເງິນໃຫ້ຖືກຕ້ອງ'); return; }
   showLoading(true);
   callApi('transferBetweenWallets', { fromId: from, toId: to, amount: amount, note: '' })
-    .then(function () { return callApi('getAllData'); })
-    .then(function (data) { showLoading(false); STATE = data; renderAll(); })
+    .then(function (res) {
+      return callApi('getAllData').then(function (data) {
+        showLoading(false); STATE = data; renderAll();
+        document.getElementById('tr-amount').value = '';
+        document.getElementById('tr-preview').innerHTML = '';
+        if (res && res.convertedAmount !== undefined) {
+          showToast('✅ ໂອນສຳເລັດ ໄດ້ຮັບ ' + fmt(res.convertedAmount) + ' ' + (CURRENCY_SYMBOLS[res.toCurrency] || ''));
+        }
+      });
+    })
     .catch(function () { showLoading(false); });
 }
 
@@ -1341,7 +1381,14 @@ function renderAdminSection() {
     }).join('') || '<div class="empty-hint">ຍັງບໍ່ມີການເຂົ້າສູ່ລະບົບ</div>') + `</div>`;
   if (isAdmin) {
     html += `<div class="card">
-      <b>🎨 ໂຕນສີ / ໂລໂກ້ / ຊື່ແອັບ</b>
+      <b>💱 ອັດຕາແລກປ່ຽນເງິນ (1 ໜ່ວຍ = ? ກີບ)</b>
+      <div style="font-size:12px;color:var(--text-light);margin:6px 0;">ໃຊ້ຄິດໄລ່ຕອນໂອນເງິນຂ້າມສະກຸນ</div>
+      <input id="admin-rate-thb" type="number" value="${STATE.settings.rateTHB || 650}" placeholder="1 ฿ ບາດ = ? ກີບ">
+      <input id="admin-rate-usd" type="number" value="${STATE.settings.rateUSD || 21000}" placeholder="1 $ ໂດລາ = ? ກີບ">
+      <button class="btn-primary" onclick="saveExchangeRates()">ບັນທຶກອັດຕາແລກປ່ຽນ</button>
+    </div>
+    <div class="card">
+      <b>🎨 ໂຕນສີ / ໂລໂກ້ / ຊື່ແອັບ</b
       <input id="admin-appname" value="${STATE.settings.appName || ''}" placeholder="ຊື່ແອັບ">
       <input id="admin-primary" type="color" value="${STATE.settings.primaryColor || '#F5C842'}" style="height:44px;">
       <input id="admin-bg" type="color" value="${STATE.settings.bgColor || '#FFF8E7'}" style="height:44px;">
@@ -1373,6 +1420,17 @@ function saveAdminTheme() {
     .then(function (data) { showLoading(false); STATE = data; applyTheme(); closeModal('modal-generic'); })
     .catch(function () { showLoading(false); });
 }
+
+function saveExchangeRates() {
+  const rateTHB = parseFloat(document.getElementById('admin-rate-thb').value) || 1;
+  const rateUSD = parseFloat(document.getElementById('admin-rate-usd').value) || 1;
+  showLoading(true);
+  callApi('saveSettings', { settingsObj: { rateTHB, rateUSD }, requesterRole: CURRENT_USER.role })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; showToast('✅ ບັນທຶກອັດຕາແລກປ່ຽນແລ້ວ'); })
+    .catch(function () { showLoading(false); });
+}
+
 function addUserUI() {
   const name = document.getElementById('new-user-name').value.trim();
   const pin = document.getElementById('new-user-pin').value.trim();
