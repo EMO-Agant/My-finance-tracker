@@ -772,15 +772,8 @@ function populateCategoryGrid() {
     </div>`).join('');
 }
 function selectCategory(id) {
-  const currentSelected = document.getElementById('manual-cat-selected').value;
-  if (currentSelected === id) {
-    // ກົດຊ້ຳໃສ່ອັນທີ່ເລືອກຢູ່ແລ້ວ -> ຍົກເລີກການເລືອກ
-    document.getElementById('manual-cat-selected').value = '';
-    document.querySelectorAll('#manual-cat-grid .cat-item').forEach(el => el.classList.remove('selected'));
-  } else {
-    document.getElementById('manual-cat-selected').value = id;
-    document.querySelectorAll('#manual-cat-grid .cat-item').forEach(el => el.classList.toggle('selected', el.dataset.id === id));
-  }
+  document.getElementById('manual-cat-selected').value = id;
+  document.querySelectorAll('#manual-cat-grid .cat-item').forEach(el => el.classList.toggle('selected', el.dataset.id === id));
 }
 
 // ---------------- ADD / EDIT TRANSACTION ----------------
