@@ -195,9 +195,6 @@ button{cursor:pointer;font-family:inherit;}
     <div class="login-box">
       <div id="user-chip-list" style="margin-bottom:14px;"></div>
       <input id="login-pin" placeholder="ລະຫັດຜ່ານ (PIN)" type="password" maxlength="6">
-      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-light);margin:-4px 0 14px;">
-        <input type="checkbox" id="login-remember" style="width:auto;margin:0;"> ຈື່ຈຳການເຂົ້າສູ່ລະບົບ
-      </label>
       <button class="btn-primary" onclick="doLogin()">ເຂົ້າສູ່ລະບົບ</button>
       <p style="font-size:11px;color:var(--text-light);margin-top:10px;">ບັນຊີເລີ່ມຕົ້ນ PIN: 0000</p>
     </div>
@@ -309,9 +306,9 @@ button{cursor:pointer;font-family:inherit;}
   <div class="fab-nav hidden" id="bottom-nav">
     <button data-page="overview" onclick="showPage('overview')"><span class="nav-icon">🏠</span>ພາບລວມ</button>
     <button data-page="reports" onclick="showPage('reports')"><span class="nav-icon">📊</span>ລາຍງານ</button>
-    <button data-page="transactions" onclick="showPage('transactions')"><span class="nav-icon">📋</span>ທຸລະກຳ</button>
     <button class="fab-add" onclick="openAddTx()">+</button>
     <button data-page="wallets" onclick="showPage('wallets')"><span class="nav-icon">👛</span>ກະເປົາ</button>
+    <button data-page="transactions" onclick="showPage('transactions')"><span class="nav-icon">📋</span>ທຸລະກຳ</button>
     <button data-page="menu" onclick="showPage('menu')"><span class="nav-icon">☰</span>ເມນູ</button>
   </div>
 
@@ -493,15 +490,13 @@ function applyTheme() {
 // ---------------- AUTH ----------------
 function doLogin() {
   const pin = document.getElementById('login-pin').value.trim();
-  const remember = document.getElementById('login-remember').checked;
   if (!pin) { showToast('ກະລຸນາປ້ອນລະຫັດຜ່ານ'); return; }
   showLoading(true);
   callApi('login', { pin: pin }).then(function (res) {
     showLoading(false);
     if (!res.success) { showToast(res.message); return; }
     CURRENT_USER = res.user;
-    if (remember) localStorage.setItem('savedSession', JSON.stringify(res.user));
-    else localStorage.removeItem('savedSession');
+    localStorage.setItem('savedSession', JSON.stringify(res.user)); // ✅ ຈື່ໄວ້ອັດຕະໂນມັດທຸກຄັ້ງ
     enterApp();
   }).catch(function () { showLoading(false); });
 }
@@ -551,6 +546,14 @@ function renderAll() {
 function fmt(n) { return Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 
+// 🆕 ແປງວັນທີໃຫ້ເປັນ ISO ສະເໝີກ່ອນປຽບທຽບ (ປອດໄພຕໍ່ຮູບແບບ string/Date object ຈາກ Sheets)
+function toISODate_(d) {
+  const dt = new Date(d);
+  return isNaN(dt) ? String(d) : dt.toISOString();
+}
+function dayKey(d) { return toISODate_(d).slice(0, 10); }
+function ymKey(d) { return toISODate_(d).slice(0, 7); }
+
 function renderOverview() {
   const byCurrency = {};
   STATE.wallets.forEach(w => { const c = w.currency || 'LAK'; byCurrency[c] = (byCurrency[c] || 0) + Number(w.balance || 0); });
@@ -561,7 +564,7 @@ function renderOverview() {
     .join(' · ');
 
   const today = todayStr();
-  const txToday = STATE.transactions.filter(t => String(t.date).slice(0, 10) === today);
+  const txToday = STATE.transactions.filter(t => dayKey(t.date) === today);
   const expenseToday = txToday.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
   const incomeToday = txToday.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
   const transferToday = txToday.filter(t => t.type === 'transfer').reduce((s, t) => s + Number(t.amount), 0);
@@ -595,14 +598,14 @@ function renderOverview() {
 function renderDashboard() {
   const now = new Date();
   const ym = now.toISOString().slice(0, 7); // YYYY-MM
-  const txThisMonth = STATE.transactions.filter(t => String(t.date).slice(0, 7) === ym);
+  const txThisMonth = STATE.transactions.filter(t => ymKey(t.date) === ym);
 
   const monthlyIncome = txThisMonth.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
   const monthlyExpense = txThisMonth.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
 
   const today = todayStr();
   const dailyExpense = STATE.transactions
-    .filter(t => t.type === 'expense' && String(t.date).slice(0, 10) === today)
+    .filter(t => t.type === 'expense' && dayKey(t.date) === today)
     .reduce((s, t) => s + Number(t.amount), 0);
 
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -635,7 +638,7 @@ const LAO_MONTHS_FULL_OV = ['ມັງກອນ','ກຸມພາ','ມີນາ
 function renderOverviewReportPreview(){
   const now = new Date();
   const ym = now.toISOString().slice(0,7);
-  const list = STATE.transactions.filter(t => t.type === 'expense' && String(t.date).slice(0,7) === ym);
+  const list = STATE.transactions.filter(t => t.type === 'expense' && ymKey(t.date) === ym);
   const catTotals = {}, catIcons = {};
   list.forEach(t=>{
     const cat = catById(t.categoryId);
@@ -678,7 +681,7 @@ function txRowHtml(t) {
     ${slipBtn}
     <div class="info">
       <div class="t1">${t.note || (cat ? cat.name : 'ລາຍການ')}</div>
-      <div class="t2">${w ? w.name : ''} · ${String(t.date).slice(0, 10)}</div>
+      <div class="t2">${w ? w.name : ''} · ${dayKey(t.date)}</div>
     </div>
     <div class="amt ${amtClass}">${sign}${fmt(t.amount)} ${CURRENCY_SYMBOLS[curr] || ''}</div>
     <button class="del-x" onclick="event.stopPropagation();removeTx('${t.id}')" title="ລົບລາຍການ">🗑️</button>
@@ -698,7 +701,7 @@ function openSlipView(id) {
   const badge = document.getElementById('slip-view-type');
   badge.innerText = t.type === 'income' ? 'ລາຍຮັບ' : (t.type === 'expense' ? 'ລາຍຈ່າຍ' : 'ໂອນເງິນ');
   badge.style.background = t.type === 'income' ? 'var(--green)' : (t.type === 'expense' ? 'var(--red)' : '#B0A6C9');
-  document.getElementById('slip-view-date').innerText = String(t.date).slice(0, 10);
+  document.getElementById('slip-view-date').innerText = dayKey(t.date);
   document.getElementById('slip-view-note').innerText = t.note || '-';
   document.getElementById('slip-view-cat').innerText = cat ? (cat.icon + ' ' + cat.name) : '-';
   document.getElementById('slip-view-wallet').innerText = w ? (w.icon + ' ' + w.name) : '-';
@@ -841,7 +844,7 @@ function openEditTx(id) {
   document.getElementById('manual-amount').value = t.amount;
   const w = walletById(t.walletId);
   document.getElementById('manual-currency').value = t.currency || (w ? w.currency : 'LAK') || 'LAK';
-  document.getElementById('manual-date').value = String(t.date).slice(0, 10);
+  document.getElementById('manual-date').value = dayKey(t.date);
   document.getElementById('manual-note').value = t.note || '';
   document.getElementById('manual-cat-selected').value = '';
   selectCategory(t.categoryId || '');
@@ -1110,7 +1113,7 @@ let _reportChartInstance=null, _timeChartInstance=null, _networthChartInstance=n
 function reportFilteredTx(){
   let list = STATE.transactions.filter(t => t.type !== 'transfer');
   if (reportState.walletId !== 'all') list = list.filter(t => t.walletId === reportState.walletId);
-  if (reportState.period === 'month') list = list.filter(t => String(t.date).slice(0,7) === reportState.month);
+  if (reportState.period === 'month') list = list.filter(t => ymKey(t.date) === reportState.month);
   return list;
 }
 
@@ -1158,7 +1161,7 @@ function renderReportsSection(){
     const list = reportFilteredTx();
     const exp = list.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
     const inc = list.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
-    const trf = STATE.transactions.filter(t=>t.type==='transfer' && (reportState.period!=='month' || String(t.date).slice(0,7)===reportState.month)).reduce((s,t)=>s+Number(t.amount),0);
+    const trf = STATE.transactions.filter(t=>t.type==='transfer' && (reportState.period!=='month' || ymKey(t.date)===reportState.month)).reduce((s,t)=>s+Number(t.amount),0);
     html += `<div class="report-summary-row">
       <div><div class="num" style="color:var(--red);">- ${fmt(exp)}</div><div class="label">ລາຍຈ່າຍ</div></div>
       <div><div class="num" style="color:var(--green);">+ ${fmt(inc)}</div><div class="label">ລາຍຮັບ</div></div>
@@ -1244,7 +1247,7 @@ function drawTimeChart(){
     const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
     const ym = d.toISOString().slice(0,7);
     labels.push(LAO_MONTHS_SHORT[d.getMonth()]);
-    const list = STATE.transactions.filter(t=>String(t.date).slice(0,7)===ym);
+    const list = STATE.transactions.filter(t=>ymKey(t.date)===ym);
     expData.push(list.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0));
     incData.push(list.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0));
   }
