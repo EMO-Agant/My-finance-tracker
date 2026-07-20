@@ -77,9 +77,10 @@ button{cursor:pointer;font-family:inherit;}
 .tx-item .amt{font-weight:700;font-size:14px;white-space:nowrap;}
 .tx-item .amt.expense{color:var(--red);}
 .tx-item .amt.income{color:var(--green);}
-.tx-item .del-x{background:none;border:none;color:#F28482;font-size:16px;padding:4px 6px;border-radius:8px;}
+.tx-item .del-x{background:none;border:none;color:#F28482;font-size:16px;padding:4px 6px;border-radius:8px;flex-shrink:0;}
 .tx-item .del-x:active{background:#FDE9E9;}
-.tx-item{cursor:pointer;}
+.tx-item .edit-x{background:none;border:none;color:var(--primary-dark);font-size:16px;padding:4px 6px;border-radius:8px;flex-shrink:0;}
+.tx-item .edit-x:active{background:#FFF3CE;}
 .tx-slip-thumb{width:34px;height:34px;border-radius:8px;object-fit:cover;border:1px solid #eee0c0;flex-shrink:0;cursor:pointer;}
 
 .slip-view-img{width:100%;border-radius:16px;margin-bottom:14px;}
@@ -417,6 +418,10 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(function () { t.classList.remove('show'); }, 2500);
 }
+window.addEventListener('error', function (e) {
+  showToast('⚠️ Error: ' + e.message + ' (ແຖວ ' + e.lineno + ')');
+  console.error(e);
+});
 
 let STATE = { wallets:[], categories:[], transactions:[], budgets:[], goals:[], installments:[], tags:[], users:[], settings:{} };
 let CURRENT_USER = null;
@@ -645,9 +650,9 @@ function txRowHtml(t) {
   const amtClass = t.type === 'income' ? 'income' : (t.type === 'expense' ? 'expense' : '');
   const sign = t.type === 'income' ? '+' : (t.type === 'expense' ? '-' : '');
   const slipBtn = t.receiptUrl
-    ? `<img class="tx-slip-thumb" src="${t.receiptUrl}" onclick="event.stopPropagation();viewSlip('${t.id}')">`
+    ? `<img class="tx-slip-thumb" src="${t.receiptUrl}" onclick="viewSlip('${t.id}')">`
     : '';
-  return `<div class="tx-item" onclick="editTx('${t.id}')">
+  return `<div class="tx-item">
     <div class="icon-badge">${icon}</div>
     <div class="info">
       <div class="t1">${t.note || (cat ? cat.name : 'ລາຍການ')}</div>
@@ -655,7 +660,8 @@ function txRowHtml(t) {
     </div>
     ${slipBtn}
     <div class="amt ${amtClass}">${sign}${fmt(t.amount)}</div>
-    <button class="del-x" onclick="event.stopPropagation();removeTx('${t.id}')">🗑️</button>
+    <button class="edit-x" onclick="editTx('${t.id}')">✏️</button>
+    <button class="del-x" onclick="removeTx('${t.id}')">🗑️</button>
   </div>`;
 }
 
