@@ -77,7 +77,16 @@ button{cursor:pointer;font-family:inherit;}
 .tx-item .amt{font-weight:700;font-size:14px;white-space:nowrap;}
 .tx-item .amt.expense{color:var(--red);}
 .tx-item .amt.income{color:var(--green);}
-.tx-item .del-x{background:none;border:none;color:#ccc;font-size:16px;padding:4px 6px;}
+.tx-item .del-x{background:none;border:none;color:#F28482;font-size:16px;padding:4px 6px;border-radius:8px;}
+.tx-item .del-x:active{background:#FDE9E9;}
+.tx-item{cursor:pointer;}
+.tx-slip-thumb{width:34px;height:34px;border-radius:8px;object-fit:cover;border:1px solid #eee0c0;flex-shrink:0;cursor:pointer;}
+
+.slip-view-img{width:100%;border-radius:16px;margin-bottom:14px;}
+.slip-detail-box{background:#FFFDF5;border-radius:16px;padding:14px;}
+.slip-detail-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F3EAD0;font-size:13px;}
+.slip-detail-row:last-child{border-bottom:none;}
+.slip-detail-row .sdr-label{color:var(--text-light);}
 
 .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;}
 .tabs button{background:#F3EAD0;border:none;border-radius:14px;padding:8px 14px;font-size:13px;white-space:nowrap;color:var(--text);}
@@ -298,7 +307,7 @@ button{cursor:pointer;font-family:inherit;}
   <div class="modal-overlay" id="modal-add-tx">
     <div class="modal-sheet">
       <button class="modal-close" onclick="closeModal('modal-add-tx')">✕</button>
-      <div class="modal-title">➕ ເພີ່ມທຸລະກຳ</div>
+      <div class="modal-title" id="add-tx-modal-title">➕ ເພີ່ມທຸລະກຳ</div>
       <div class="seg">
         <button id="seg-manual" class="active" onclick="switchAddTab('manual')">✍️ ບັນທຶກເອງ</button>
         <button id="seg-scan" onclick="switchAddTab('scan')">📷 ສະແກນໃບເສັດ</button>
@@ -312,6 +321,8 @@ button{cursor:pointer;font-family:inherit;}
         <select id="manual-wallet"></select>
         <input id="manual-amount" type="number" placeholder="ຈຳນວນເງິນ">
         <input id="manual-note" placeholder="ໝາຍເຫດ / ຊື່ລາຍການ">
+        <input type="file" id="manual-slip-file" accept="image/*" capture="environment" onchange="handleManualSlipFile(event)">
+        <div id="manual-slip-preview" style="margin-bottom:10px;"></div>
         <div class="cat-grid" id="manual-cat-grid"></div>
         <input id="manual-cat-selected" type="hidden">
         <select id="manual-tag" style="margin-top:10px;"><option value="">ບໍ່ໃສ່ແທັກ</option></select>
@@ -342,6 +353,17 @@ button{cursor:pointer;font-family:inherit;}
         <option value="USD">$ ໂດລາ (USD)</option>
       </select>
       <button class="btn-primary" onclick="saveWalletUI()">ບັນທຶກ</button>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: VIEW SLIP ===================== -->
+  <div class="modal-overlay" id="modal-slip-view">
+    <div class="modal-sheet">
+      <button class="modal-close" onclick="closeModal('modal-slip-view')">✕</button>
+      <div class="modal-title">🧾 ລາຍລະອຽດ Slip</div>
+      <img id="slip-view-img" class="slip-view-img" src="">
+      <div class="slip-detail-box" id="slip-view-details"></div>
+      <a id="slip-view-openfull" href="#" target="_blank" class="btn-outline" style="display:block;text-align:center;margin-top:14px;text-decoration:none;">🔗 ເປີດຮູບເຕັມ</a>
     </div>
   </div>
 
@@ -400,6 +422,8 @@ let STATE = { wallets:[], categories:[], transactions:[], budgets:[], goals:[], 
 let CURRENT_USER = null;
 let addTxType = 'expense';
 let pendingScanItems = [];
+let editingTxId = null;
+let pendingSlipBase64 = null, pendingSlipMime = null, pendingSlipName = null;
 
 // ---------------- INIT ----------------
 window.onload = function () {
@@ -620,14 +644,18 @@ function txRowHtml(t) {
   const icon = t.type === 'transfer' ? '🔄' : (cat ? cat.icon : '💸');
   const amtClass = t.type === 'income' ? 'income' : (t.type === 'expense' ? 'expense' : '');
   const sign = t.type === 'income' ? '+' : (t.type === 'expense' ? '-' : '');
-  return `<div class="tx-item">
+  const slipBtn = t.receiptUrl
+    ? `<img class="tx-slip-thumb" src="${t.receiptUrl}" onclick="event.stopPropagation();viewSlip('${t.id}')">`
+    : '';
+  return `<div class="tx-item" onclick="editTx('${t.id}')">
     <div class="icon-badge">${icon}</div>
     <div class="info">
       <div class="t1">${t.note || (cat ? cat.name : 'ລາຍການ')}</div>
       <div class="t2">${w ? w.name : ''} · ${String(t.date).slice(0, 10)}</div>
     </div>
+    ${slipBtn}
     <div class="amt ${amtClass}">${sign}${fmt(t.amount)}</div>
-    <button class="del-x" onclick="removeTx('${t.id}')">✕</button>
+    <button class="del-x" onclick="event.stopPropagation();removeTx('${t.id}')">🗑️</button>
   </div>`;
 }
 
@@ -687,12 +715,20 @@ function selectCategory(id) {
 }
 
 // ---------------- ADD TRANSACTION ----------------
-function openAddTx() { document.getElementById('modal-add-tx').classList.add('show'); }
-function switchAddTab(tab) {
-  document.getElementById('seg-manual').classList.toggle('active', tab === 'manual');
-  document.getElementById('seg-scan').classList.toggle('active', tab === 'scan');
-  document.getElementById('tab-manual').classList.toggle('hidden', tab !== 'manual');
-  document.getElementById('tab-scan').classList.toggle('hidden', tab !== 'scan');
+function openAddTx() {
+  editingTxId = null;
+  pendingSlipBase64 = null; pendingSlipMime = null; pendingSlipName = null;
+  document.getElementById('manual-slip-preview').innerHTML = '';
+  document.getElementById('manual-wallet').value = '';
+  document.getElementById('manual-amount').value = '';
+  document.getElementById('manual-note').value = '';
+  document.getElementById('manual-cat-selected').value = '';
+  document.getElementById('manual-tag').value = '';
+  document.querySelectorAll('#manual-cat-grid .cat-item').forEach(el => el.classList.remove('selected'));
+  setTxType('expense');
+  switchAddTab('manual');
+  document.getElementById('add-tx-modal-title').innerText = '➕ ເພີ່ມທຸລະກຳ';
+  document.getElementById('modal-add-tx').classList.add('show');
 }
 function setTxType(type) {
   addTxType = type;
@@ -706,12 +742,29 @@ function saveManualTx() {
   const categoryId = document.getElementById('manual-cat-selected').value;
   const tagId = document.getElementById('manual-tag').value;
   if (!walletId || !amount) { showToast('ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບ'); return; }
-  const tx = { date: new Date().toISOString(), type: addTxType, walletId, categoryId, amount, note, tagId, createdBy: CURRENT_USER.id };
+
   showLoading(true);
-  callApi('addTransaction', { obj: tx })
-    .then(function () { return callApi('getAllData'); })
-    .then(function (data) { showLoading(false); STATE = data; renderAll(); closeModal('modal-add-tx'); })
-    .catch(function () { showLoading(false); });
+  const uploadStep = pendingSlipBase64
+    ? callApi('uploadSlip', { base64Data: pendingSlipBase64, mimeType: pendingSlipMime, fileName: pendingSlipName })
+    : Promise.resolve(null);
+
+  uploadStep.then(function (slipResult) {
+    const tx = { date: new Date().toISOString(), type: addTxType, walletId, categoryId, amount, note, tagId, createdBy: CURRENT_USER.id };
+    if (slipResult && slipResult.url) tx.receiptUrl = slipResult.url;
+
+    if (editingTxId) {
+      tx.id = editingTxId;
+      if (!tx.receiptUrl) {
+        const old = STATE.transactions.find(x => x.id === editingTxId);
+        if (old) { tx.receiptUrl = old.receiptUrl; tx.createdAt = old.createdAt; }
+      }
+      return callApi('updateTransaction', { obj: tx });
+    }
+    return callApi('addTransaction', { obj: tx });
+  })
+  .then(function () { return callApi('getAllData'); })
+  .then(function (data) { showLoading(false); STATE = data; renderAll(); closeModal('modal-add-tx'); editingTxId = null; })
+  .catch(function () { showLoading(false); });
 }
 
 // ---------------- RECEIPT SCAN ----------------
@@ -1181,6 +1234,57 @@ function removeUserUI(id) {
     .then(function () { return callApi('getAllData'); })
     .then(function (data) { showLoading(false); STATE = data; openMenu('admin'); })
     .catch(function () { showLoading(false); });
+}
+
+function handleManualSlipFile(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    pendingSlipBase64 = e.target.result.split(',')[1];
+    pendingSlipMime = file.type;
+    pendingSlipName = file.name;
+    document.getElementById('manual-slip-preview').innerHTML =
+      '<img src="' + e.target.result + '" style="width:80px;height:80px;object-fit:cover;border-radius:10px;">';
+  };
+  reader.readAsDataURL(file);
+}
+
+function viewSlip(id) {
+  const t = STATE.transactions.find(x => x.id === id);
+  if (!t || !t.receiptUrl) return;
+  const cat = catById(t.categoryId);
+  const w = walletById(t.walletId);
+  document.getElementById('slip-view-img').src = t.receiptUrl;
+  document.getElementById('slip-view-openfull').href = t.receiptUrl;
+  document.getElementById('slip-view-details').innerHTML = `
+    <div class="slip-detail-row"><span class="sdr-label">ປະເພດ</span><span>${t.type==='income'?'↓ ລາຍຮັບ':(t.type==='expense'?'↑ ລາຍຈ່າຍ':'🔄 ໂອນເງິນ')}</span></div>
+    <div class="slip-detail-row"><span class="sdr-label">ວັນທີ</span><span>${String(t.date).slice(0,10)}</span></div>
+    <div class="slip-detail-row"><span class="sdr-label">ລາຍລະອຽດ</span><span>${t.note || '-'}</span></div>
+    <div class="slip-detail-row"><span class="sdr-label">ໝວດໝູ່</span><span>${cat ? cat.icon+' '+cat.name : '-'}</span></div>
+    <div class="slip-detail-row"><span class="sdr-label">ກະເປົາ</span><span>${w ? w.name : '-'}</span></div>
+    <div class="slip-detail-row"><span class="sdr-label">ຈຳນວນ</span><span style="color:${t.type==='income'?'var(--green)':'var(--red)'};font-weight:700;">${t.type==='income'?'+':'-'}${fmt(t.amount)}</span></div>
+  `;
+  document.getElementById('modal-slip-view').classList.add('show');
+}
+
+function editTx(id) {
+  const t = STATE.transactions.find(x => x.id === id);
+  if (!t) return;
+  editingTxId = id;
+  pendingSlipBase64 = null; pendingSlipMime = null; pendingSlipName = null;
+  switchAddTab('manual');
+  setTxType(t.type === 'income' ? 'income' : 'expense');
+  document.getElementById('manual-wallet').value = t.walletId || '';
+  document.getElementById('manual-amount').value = t.amount || '';
+  document.getElementById('manual-note').value = t.note || '';
+  document.getElementById('manual-tag').value = t.tagId || '';
+  selectCategory(t.categoryId || '');
+  document.getElementById('manual-slip-preview').innerHTML = t.receiptUrl
+    ? '<img src="' + t.receiptUrl + '" style="width:80px;height:80px;object-fit:cover;border-radius:10px;">'
+    : '';
+  document.getElementById('add-tx-modal-title').innerText = '✏️ ແກ້ໄຂທຸລະກຳ';
+  document.getElementById('modal-add-tx').classList.add('show');
 }
 </script>
 </body>
