@@ -45,7 +45,7 @@ button{cursor:pointer;font-family:inherit;}
 /* ---------- TOPBAR ---------- */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 8px;}
 .topbar .logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:18px;}
-.topbar .logo img{width:28px;height:28px;border-radius:50%;}
+.topbar .logo img{width:44px;height:44px;border-radius:50%;}
 .hamburger{background:none;border:none;font-size:22px;padding:6px 10px;border-radius:10px;}
 .hamburger:active{background:#f2e5bf;}
 
@@ -207,8 +207,7 @@ button{cursor:pointer;font-family:inherit;}
   <div id="main-app" class="hidden">
 
     <div class="topbar">
-      <div class="logo"><img id="topbar-logo" src="https://i.postimg.cc/W3K6dFRh/Logo.png" alt="Logo" style="width:28px;height:28px;border-radius:50%;object-fit:cover;"> <span id="topbar-name">ບັນທຶກລາຍຈ່າຍ</span></div>
-      <button class="hamburger" onclick="showPage('menu')">☰</button>
+      <div class="logo"><img id="topbar-logo" src="https://i.postimg.cc/W3K6dFRh/Logo.png" alt="Logo" style="width:44px;height:44px;border-radius:50%;object-fit:cover;"> <span id="topbar-name">ບັນທຶກລາຍຈ່າຍ</span></div>
     </div>
 
     <!-- ---------- OVERVIEW ---------- -->
@@ -508,7 +507,7 @@ function enterApp() {
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('main-app').classList.remove('hidden');
   document.getElementById('bottom-nav').classList.remove('hidden');
-  reloadData();   // ✅ ປ່ຽນຈາກ renderAll() ເປັນອັນນີ້ - ໂຫຼດຂໍ້ມູນສົດໆກ່ອນສະແດງ
+  renderAll();   // ✅ ປ່ຽນຈາກ reloadData() ເປັນອັນນີ້ - ໃຊ້ຂໍ້ມູນທີ່ໂຫຼດໄວ້ແລ້ວ ບໍ່ຕ້ອງດຶງຊ້ຳ ບໍ່ມີ loading ອີກຄັ້ງ
 }
 function logout() {
   localStorage.removeItem('savedSession');
@@ -773,8 +772,15 @@ function populateCategoryGrid() {
     </div>`).join('');
 }
 function selectCategory(id) {
-  document.getElementById('manual-cat-selected').value = id;
-  document.querySelectorAll('#manual-cat-grid .cat-item').forEach(el => el.classList.toggle('selected', el.dataset.id === id));
+  const currentSelected = document.getElementById('manual-cat-selected').value;
+  if (currentSelected === id) {
+    // ກົດຊ້ຳໃສ່ອັນທີ່ເລືອກຢູ່ແລ້ວ -> ຍົກເລີກການເລືອກ
+    document.getElementById('manual-cat-selected').value = '';
+    document.querySelectorAll('#manual-cat-grid .cat-item').forEach(el => el.classList.remove('selected'));
+  } else {
+    document.getElementById('manual-cat-selected').value = id;
+    document.querySelectorAll('#manual-cat-grid .cat-item').forEach(el => el.classList.toggle('selected', el.dataset.id === id));
+  }
 }
 
 // ---------------- ADD / EDIT TRANSACTION ----------------
