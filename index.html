@@ -368,7 +368,7 @@ button{cursor:pointer;font-family:inherit;}
   <div class="modal-overlay" id="modal-wallet">
     <div class="modal-sheet">
       <button class="modal-close" onclick="closeModal('modal-wallet')">✕</button>
-      <div class="modal-title">👛 ເພີ່ມກະເປົາເງິນ</div>
+      <div class="modal-title" id="wallet-modal-title">👛 ເພີ່ມກະເປົາເງິນ</div>
       <input id="wallet-name" placeholder="ຊື່ກະເປົາ">
       <input id="wallet-icon" placeholder="ໄອຄອນ (emoji) ເຊັ່ນ 💵">
       <input id="wallet-balance" type="number" placeholder="ຍອດເລີ່ມຕົ້ນ">
@@ -377,6 +377,7 @@ button{cursor:pointer;font-family:inherit;}
         <option value="THB">฿ ບາດ (THB)</option>
         <option value="USD">$ ໂດລາ (USD)</option>
       </select>
+      <input id="wallet-edit-id" type="hidden">
       <button class="btn-primary" onclick="saveWalletUI()">ບັນທຶກ</button>
     </div>
   </div>
@@ -731,8 +732,8 @@ function renderTransactions() {
 
 function renderWalletsPage() {
   document.getElementById('wallets-page-grid').innerHTML = STATE.wallets.map(w => `
-    <div class="wallet-card" style="background:${w.color || '#FFF3CE'}22;">
-      <button class="del" onclick="removeWallet('${w.id}')">✕</button>
+    <div class="wallet-card" style="background:${w.color || '#FFF3CE'}22;cursor:pointer;" onclick="openWalletModal('${w.id}')">
+      <button class="del" onclick="event.stopPropagation();removeWallet('${w.id}')" title="ລົບກະເປົາ">🗑️</button>
       <div class="icon">${w.icon || '💰'}</div>
       <div class="name">${w.name}</div>
       <div class="amt">${fmt(w.balance)} ${CURRENCY_SYMBOLS[w.currency] || 'ກີບ'}</div>
@@ -742,8 +743,12 @@ function removeWallet(id) {
   if (!confirm('ລົບກະເປົາເງິນນີ້?')) return;
   showLoading(true);
   callApi('deleteWallet', { id: id })
-    .then(function () { return callApi('getAllData'); })
-    .then(function (data) { showLoading(false); STATE = data; renderAll(); })
+    .then(function () {
+      showLoading(false);
+      // ✅ ອັບເດດທັນທີຈາກຄ່າໃນໜ່ວຍຄວາມຈຳ ບໍ່ຕ້ອງລໍ getAllData ອີກຮອບ (ໄວຂຶ້ນ)
+      STATE.wallets = STATE.wallets.filter(w => w.id !== id);
+      renderAll();
+    })
     .catch(function () { showLoading(false); });
 }
 
@@ -1031,17 +1036,48 @@ function saveScannedItems() {
 }
 
 // ---------------- WALLET MODAL ----------------
-function openWalletModal() { document.getElementById('modal-wallet').classList.add('show'); }
+function openWalletModal(id) {
+  const title = document.getElementById('wallet-modal-title');
+  if (id) {
+    const w = walletById(id);
+    if (!w) return;
+    title.innerText = '✏️ ແກ້ໄຂກະເປົາເງິນ';
+    document.getElementById('wallet-name').value = w.name || '';
+    document.getElementById('wallet-icon').value = w.icon || '';
+    document.getElementById('wallet-balance').value = w.balance || 0;
+    document.getElementById('wallet-currency').value = w.currency || 'LAK';
+    document.getElementById('wallet-edit-id').value = w.id;
+  } else {
+    title.innerText = '👛 ເພີ່ມກະເປົາເງິນ';
+    document.getElementById('wallet-name').value = '';
+    document.getElementById('wallet-icon').value = '';
+    document.getElementById('wallet-balance').value = '';
+    document.getElementById('wallet-currency').value = 'LAK';
+    document.getElementById('wallet-edit-id').value = '';
+  }
+  document.getElementById('modal-wallet').classList.add('show');
+}
+
 function saveWalletUI() {
   const name = document.getElementById('wallet-name').value.trim();
   const icon = document.getElementById('wallet-icon').value.trim() || '💰';
   const balance = parseFloat(document.getElementById('wallet-balance').value) || 0;
+  const currency = document.getElementById('wallet-currency').value;
+  const editId = document.getElementById('wallet-edit-id').value;
   if (!name) { showToast('ປ້ອນຊື່ກະເປົາ'); return; }
   showLoading(true);
-  const currency = document.getElementById('wallet-currency').value;
-  callApi('saveWallet', { obj: { name, icon, color: '#F5C842', balance, type: 'custom', currency: currency } })
-    .then(function () { return callApi('getAllData'); })
-    .then(function (data) { showLoading(false); STATE = data; renderAll(); closeModal('modal-wallet'); })
+  const existing = editId ? walletById(editId) : null;
+  const obj = { name, icon, color: (existing && existing.color) || '#F5C842', balance, type: (existing && existing.type) || 'custom', currency };
+  if (editId) obj.id = editId;
+  callApi('saveWallet', { obj: obj })
+    .then(function (savedObj) {
+      showLoading(false);
+      // ✅ ອັບເດດທັນທີດ້ວຍຄ່າຈາກ server ບໍ່ຕ້ອງລໍ getAllData ອີກຮອບ (ໄວຂຶ້ນ)
+      const idx = STATE.wallets.findIndex(w => w.id === savedObj.id);
+      if (idx > -1) STATE.wallets[idx] = savedObj; else STATE.wallets.push(savedObj);
+      renderAll();
+      closeModal('modal-wallet');
+    })
     .catch(function () { showLoading(false); });
 }
 
