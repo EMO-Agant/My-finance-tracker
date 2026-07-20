@@ -230,6 +230,7 @@ button{cursor:pointer;font-family:inherit;}
 
     <div class="topbar">
       <div class="logo"><img id="topbar-logo" src="https://i.postimg.cc/W3K6dFRh/Logo.png" alt="Logo" style="width:44px;height:44px;border-radius:50%;object-fit:cover;"> <span id="topbar-name">ບັນທຶກລາຍຈ່າຍ</span></div>
+      <button class="hamburger" onclick="showPage('menu')">☰</button>
     </div>
 
     <!-- ---------- OVERVIEW ---------- -->
@@ -337,7 +338,6 @@ button{cursor:pointer;font-family:inherit;}
     <button class="fab-add" onclick="openAddTx()">+</button>
     <button data-page="transactions" onclick="showPage('transactions')"><span class="nav-icon">📋</span>ທຸລະກຳ</button>
     <button data-page="wallets" onclick="showPage('wallets')"><span class="nav-icon">👛</span>ກະເປົາ</button>
-    <button data-page="menu" onclick="showPage('menu')"><span class="nav-icon">☰</span>ເມນູ</button>
   </div>
 
   <!-- ===================== MODAL: ADD TRANSACTION ===================== -->
@@ -1244,6 +1244,8 @@ function drawActiveReportChart(){
   else if (reportState.tab === 'tag') { drawTagBubbles(); drawTagTable(); }
   else if (reportState.tab === 'time') drawTimeChart();
   else if (reportState.tab === 'networth') drawNetWorthChart();
+  else if (reportState.tab === 'goals') drawGoalsReport();
+  else if (reportState.tab === 'installments') drawInstallmentsReport();
 }
 
 function renderReportsSection(){
@@ -1258,6 +1260,8 @@ function renderReportsSection(){
     <button class="${reportState.tab==='networth'?'active':''}" onclick="setReportTab('networth')">ຊັບສິນສຸດທິ</button>
     <button class="${reportState.tab==='time'?'active':''}" onclick="setReportTab('time')">ຕາມຊ່ວງເວລາ</button>
     <button class="${reportState.tab==='tag'?'active':''}" onclick="setReportTab('tag')">ຕາມແທັກ</button>
+    <button class="${reportState.tab==='goals'?'active':''}" onclick="setReportTab('goals')">🚩 ເປົ້າໝາຍ</button>
+    <button class="${reportState.tab==='installments'?'active':''}" onclick="setReportTab('installments')">🏷️ ຜ່ອນຊຳລະ</button>
   </div>`;
 
   if (reportState.tab === 'category' || reportState.tab === 'tag'){
@@ -1300,10 +1304,10 @@ function renderReportsSection(){
       <div class="card"><div style="font-weight:700;margin-bottom:6px;">ແຍກຕາມແທັກ</div><div id="tag-table"></div></div>`;
   } else if (reportState.tab === 'time'){
     html += `<div class="card"><div style="font-weight:700;margin-bottom:6px;">ລາຍຈ່າຍ-ລາຍຮັບ 6 ເດືອນຫຼ້າສຸດ</div><canvas id="time-chart" height="220"></canvas></div>`;
-  } else if (reportState.tab === 'networth'){
-    html += `<div class="card"><div class="report-donut-wrap"><canvas id="networth-chart" height="240"></canvas>
-      <div class="report-donut-center" id="networth-center"></div></div></div>
-      <div class="card" id="networth-table"></div>`;
+} else if (reportState.tab === 'goals'){
+    html += `<div id="goals-report-wrap"></div>`;
+  } else if (reportState.tab === 'installments'){
+    html += `<div id="installments-report-wrap"></div>`;
   }
   return html;
 }
@@ -1441,6 +1445,102 @@ function openMenu(section) {
   if (section === 'profile') c.innerHTML = renderProfileSection();
   if (section === 'mytheme') c.innerHTML = renderMyThemeSection();
   if (section === 'categories') { c.innerHTML = renderCategoriesSection(); setTimeout(renderCatColorSwatches, 30); }
+}
+
+function drawGoalsReport(){
+  const wrap = document.getElementById('goals-report-wrap');
+  if (!wrap) return;
+  if (!STATE.goals.length){ wrap.innerHTML = '<div class="card"><div class="empty-hint">ຍັງບໍ່ມີເປົ້າໝາຍອອມເງິນ</div></div>'; return; }
+  wrap.innerHTML = STATE.goals.map(g=>{
+    const pct = Math.min(100, Math.round((Number(g.currentAmount)/Number(g.targetAmount))*100));
+    const remain = Math.max(0, Number(g.targetAmount) - Number(g.currentAmount));
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <b>${g.icon || '🚩'} ${g.name}</b>
+        <span style="font-weight:700;color:var(--primary-dark);">${pct}%</span>
+      </div>
+      <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${pct}%;"></div></div>
+      <div class="report-summary-row" style="margin-top:12px;">
+        <div><div class="num" style="color:var(--green);">${fmt(g.currentAmount)}</div><div class="label">ອອມແລ້ວ</div></div>
+        <div><div class="num" style="color:var(--red);">${fmt(remain)}</div><div class="label">ຄົງເຫຼືອ</div></div>
+        <div><div class="num">${fmt(g.targetAmount)}</div><div class="label">ເປົ້າໝາຍ</div></div>
+      </div>
+      ${g.targetDate ? `<div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:6px;">ພາຍໃນວັນທີ ${g.targetDate}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function calcInstallmentDetails(l){
+  const principal = Number(l.principal) || 0;
+  const rate = Number(l.interestRate) || 0;
+  const total = Number(l.totalInstallments) || 1;
+  const paid = Number(l.paidInstallments) || 0;
+  const monthlyPrincipal = principal / total;
+  const monthlyRate = rate / 100 / 12;
+  let totalInterest = 0, interestPaid = 0, nextInterest = 0;
+
+  if (l.loanType === 'declining') {
+    for (let i = 1; i <= total; i++) {
+      const balanceBefore = principal - monthlyPrincipal * (i - 1);
+      const interestI = balanceBefore * monthlyRate;
+      totalInterest += interestI;
+      if (i <= paid) interestPaid += interestI;
+      if (i === paid + 1) nextInterest = interestI;
+    }
+  } else {
+    const flatMonthly = principal * monthlyRate;
+    totalInterest = flatMonthly * total;
+    interestPaid = flatMonthly * paid;
+    nextInterest = flatMonthly;
+  }
+
+  const principalPaid = monthlyPrincipal * Math.min(paid, total);
+  const paidAmount = principalPaid + interestPaid;
+  const totalAmount = principal + totalInterest;
+  const remainingAmount = Math.max(0, totalAmount - paidAmount);
+  const nextInstallmentAmount = monthlyPrincipal + nextInterest;
+  return { totalInterest, interestPaid, paidAmount, remainingAmount, nextInstallmentAmount };
+}
+
+function drawInstallmentsReport(){
+  const wrap = document.getElementById('installments-report-wrap');
+  if (!wrap) return;
+  if (!STATE.installments.length){ wrap.innerHTML = '<div class="card"><div class="empty-hint">ຍັງບໍ່ມີລາຍການຜ່ອນຊຳລະ</div></div>'; return; }
+
+  wrap.innerHTML = STATE.installments.map(l=>{
+    const d = calcInstallmentDetails(l);
+    const pct = Math.min(100, Math.round((Number(l.paidInstallments)/Number(l.totalInstallments))*100));
+    let dots = '';
+    for (let i = 1; i <= Number(l.totalInstallments); i++) {
+      dots += `<div class="install-dot ${i <= Number(l.paidInstallments) ? 'paid' : ''}">${i}</div>`;
+    }
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <b>${l.name}</b>
+        <span class="badge">${l.loanType === 'declining' ? 'ລົດຕົ້ນລົດດອກ' : 'ຄິດດອກຄົງທີ່'}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-light);margin:2px 0 10px;">${l.category || ''} · ${l.status || ''}</div>
+
+      <div class="report-summary-row">
+        <div><div class="num" style="color:var(--red);">${fmt(d.paidAmount)}</div><div class="label">ຈ່າຍໄປແລ້ວ</div></div>
+        <div><div class="num">${fmt(d.remainingAmount)}</div><div class="label">ຄົງເຫຼືອ</div></div>
+        <div><div class="num" style="color:var(--green);">${fmt(l.principal)}</div><div class="label">ເງິນຕົ້ນ</div></div>
+      </div>
+      <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${pct}%;"></div></div>
+
+      <div class="slip-detail-card" style="margin-top:14px;">
+        <div class="slip-detail-row"><span>ດອກເບ້ຍທີ່ຈ່າຍແລ້ວ</span><span>${fmt(d.interestPaid)} ກີບ</span></div>
+        <div class="slip-detail-row"><span>ດອກເບ້ຍທີ່ຕ້ອງຈ່າຍທັງໝົດ</span><span>${fmt(d.totalInterest)} ກີບ</span></div>
+        <div class="slip-detail-row"><span>ອັດຕາດອກເບ້ຍ</span><span>${l.interestRate}% ຕໍ່ປີ</span></div>
+        <div class="slip-detail-row"><span>ຄ່າງວດງວດຖັດໄປ</span><span>${fmt(d.nextInstallmentAmount)} ກີບ</span></div>
+      </div>
+
+      <div style="font-size:12px;font-weight:700;margin:14px 0 6px;">
+        ຕາຕະລາງການຜ່ອນຊຳລະ ${l.paidInstallments}/${l.totalInstallments} (ເຫຼືອ ${Number(l.totalInstallments)-Number(l.paidInstallments)} ງວດ)
+      </div>
+      <div class="install-grid">${dots}</div>
+    </div>`;
+  }).join('');
 }
 
 function renderBudgetSection() {
