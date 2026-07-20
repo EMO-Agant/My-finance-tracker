@@ -942,6 +942,9 @@ function handleReceiptFiles(evt) {
   });
 }
 function addScanResult(result, fileName, receiptImgUrl) {
+  if (result.source === 'error') {
+    showToast('❌ ' + (result.errorMessage || 'ວິເຄາະໃບເສັດບໍ່ສຳເລັດ') + ' (' + fileName + ')');
+  }
   (result.items || []).forEach(function (it) {
     it._uid = 'i' + Math.random().toString(36).slice(2);
     it._file = fileName;
@@ -949,7 +952,7 @@ function addScanResult(result, fileName, receiptImgUrl) {
     pendingScanItems.push(it);
   });
   renderScanResults();
-  document.getElementById('btn-save-scan').classList.remove('hidden');
+  if (pendingScanItems.length) document.getElementById('btn-save-scan').classList.remove('hidden');
 }
 function renderScanResults() {
   document.getElementById('scan-results').innerHTML = pendingScanItems.map(function (it) {
