@@ -69,18 +69,15 @@ button{cursor:pointer;font-family:inherit;}
 .wallet-card .del{position:absolute;top:6px;right:8px;background:rgba(255,255,255,.6);border:none;border-radius:50%;width:22px;height:22px;font-size:12px;}
 
 .section-title{font-size:15px;font-weight:700;margin:18px 0 8px;}
-.tx-item{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #F3EAD0;}
-.tx-item .icon-badge{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;background:#FFF3CE;flex-shrink:0;overflow:hidden;}
-.tx-item .icon-badge img{width:100%;height:100%;object-fit:cover;}
+.tx-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #F3EAD0;}
+.tx-item .icon-badge{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;background:#FFF3CE;flex-shrink:0;}
 .tx-item .info{flex:1;min-width:0;}
 .tx-item .info .t1{font-weight:600;font-size:14px;}
 .tx-item .info .t2{font-size:12px;color:var(--text-light);}
 .tx-item .amt{font-weight:700;font-size:14px;white-space:nowrap;}
 .tx-item .amt.expense{color:var(--red);}
 .tx-item .amt.income{color:var(--green);}
-.tx-item .del-x{background:none;border:none;color:#ccc;font-size:16px;padding:4px 6px;flex-shrink:0;}
-.tx-item .del-x.slip-view{color:var(--primary-dark);}
-.tx-item .del-x.trash-view{color:var(--red);}
+.tx-item .del-x{background:none;border:none;color:#ccc;font-size:16px;padding:4px 6px;}
 
 .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;}
 .tabs button{background:#F3EAD0;border:none;border-radius:14px;padding:8px 14px;font-size:13px;white-space:nowrap;color:var(--text);}
@@ -130,13 +127,29 @@ button{cursor:pointer;font-family:inherit;}
 .color-swatch{width:32px;height:32px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px #eee;}
 .link-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid #F3EAD0;font-size:14px;}
 .role-tag{font-size:11px;background:#F3EAD0;padding:2px 8px;border-radius:8px;}
-
-/* 🆕 Slip attach / popup */
-.slip-attach-label{font-size:13px;color:var(--text-light);margin:6px 0 4px;}
-.slip-preview-box{margin-bottom:12px;}
-.slip-preview-box img{max-width:100%;border-radius:14px;display:block;}
-.slip-img-wrap{text-align:center;background:#FFFDF5;border-radius:16px;padding:12px;}
-.slip-img-wrap img{max-width:100%;border-radius:14px;max-height:340px;object-fit:contain;}
+.report-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;}
+.report-tabs button{flex-shrink:0;background:#F3EAD0;border:none;border-radius:14px;padding:9px 16px;font-size:13px;color:var(--text);}
+.report-tabs button.active{background:var(--green);color:#fff;font-weight:700;}
+.report-filter-row{display:flex;gap:8px;margin-bottom:10px;overflow-x:auto;}
+.report-filter-row select{width:auto;flex-shrink:0;padding:8px 12px;font-size:12px;margin-bottom:0;}
+.month-scroll{display:flex;gap:6px;overflow-x:auto;padding:6px 2px 12px;}
+.month-pill{flex-shrink:0;width:52px;height:52px;border-radius:50%;background:#FFFDF5;border:1px solid #eee0c0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-light);flex-direction:column;cursor:pointer;}
+.month-pill.active{background:var(--primary);color:#fff;font-weight:700;border-color:var(--primary);}
+.report-summary-row{display:flex;justify-content:space-between;text-align:center;margin:10px 0;}
+.report-summary-row div{flex:1;}
+.report-summary-row .num{font-weight:700;font-size:15px;}
+.report-summary-row .label{font-size:11px;color:var(--text-light);}
+.report-type-toggle{display:flex;justify-content:flex-end;margin-bottom:10px;}
+.report-type-toggle select{width:auto;padding:8px 14px;border-radius:20px;background:var(--primary);color:#fff;border:none;font-weight:700;font-size:13px;}
+.cat-legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0 4px;}
+.cat-legend-item{display:flex;align-items:center;gap:6px;background:#FFFDF5;border-radius:14px;padding:6px 12px;font-size:12px;border:1px solid #F3EAD0;}
+.cat-legend-item .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block;}
+.report-donut-wrap{position:relative;display:flex;justify-content:center;align-items:center;}
+.report-donut-center{position:absolute;text-align:center;pointer-events:none;}
+.report-donut-center .amt{font-weight:800;font-size:18px;}
+.report-donut-center .lbl{font-size:11px;color:var(--text-light);}
+.report-table-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F3EAD0;font-size:13px;}
+.report-table-row .rt-left{display:flex;align-items:center;gap:8px;}
 
 /* ---------- LOADING / TOAST (ໃໝ່: ບໍ່ມີ google.script.run ອີກຕໍ່ໄປ ຕ້ອງໂຊວ໌ສະຖານະ fetch ເອງ) ---------- */
 #global-loading{position:fixed;inset:0;background:rgba(255,248,231,.85);display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:9999;font-size:14px;color:var(--text-light);}
@@ -174,7 +187,7 @@ button{cursor:pointer;font-family:inherit;}
 
     <div class="topbar">
       <div class="logo"><img id="topbar-logo" src="https://i.postimg.cc/W3K6dFRh/Logo.png" alt="Logo" style="width:28px;height:28px;border-radius:50%;object-fit:cover;"> <span id="topbar-name">ບັນທຶກລາຍຈ່າຍ</span></div>
-      <button class="hamburger" onclick="openMenu('admin')">☰</button>
+      <button class="hamburger" onclick="showPage('menu')">☰</button>
     </div>
 
     <!-- ---------- OVERVIEW ---------- -->
@@ -223,6 +236,17 @@ button{cursor:pointer;font-family:inherit;}
             <div class="label">🐷 ເງິນອອມ</div>
           </div>
         </div>
+      </div>
+      <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>📊 ສະຫຼຸບລາຍງານ</span>
+        <button class="btn-outline" style="width:auto;padding:6px 12px;font-size:12px;" onclick="openMenu('reports')">ເບິ່ງທັງໝົດ ›</button>
+      </div>
+      <div class="card">
+        <div class="report-donut-wrap">
+          <canvas id="ov-report-chart" height="180"></canvas>
+          <div class="report-donut-center" id="ov-report-center"></div>
+        </div>
+        <div class="cat-legend" id="ov-report-legend"></div>
       </div>
       <div class="section-title">👛 ກະເປົາເງິນ</div>
       <div class="wallet-grid" id="ov-wallet-grid"></div>
@@ -278,12 +302,12 @@ button{cursor:pointer;font-family:inherit;}
     <button data-page="menu" onclick="showPage('menu')"><span class="nav-icon">☰</span>ເມນູ</button>
   </div>
 
-  <!-- ===================== MODAL: ADD / EDIT TRANSACTION ===================== -->
+  <!-- ===================== MODAL: ADD TRANSACTION ===================== -->
   <div class="modal-overlay" id="modal-add-tx">
     <div class="modal-sheet">
       <button class="modal-close" onclick="closeModal('modal-add-tx')">✕</button>
-      <div class="modal-title" id="add-tx-title">➕ ເພີ່ມທຸລະກຳ</div>
-      <div class="seg" id="add-tx-seg-tabs">
+      <div class="modal-title">➕ ເພີ່ມທຸລະກຳ</div>
+      <div class="seg">
         <button id="seg-manual" class="active" onclick="switchAddTab('manual')">✍️ ບັນທຶກເອງ</button>
         <button id="seg-scan" onclick="switchAddTab('scan')">📷 ສະແກນໃບເສັດ</button>
       </div>
@@ -299,12 +323,7 @@ button{cursor:pointer;font-family:inherit;}
         <div class="cat-grid" id="manual-cat-grid"></div>
         <input id="manual-cat-selected" type="hidden">
         <select id="manual-tag" style="margin-top:10px;"><option value="">ບໍ່ໃສ່ແທັກ</option></select>
-
-        <div class="slip-attach-label">📎 ຮູບ Slip / ໃບບິນ (ຖ້າມີ)</div>
-        <input type="file" id="manual-slip" accept="image/*" capture="environment">
-        <div id="manual-slip-preview" class="slip-preview-box"></div>
-
-        <button class="btn-primary" style="margin-top:14px;" id="btn-save-manual" onclick="saveManualTx()">ບັນທຶກລາຍການ</button>
+        <button class="btn-primary" style="margin-top:14px;" onclick="saveManualTx()">ບັນທຶກລາຍການ</button>
       </div>
 
       <div id="tab-scan" class="hidden">
@@ -331,27 +350,6 @@ button{cursor:pointer;font-family:inherit;}
         <option value="USD">$ ໂດລາ (USD)</option>
       </select>
       <button class="btn-primary" onclick="saveWalletUI()">ບັນທຶກ</button>
-    </div>
-  </div>
-
-  <!-- ===================== MODAL: SLIP VIEW (🆕) ===================== -->
-  <div class="modal-overlay" id="modal-slip">
-    <div class="modal-sheet">
-      <button class="modal-close" onclick="closeModal('modal-slip')">✕</button>
-      <div class="modal-title">🧾 ລາຍລະອຽດ Slip</div>
-      <div class="slip-img-wrap">
-        <img id="slip-img" src="" alt="slip">
-      </div>
-      <div class="card" style="margin-top:14px;">
-        <div class="link-row"><span>ປະເພດ</span><span id="slip-type"></span></div>
-        <div class="link-row"><span>ວັນທີ</span><span id="slip-date"></span></div>
-        <div class="link-row"><span>ລາຍລະອຽດ</span><span id="slip-note"></span></div>
-        <div class="link-row"><span>ໝວດໝູ່</span><span id="slip-cat"></span></div>
-        <div class="link-row"><span>ກະເປົາ</span><span id="slip-wallet"></span></div>
-        <div class="link-row" style="border-bottom:none;"><span>ຈຳນວນ</span><span id="slip-amount" style="font-weight:800;"></span></div>
-      </div>
-      <a id="slip-open-full" href="#" target="_blank" rel="noopener" class="btn-outline" style="display:block;text-align:center;text-decoration:none;margin-top:10px;">🔗 ເປີດຮູບເຕັມ</a>
-      <button class="btn-primary" style="margin-top:10px;" onclick="editFromSlip()">✏️ ແກ້ໄຂລາຍການນີ້</button>
     </div>
   </div>
 
@@ -410,11 +408,6 @@ let STATE = { wallets:[], categories:[], transactions:[], budgets:[], goals:[], 
 let CURRENT_USER = null;
 let addTxType = 'expense';
 let pendingScanItems = [];
-let fileBase64Map = {};          // 🆕 ໄຟລ໌ base64 ຂອງໃບເສັດແຕ່ລະໄຟລ໌ ຕອນສະແກນຫຼາຍໃບ
-let editingTxId = null;          // 🆕 id ຂອງລາຍການທີ່ກຳລັງແກ້ໄຂ (null = ກຳລັງເພີ່ມໃໝ່)
-let editingSlipUrl = '';         // 🆕 receiptUrl ເກົ່າຂອງລາຍການທີ່ກຳລັງແກ້ໄຂ
-let editingTxDate = null;        // 🆕 ວັນທີເກົ່າຂອງລາຍການທີ່ກຳລັງແກ້ໄຂ (ບໍ່ໃຫ້ປ່ຽນວັນທີຕອນແກ້ໄຂ)
-let currentSlipTxId = null;      // 🆕 id ຂອງລາຍການທີ່ກຳລັງເປີດເບິ່ງໃນ popup slip
 
 // ---------------- INIT ----------------
 window.onload = function () {
@@ -507,6 +500,7 @@ function closeModal(id) { document.getElementById(id).classList.remove('show'); 
 function renderAll() {
   renderOverview();
   renderDashboard();
+  renderOverviewReportPreview();
   renderTransactions();
   renderWalletsPage();
   populateCategoryGrid();
@@ -596,25 +590,52 @@ function renderDashboard() {
 }
 
 function catById(id) { return STATE.categories.find(c => c.id === id); }
+let _ovReportChartInstance = null;
+const LAO_MONTHS_FULL_OV = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
+function renderOverviewReportPreview(){
+  const now = new Date();
+  const ym = now.toISOString().slice(0,7);
+  const list = STATE.transactions.filter(t => t.type === 'expense' && String(t.date).slice(0,7) === ym);
+  const catTotals = {}, catIcons = {};
+  list.forEach(t=>{
+    const cat = catById(t.categoryId);
+    const key = cat ? cat.name : 'ອື່ນໆ';
+    catTotals[key] = (catTotals[key]||0) + Number(t.amount);
+    catIcons[key] = cat ? cat.icon : '❔';
+  });
+  const total = Object.values(catTotals).reduce((a,b)=>a+b,0);
+  const colors = ['#F28482','#F6BD60','#84A59D','#B39DDB','#8EB8E5','#7FC8A9','#D9A441','#F4A261','#E76F51','#FF9F7F'];
+  const labels = Object.keys(catTotals);
+  const ctx = document.getElementById('ov-report-chart');
+  if (_ovReportChartInstance){ _ovReportChartInstance.destroy(); _ovReportChartInstance=null; }
+  if (ctx && labels.length){
+    _ovReportChartInstance = new Chart(ctx, { type:'doughnut',
+      data:{ labels, datasets:[{ data:Object.values(catTotals), backgroundColor:labels.map((_,i)=>colors[i%colors.length]), borderWidth:2, borderColor:'#fff' }] },
+      options:{ cutout:'68%', plugins:{ legend:{ display:false } } } });
+  }
+  document.getElementById('ov-report-center').innerHTML = total
+    ? `<div class="amt">${fmt(total)}</div><div class="lbl">${LAO_MONTHS_FULL_OV[now.getMonth()]}</div>`
+    : `<div class="lbl">ບໍ່ມີຂໍ້ມູນ</div>`;
+  document.getElementById('ov-report-legend').innerHTML = labels.slice(0,4).map((k,i)=>
+    `<div class="cat-legend-item"><span class="dot" style="background:${colors[i%colors.length]};"></span>${catIcons[k]} ${k} ${total?Math.round(catTotals[k]/total*100):0}%</div>`
+  ).join('') || '<div class="empty-hint">ຍັງບໍ່ມີຂໍ້ມູນເດືອນນີ້</div>';
+}
 function walletById(id) { return STATE.wallets.find(w => w.id === id); }
 
-// 🆕 tx row: ໂຊຮູບຫຍໍ້ slip ຖ້າມີ, ກົດ info/icon ເພື່ອແກ້ໄຂ, ມີປຸ່ມເບິ່ງບິນ ແລະປຸ່ມຖັງຂີ້ເຫຍື້ອ
 function txRowHtml(t) {
   const cat = catById(t.categoryId);
   const w = walletById(t.walletId);
   const icon = t.type === 'transfer' ? '🔄' : (cat ? cat.icon : '💸');
   const amtClass = t.type === 'income' ? 'income' : (t.type === 'expense' ? 'expense' : '');
   const sign = t.type === 'income' ? '+' : (t.type === 'expense' ? '-' : '');
-  const badgeInner = t.receiptUrl ? `<img src="${t.receiptUrl}" alt="slip">` : icon;
   return `<div class="tx-item">
-    <div class="icon-badge" onclick="editTx('${t.id}')" style="cursor:pointer;">${badgeInner}</div>
-    <div class="info" onclick="editTx('${t.id}')" style="cursor:pointer;">
+    <div class="icon-badge">${icon}</div>
+    <div class="info">
       <div class="t1">${t.note || (cat ? cat.name : 'ລາຍການ')}</div>
       <div class="t2">${w ? w.name : ''} · ${String(t.date).slice(0, 10)}</div>
     </div>
     <div class="amt ${amtClass}">${sign}${fmt(t.amount)}</div>
-    ${t.receiptUrl ? `<button class="del-x slip-view" title="ເບິ່ງບິນ" onclick="viewSlip('${t.id}')">🧾</button>` : ''}
-    <button class="del-x trash-view" title="ລົບລາຍການ" onclick="removeTx('${t.id}')">🗑️</button>
+    <button class="del-x" onclick="removeTx('${t.id}')">✕</button>
   </div>`;
 }
 
@@ -673,31 +694,8 @@ function selectCategory(id) {
   document.querySelectorAll('#manual-cat-grid .cat-item').forEach(el => el.classList.toggle('selected', el.dataset.id === id));
 }
 
-// ---------------- ADD / EDIT TRANSACTION ----------------
-function openAddTx() {
-  editingTxId = null;
-  editingSlipUrl = '';
-  editingTxDate = null;
-  resetManualForm();
-  document.getElementById('add-tx-title').innerText = '➕ ເພີ່ມທຸລະກຳ';
-  document.getElementById('btn-save-manual').innerText = 'ບັນທຶກລາຍການ';
-  document.getElementById('add-tx-seg-tabs').classList.remove('hidden');
-  switchAddTab('manual');
-  document.getElementById('modal-add-tx').classList.add('show');
-}
-
-function resetManualForm() {
-  document.getElementById('manual-wallet').value = '';
-  document.getElementById('manual-amount').value = '';
-  document.getElementById('manual-note').value = '';
-  document.getElementById('manual-tag').value = '';
-  document.getElementById('manual-cat-selected').value = '';
-  document.querySelectorAll('#manual-cat-grid .cat-item').forEach(el => el.classList.remove('selected'));
-  document.getElementById('manual-slip').value = '';
-  document.getElementById('manual-slip-preview').innerHTML = '';
-  setTxType('expense');
-}
-
+// ---------------- ADD TRANSACTION ----------------
+function openAddTx() { document.getElementById('modal-add-tx').classList.add('show'); }
 function switchAddTab(tab) {
   document.getElementById('seg-manual').classList.toggle('active', tab === 'manual');
   document.getElementById('seg-scan').classList.toggle('active', tab === 'scan');
@@ -709,38 +707,6 @@ function setTxType(type) {
   document.getElementById('type-expense').classList.toggle('active', type === 'expense');
   document.getElementById('type-income').classList.toggle('active', type === 'income');
 }
-
-// 🆕 ເປີດຟອມແກ້ໄຂລາຍການ (ກົດຢູ່ໃສ່ໆ ໃນລາຍການ ຫຼືປຸ່ມ "ແກ້ໄຂລາຍການນີ້" ໃນ popup slip)
-function editTx(id) {
-  const t = STATE.transactions.find(x => x.id === id);
-  if (!t) return;
-  editingTxId = t.id;
-  editingSlipUrl = t.receiptUrl || '';
-  editingTxDate = t.date;
-  resetManualForm();
-  document.getElementById('add-tx-seg-tabs').classList.add('hidden');
-  switchAddTab('manual');
-  setTxType(t.type === 'income' ? 'income' : 'expense');
-  document.getElementById('manual-wallet').value = t.walletId || '';
-  document.getElementById('manual-amount').value = t.amount;
-  document.getElementById('manual-note').value = t.note || '';
-  document.getElementById('manual-tag').value = t.tagId || '';
-  if (t.categoryId) selectCategory(t.categoryId);
-  if (editingSlipUrl) {
-    document.getElementById('manual-slip-preview').innerHTML =
-      '<div class="empty-hint">📎 ມີ Slip ຢູ່ແລ້ວ — ອັບໂຫລດຮູບໃໝ່ຖ້າຢາກປ່ຽນ</div>';
-  }
-  document.getElementById('add-tx-title').innerText = '✏️ ແກ້ໄຂທຸລະກຳ';
-  document.getElementById('btn-save-manual').innerText = '💾 ບັນທຶກການແກ້ໄຂ';
-  closeModal('modal-slip');
-  document.getElementById('modal-add-tx').classList.add('show');
-}
-
-// 🆕 ເອີ້ນຈາກ popup slip -> ໄປແກ້ໄຂລາຍການທີ່ກຳລັງເບິ່ງຢູ່
-function editFromSlip() {
-  if (currentSlipTxId) editTx(currentSlipTxId);
-}
-
 function saveManualTx() {
   const walletId = document.getElementById('manual-wallet').value;
   const amount = parseFloat(document.getElementById('manual-amount').value);
@@ -748,51 +714,18 @@ function saveManualTx() {
   const categoryId = document.getElementById('manual-cat-selected').value;
   const tagId = document.getElementById('manual-tag').value;
   if (!walletId || !amount) { showToast('ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບ'); return; }
-  const slipFile = document.getElementById('manual-slip').files[0];
-
-  function finishAndReload() {
-    return callApi('getAllData').then(function (data) {
-      showLoading(false);
-      STATE = data;
-      renderAll();
-      closeModal('modal-add-tx');
-      editingTxId = null; editingSlipUrl = ''; editingTxDate = null;
-    }).catch(function () { showLoading(false); });
-  }
-
-  function attachSlipIfAny(tx) {
-    if (!slipFile) return finishAndReload();
-    const reader = new FileReader();
-    return new Promise(function (resolve) {
-      reader.onload = function (e) {
-        const base64 = e.target.result.split(',')[1];
-        callApi('uploadSlip', { base64Data: base64, mimeType: slipFile.type, fileName: slipFile.name, txId: tx.id })
-          .then(function () { return finishAndReload(); })
-          .then(resolve)
-          .catch(function () { showLoading(false); resolve(); });
-      };
-      reader.readAsDataURL(slipFile);
-    });
-  }
-
+  const tx = { date: new Date().toISOString(), type: addTxType, walletId, categoryId, amount, note, tagId, createdBy: CURRENT_USER.id };
   showLoading(true);
-  if (editingTxId) {
-    const tx = {
-      id: editingTxId, date: editingTxDate || new Date().toISOString(), type: addTxType,
-      walletId, categoryId, amount, note, tagId, receiptUrl: editingSlipUrl, createdBy: CURRENT_USER.id
-    };
-    callApi('updateTransaction', { obj: tx }).then(attachSlipIfAny).catch(function () { showLoading(false); });
-  } else {
-    const tx = { date: new Date().toISOString(), type: addTxType, walletId, categoryId, amount, note, tagId, createdBy: CURRENT_USER.id };
-    callApi('addTransaction', { obj: tx }).then(attachSlipIfAny).catch(function () { showLoading(false); });
-  }
+  callApi('addTransaction', { obj: tx })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; renderAll(); closeModal('modal-add-tx'); })
+    .catch(function () { showLoading(false); });
 }
 
 // ---------------- RECEIPT SCAN ----------------
 function handleReceiptFiles(evt) {
   const files = Array.from(evt.target.files);
   pendingScanItems = [];
-  fileBase64Map = {};
   document.getElementById('scan-results').innerHTML = '';
   document.getElementById('scan-status').innerText = 'ກຳລັງວິເຄາະໃບເສັດ ' + files.length + ' ໃບ... ⏳';
   let done = 0;
@@ -800,7 +733,6 @@ function handleReceiptFiles(evt) {
     const reader = new FileReader();
     reader.onload = function (e) {
       const base64 = e.target.result.split(',')[1];
-      fileBase64Map[file.name] = { base64: base64, mimeType: file.type }; // 🆕 ເກັບໄວ້ອັບໂຫລດຂຶ້ນ Drive ພາຍຫຼັງ
       callApi('scanReceipt', { base64Data: base64, mimeType: file.type, imageFileName: file.name })
         .then(function (result) {
           done++;
@@ -841,8 +773,6 @@ function removeScanItem(uid) {
   pendingScanItems = pendingScanItems.filter(i => i._uid !== uid);
   renderScanResults();
 }
-
-// 🆕 ບັນທຶກລາຍການທີ່ສະແກນທັງໝົດ + ອັບໂຫລດຮູບໃບເສັດແຕ່ລະໄຟລ໌ຂຶ້ນ Drive ແລ້ວຜູກ receiptUrl ໃສ່ທຸກລາຍການທີ່ມາຈາກໄຟລ໌ນັ້ນ
 function saveScannedItems() {
   const walletId = document.getElementById('scan-wallet').value;
   if (!walletId) { showToast('ເລືອກກະເປົາເງິນກ່ອນ'); return; }
@@ -852,60 +782,19 @@ function saveScannedItems() {
   const txs = pendingScanItems.map(it => ({
     date: new Date().toISOString(), type: 'expense', walletId,
     categoryId: catMap[it.category] || '', amount: it.amount, note: it.name,
-    tagId: '', createdBy: CURRENT_USER.id, _file: it._file
+    tagId: '', createdBy: CURRENT_USER.id
   }));
   showLoading(true);
-
-  const uniqueFiles = Object.keys(fileBase64Map);
-  const uploadPromises = uniqueFiles.map(function (fname) {
-    const f = fileBase64Map[fname];
-    return callApi('uploadSlip', { base64Data: f.base64, mimeType: f.mimeType, fileName: fname })
-      .then(function (res) { return { fname: fname, url: res.url }; });
-  });
-
-  Promise.all(uploadPromises).then(function (uploaded) {
-    const urlMap = {};
-    uploaded.forEach(function (u) { urlMap[u.fname] = u.url; });
-    const cleanTxs = txs.map(function (t) { const c = Object.assign({}, t); delete c._file; return c; });
-    return callApi('addTransactionsBulk', { list: cleanTxs }).then(function (createdList) {
-      const attachPromises = createdList.map(function (tx, i) {
-        const fname = txs[i]._file;
-        const url = urlMap[fname];
-        if (!url) return Promise.resolve();
-        return callApi('setReceiptUrl', { id: tx.id, url: url });
-      });
-      return Promise.all(attachPromises);
-    });
-  }).then(function () {
-    pendingScanItems = [];
-    fileBase64Map = {};
-    document.getElementById('scan-results').innerHTML = '';
-    document.getElementById('scan-status').innerText = 'ເລືອກ ຫຼື ຖ່າຍຮູບໃບເສັດ (ຮອງຮັບຫຼາຍໃບພ້ອມກັນ)';
-    document.getElementById('btn-save-scan').classList.add('hidden');
-    return callApi('getAllData');
-  }).then(function (data) { showLoading(false); STATE = data; renderAll(); closeModal('modal-add-tx'); })
+  callApi('addTransactionsBulk', { list: txs })
+    .then(function () {
+      pendingScanItems = [];
+      document.getElementById('scan-results').innerHTML = '';
+      document.getElementById('scan-status').innerText = 'ເລືອກ ຫຼື ຖ່າຍຮູບໃບເສັດ (ຮອງຮັບຫຼາຍໃບພ້ອມກັນ)';
+      document.getElementById('btn-save-scan').classList.add('hidden');
+      return callApi('getAllData');
+    })
+    .then(function (data) { showLoading(false); STATE = data; renderAll(); closeModal('modal-add-tx'); })
     .catch(function () { showLoading(false); });
-}
-
-// ---------------- 🆕 SLIP VIEW POPUP ----------------
-function viewSlip(id) {
-  const t = STATE.transactions.find(x => x.id === id);
-  if (!t || !t.receiptUrl) { showToast('ບໍ່ມີຮູບ Slip ສຳລັບລາຍການນີ້'); return; }
-  currentSlipTxId = id;
-  const cat = catById(t.categoryId);
-  const w = walletById(t.walletId);
-  document.getElementById('slip-img').src = t.receiptUrl;
-  document.getElementById('slip-type').innerText = t.type === 'income' ? '⬇️ ລາຍຮັບ' : (t.type === 'expense' ? '⬆️ ລາຍຈ່າຍ' : '🔄 ໂອນເງິນ');
-  document.getElementById('slip-date').innerText = String(t.date).slice(0, 10);
-  document.getElementById('slip-note').innerText = t.note || (cat ? cat.name : '-');
-  document.getElementById('slip-cat').innerText = cat ? (cat.icon + ' ' + cat.name) : '-';
-  document.getElementById('slip-wallet').innerText = w ? (w.icon + ' ' + w.name) : '-';
-  const sign = t.type === 'income' ? '+' : (t.type === 'expense' ? '-' : '');
-  const amtEl = document.getElementById('slip-amount');
-  amtEl.innerText = sign + fmt(t.amount);
-  amtEl.style.color = t.type === 'income' ? 'var(--green)' : (t.type === 'expense' ? 'var(--red)' : 'var(--text)');
-  document.getElementById('slip-open-full').href = t.receiptUrl;
-  document.getElementById('modal-slip').classList.add('show');
 }
 
 // ---------------- WALLET MODAL ----------------
@@ -935,6 +824,173 @@ function doTransfer() {
 }
 
 // ---------------- GENERIC MENU PAGES (budget/goals/installments/tags/reports/admin) ----------------
+let reportState = { tab:'category', period:'month', walletId:'all', type:'expense', month:new Date().toISOString().slice(0,7) };
+const LAO_MONTHS_SHORT = ['ມ.ກ','ກ.ພ','ມີ.ນ','ເມ.ສ','ພ.ພ','ມິ.ຖ','ກ.ລ','ສ.ຫ','ກ.ຍ','ຕ.ລ','ພ.ຈ','ທ.ວ'];
+const LAO_MONTHS_FULL  = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
+let _reportChartInstance=null, _timeChartInstance=null, _networthChartInstance=null;
+
+function reportFilteredTx(){
+  let list = STATE.transactions.filter(t => t.type !== 'transfer');
+  if (reportState.walletId !== 'all') list = list.filter(t => t.walletId === reportState.walletId);
+  if (reportState.period === 'month') list = list.filter(t => String(t.date).slice(0,7) === reportState.month);
+  return list;
+}
+
+function setReportTab(tab){ reportState.tab = tab; renderAndRefreshReports(); }
+function renderAndRefreshReports(){
+  document.getElementById('generic-content').innerHTML = renderReportsSection();
+  setTimeout(drawActiveReportChart, 50);
+}
+function drawActiveReportChart(){
+  if (reportState.tab === 'category') drawCategoryChart();
+  else if (reportState.tab === 'tag') drawTagTable();
+  else if (reportState.tab === 'time') drawTimeChart();
+  else if (reportState.tab === 'networth') drawNetWorthChart();
+}
+
+function renderReportsSection(){
+  const now = new Date(reportState.month + '-01');
+  const monthsAvail = [];
+  for (let i=-4;i<=3;i++){ const d=new Date(now.getFullYear(),now.getMonth()+i,1); monthsAvail.push(d.toISOString().slice(0,7)); }
+  const walletOpts = '<option value="all">ທຸກກະເປົາ</option>' + STATE.wallets.map(w=>`<option value="${w.id}" ${reportState.walletId===w.id?'selected':''}>${w.icon} ${w.name}</option>`).join('');
+
+  let html = `<div class="modal-title">📊 ສະຫຼຸບລາຍງານ</div>
+  <div class="report-tabs">
+    <button class="${reportState.tab==='category'?'active':''}" onclick="setReportTab('category')">ຕາມໝວດໝູ່</button>
+    <button class="${reportState.tab==='networth'?'active':''}" onclick="setReportTab('networth')">ຊັບສິນສຸດທິ</button>
+    <button class="${reportState.tab==='time'?'active':''}" onclick="setReportTab('time')">ຕາມຊ່ວງເວລາ</button>
+    <button class="${reportState.tab==='tag'?'active':''}" onclick="setReportTab('tag')">ຕາມແທັກ</button>
+  </div>`;
+
+  if (reportState.tab === 'category' || reportState.tab === 'tag'){
+    html += `<div class="report-filter-row">
+      <select onchange="reportState.period=this.value;renderAndRefreshReports();">
+        <option value="month" ${reportState.period==='month'?'selected':''}>ລາຍເດືອນ</option>
+        <option value="all" ${reportState.period==='all'?'selected':''}>ທັງໝົດ</option>
+      </select>
+      <select onchange="reportState.walletId=this.value;renderAndRefreshReports();">${walletOpts}</select>
+    </div>`;
+    if (reportState.period === 'month'){
+      html += `<div class="month-scroll">` + monthsAvail.map(m=>{
+        const d = new Date(m+'-01');
+        return `<div class="month-pill ${m===reportState.month?'active':''}" onclick="reportState.month='${m}';renderAndRefreshReports();">
+          <span>${LAO_MONTHS_SHORT[d.getMonth()]}</span><span style="font-size:9px;">${d.getFullYear()}</span></div>`;
+      }).join('') + `</div>`;
+    }
+    const list = reportFilteredTx();
+    const exp = list.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
+    const inc = list.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
+    const trf = STATE.transactions.filter(t=>t.type==='transfer' && (reportState.period!=='month' || String(t.date).slice(0,7)===reportState.month)).reduce((s,t)=>s+Number(t.amount),0);
+    html += `<div class="report-summary-row">
+      <div><div class="num" style="color:var(--red);">- ${fmt(exp)}</div><div class="label">ລາຍຈ່າຍ</div></div>
+      <div><div class="num" style="color:var(--green);">+ ${fmt(inc)}</div><div class="label">ລາຍຮັບ</div></div>
+      <div><div class="num">${fmt(trf)}</div><div class="label">ໂອນເງິນ</div></div>
+    </div>`;
+    html += `<div class="report-type-toggle"><select onchange="reportState.type=this.value;renderAndRefreshReports();">
+      <option value="expense" ${reportState.type==='expense'?'selected':''}>ລາຍຈ່າຍ</option>
+      <option value="income" ${reportState.type==='income'?'selected':''}>ລາຍຮັບ</option>
+    </select></div>`;
+  }
+
+  if (reportState.tab === 'category'){
+    html += `<div class="card"><div class="report-donut-wrap"><canvas id="report-chart" height="240"></canvas>
+      <div class="report-donut-center" id="report-donut-center"></div></div>
+      <div class="cat-legend" id="cat-legend"></div></div>
+      <div class="card"><div style="font-weight:700;margin-bottom:6px;">ແຍກຕາມໝວດໝູ່</div><div id="cat-table"></div></div>`;
+  } else if (reportState.tab === 'tag'){
+    html += `<div class="card"><div style="font-weight:700;margin-bottom:6px;">ແຍກຕາມແທັກ</div><div id="tag-table"></div></div>`;
+  } else if (reportState.tab === 'time'){
+    html += `<div class="card"><div style="font-weight:700;margin-bottom:6px;">ລາຍຈ່າຍ-ລາຍຮັບ 6 ເດືອນຫຼ້າສຸດ</div><canvas id="time-chart" height="220"></canvas></div>`;
+  } else if (reportState.tab === 'networth'){
+    html += `<div class="card"><div class="report-donut-wrap"><canvas id="networth-chart" height="240"></canvas>
+      <div class="report-donut-center" id="networth-center"></div></div></div>
+      <div class="card" id="networth-table"></div>`;
+  }
+  return html;
+}
+
+function drawCategoryChart(){
+  const list = reportFilteredTx().filter(t=>t.type===reportState.type);
+  const catTotals={}, catIcons={};
+  list.forEach(t=>{
+    const cat = catById(t.categoryId);
+    const key = cat ? cat.name : 'ອື່ນໆ';
+    catTotals[key] = (catTotals[key]||0) + Number(t.amount);
+    catIcons[key] = cat ? cat.icon : '❔';
+  });
+  const total = Object.values(catTotals).reduce((a,b)=>a+b,0);
+  const colors = ['#F28482','#F6BD60','#84A59D','#B39DDB','#8EB8E5','#7FC8A9','#D9A441','#F4A261','#E76F51','#FF9F7F'];
+  const labels = Object.keys(catTotals);
+  const ctx = document.getElementById('report-chart');
+  if (_reportChartInstance){ _reportChartInstance.destroy(); _reportChartInstance=null; }
+  if (ctx && labels.length){
+    _reportChartInstance = new Chart(ctx,{ type:'doughnut',
+      data:{ labels, datasets:[{ data:Object.values(catTotals), backgroundColor:labels.map((_,i)=>colors[i%colors.length]), borderWidth:2, borderColor:'#fff' }] },
+      options:{ cutout:'68%', plugins:{ legend:{ display:false } } } });
+  }
+  const d = new Date(reportState.month+'-01');
+  document.getElementById('report-donut-center').innerHTML = total
+    ? `<div class="amt">${fmt(total)}</div><div class="lbl">${reportState.period==='month'?LAO_MONTHS_FULL[d.getMonth()]:'ທັງໝົດ'}</div>`
+    : `<div class="lbl">ບໍ່ມີຂໍ້ມູນ</div>`;
+  document.getElementById('cat-legend').innerHTML = labels.map((k,i)=>
+    `<div class="cat-legend-item"><span class="dot" style="background:${colors[i%colors.length]};"></span>${catIcons[k]} ${k} ${total?Math.round(catTotals[k]/total*100):0}%</div>`
+  ).join('') || '<div class="empty-hint">ບໍ່ມີຂໍ້ມູນ</div>';
+  document.getElementById('cat-table').innerHTML = labels.map((k,i)=>
+    `<div class="report-table-row"><div class="rt-left"><span class="dot" style="background:${colors[i%colors.length]};"></span>${catIcons[k]} ${k}</div><div>${total?Math.round(catTotals[k]/total*100):0}% · ${fmt(catTotals[k])}</div></div>`
+  ).join('') || '<div class="empty-hint">ຍັງບໍ່ມີຂໍ້ມູນ</div>';
+}
+
+function drawTagTable(){
+  const list = reportFilteredTx().filter(t=>t.type===reportState.type);
+  const tagTotals={};
+  list.forEach(t=>{
+    const tag = STATE.tags.find(x=>x.id===t.tagId);
+    const key = tag ? tag.name : 'ບໍ່ມີແທັກ';
+    tagTotals[key] = (tagTotals[key]||0) + Number(t.amount);
+  });
+  const total = Object.values(tagTotals).reduce((a,b)=>a+b,0);
+  document.getElementById('tag-table').innerHTML = Object.keys(tagTotals).map(k=>
+    `<div class="report-table-row"><span>🏷️ ${k}</span><span>${total?Math.round(tagTotals[k]/total*100):0}% · ${fmt(tagTotals[k])}</span></div>`
+  ).join('') || '<div class="empty-hint">ຍັງບໍ່ມີຂໍ້ມູນ</div>';
+}
+
+function drawTimeChart(){
+  const now = new Date();
+  const labels=[], expData=[], incData=[];
+  for (let i=5;i>=0;i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const ym = d.toISOString().slice(0,7);
+    labels.push(LAO_MONTHS_SHORT[d.getMonth()]);
+    const list = STATE.transactions.filter(t=>String(t.date).slice(0,7)===ym);
+    expData.push(list.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0));
+    incData.push(list.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0));
+  }
+  const ctx = document.getElementById('time-chart');
+  if (_timeChartInstance){ _timeChartInstance.destroy(); _timeChartInstance=null; }
+  if (ctx){
+    _timeChartInstance = new Chart(ctx,{ type:'bar',
+      data:{ labels, datasets:[
+        { label:'ລາຍຈ່າຍ', data:expData, backgroundColor:'#F28482' },
+        { label:'ລາຍຮັບ', data:incData, backgroundColor:'#7FC8A9' } ] },
+      options:{ plugins:{ legend:{ position:'bottom', labels:{ font:{ size:11 } } } } } });
+  }
+}
+
+function drawNetWorthChart(){
+  const total = STATE.wallets.reduce((s,w)=>s+Number(w.balance||0),0);
+  const colors = ['#F28482','#F6BD60','#84A59D','#B39DDB','#8EB8E5','#7FC8A9','#D9A441'];
+  const ctx = document.getElementById('networth-chart');
+  if (_networthChartInstance){ _networthChartInstance.destroy(); _networthChartInstance=null; }
+  if (ctx && STATE.wallets.length){
+    _networthChartInstance = new Chart(ctx,{ type:'doughnut',
+      data:{ labels: STATE.wallets.map(w=>w.name), datasets:[{ data: STATE.wallets.map(w=>Number(w.balance||0)), backgroundColor: STATE.wallets.map((_,i)=>colors[i%colors.length]), borderWidth:2, borderColor:'#fff' }] },
+      options:{ cutout:'68%', plugins:{ legend:{ display:false } } } });
+  }
+  document.getElementById('networth-center').innerHTML = `<div class="amt">${fmt(total)}</div><div class="lbl">ຊັບສິນສຸດທິ</div>`;
+  document.getElementById('networth-table').innerHTML = STATE.wallets.map((w,i)=>
+    `<div class="report-table-row"><div class="rt-left"><span class="dot" style="background:${colors[i%colors.length]};"></span>${w.icon} ${w.name}</div><div>${total?Math.round(Number(w.balance||0)/total*100):0}% · ${fmt(w.balance)}</div></div>`
+  ).join('') || '<div class="empty-hint">ຍັງບໍ່ມີກະເປົາເງິນ</div>';
+}
 function openMenu(section) {
   document.getElementById('modal-generic').classList.add('show');
   const c = document.getElementById('generic-content');
@@ -942,7 +998,7 @@ function openMenu(section) {
   if (section === 'goals') c.innerHTML = renderGoalsSection();
   if (section === 'installments') c.innerHTML = renderInstallmentsSection();
   if (section === 'tags') c.innerHTML = renderTagsSection();
-  if (section === 'reports') { c.innerHTML = renderReportsSection(); setTimeout(drawReportChart, 50); }
+  if (section === 'reports') { c.innerHTML = renderReportsSection(); setTimeout(drawActiveReportChart, 50); }
   if (section === 'admin') c.innerHTML = renderAdminSection();
 }
 
@@ -1056,36 +1112,6 @@ function addTagUI() {
     .then(function () { return callApi('getAllData'); })
     .then(function (data) { showLoading(false); STATE = data; openMenu('tags'); })
     .catch(function () { showLoading(false); });
-}
-
-function renderReportsSection() {
-  const catTotals = {};
-  STATE.transactions.filter(t => t.type === 'expense').forEach(t => {
-    const cat = catById(t.categoryId);
-    const key = cat ? cat.name : 'ອື່ນໆ';
-    catTotals[key] = (catTotals[key] || 0) + Number(t.amount);
-  });
-  const totalExpense = Object.values(catTotals).reduce((a, b) => a + b, 0);
-  const rows = Object.keys(catTotals).map(k => `<div class="link-row"><span>${k}</span><span>${totalExpense ? Math.round(catTotals[k] / totalExpense * 100) : 0}% · ${fmt(catTotals[k])}</span></div>`).join('');
-  return `<div class="modal-title">📊 ສະຫຼຸບລາຍງານ ຕາມໝວດໝູ່</div>
-    <div class="card"><canvas id="report-chart" height="220"></canvas></div>
-    <div class="card">${rows || '<div class="empty-hint">ຍັງບໍ່ມີຂໍ້ມູນ</div>'}</div>`;
-}
-function drawReportChart() {
-  const catTotals = {};
-  STATE.transactions.filter(t => t.type === 'expense').forEach(t => {
-    const cat = catById(t.categoryId);
-    const key = cat ? cat.name : 'ອື່ນໆ';
-    catTotals[key] = (catTotals[key] || 0) + Number(t.amount);
-  });
-  const ctx = document.getElementById('report-chart');
-  if (!ctx || !Object.keys(catTotals).length) return;
-  new Chart(ctx, {
-    type: 'doughnut',
-    data: { labels: Object.keys(catTotals), datasets: [{ data: Object.values(catTotals),
-      backgroundColor: ['#FF9F7F', '#8EB8E5', '#B39DDB', '#7FC8A9', '#D9A441', '#F4A261', '#E76F51', '#F6BD60', '#84A59D', '#F28482'] }] },
-    options: { plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } }
-  });
 }
 
 // ---------------- ADMIN ----------------
