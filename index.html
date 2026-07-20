@@ -917,10 +917,20 @@ function handleReceiptFiles(evt) {
     const reader = new FileReader();
     reader.onload = function (e) {
       const base64 = e.target.result.split(',')[1];
-      callApi('scanReceipt', { base64Data: base64, mimeType: file.type, imageFileName: file.name })
-        .then(function (result) {
+
+      // ອັບໂຫລດຮູບໃບເສັດຂຶ້ນ Drive ຄຽງຄູ່ກັບການວິເຄາະ AI
+      const uploadPromise = callApi('uploadSlip', { base64Data: base64, mimeType: file.type, fileName: 'receipt_' + Date.now() + '_' + file.name })
+        .then(function (res) { return res.url; })
+        .catch(function () { return ''; });
+
+      const scanPromise = callApi('scanReceipt', { base64Data: base64, mimeType: file.type, imageFileName: file.name });
+
+      Promise.all([scanPromise, uploadPromise])
+        .then(function (arr) {
+          const result = arr[0];
+          const receiptImgUrl = arr[1];
           done++;
-          addScanResult(result, file.name);
+          addScanResult(result, file.name, receiptImgUrl);
           if (done === files.length) document.getElementById('scan-status').innerText = 'ວິເຄາະສຳເລັດ ✅ ກວດຄືນລາຍການລຸ່ມນີ້ກ່ອນບັນທຶກ';
         })
         .catch(function () {
@@ -931,10 +941,11 @@ function handleReceiptFiles(evt) {
     reader.readAsDataURL(file);
   });
 }
-function addScanResult(result, fileName) {
+function addScanResult(result, fileName, receiptImgUrl) {
   (result.items || []).forEach(function (it) {
     it._uid = 'i' + Math.random().toString(36).slice(2);
     it._file = fileName;
+    it._receiptImgUrl = receiptImgUrl || '';
     pendingScanItems.push(it);
   });
   renderScanResults();
@@ -966,7 +977,8 @@ function saveScannedItems() {
   const txs = pendingScanItems.map(it => ({
     date: new Date().toISOString(), type: 'expense', walletId,
     categoryId: catMap[it.category] || '', amount: it.amount, note: it.name,
-    tagId: '', createdBy: CURRENT_USER.id
+    tagId: '', createdBy: CURRENT_USER.id,
+    'ໃບເສັດ': it._receiptImgUrl || ''
   }));
   showLoading(true);
   callApi('addTransactionsBulk', { list: txs })
