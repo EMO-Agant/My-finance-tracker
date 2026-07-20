@@ -171,6 +171,11 @@ button{cursor:pointer;font-family:inherit;}
 .report-donut-center .lbl{font-size:11px;color:var(--text-light);}
 .report-table-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F3EAD0;font-size:13px;}
 .report-table-row .rt-left{display:flex;align-items:center;gap:8px;}
+.tag-bubble-wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;padding:14px 6px;}
+.tag-bubble{border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#5B4636;flex-shrink:0;transition:.2s;}
+.tag-bubble .tb-icon{line-height:1;}
+.tag-bubble .tb-name{font-weight:700;line-height:1.15;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90%;}
+.tag-bubble .tb-amt{opacity:.7;line-height:1.1;}
 
 /* ---------- LOADING / TOAST ---------- */
 #global-loading{position:fixed;inset:0;background:rgba(255,248,231,.85);display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:9999;font-size:14px;color:var(--text-light);}
@@ -1124,7 +1129,7 @@ function renderAndRefreshReports(){
 }
 function drawActiveReportChart(){
   if (reportState.tab === 'category') drawCategoryChart();
-  else if (reportState.tab === 'tag') drawTagTable();
+  else if (reportState.tab === 'tag') { drawTagBubbles(); drawTagTable(); }
   else if (reportState.tab === 'time') drawTimeChart();
   else if (reportState.tab === 'networth') drawNetWorthChart();
 }
@@ -1179,7 +1184,8 @@ function renderReportsSection(){
       <div class="cat-legend" id="cat-legend"></div></div>
       <div class="card"><div style="font-weight:700;margin-bottom:6px;">ແຍກຕາມໝວດໝູ່</div><div id="cat-table"></div></div>`;
   } else if (reportState.tab === 'tag'){
-    html += `<div class="card"><div style="font-weight:700;margin-bottom:6px;">ແຍກຕາມແທັກ</div><div id="tag-table"></div></div>`;
+    html += `<div class="card"><div class="tag-bubble-wrap" id="tag-bubble-wrap"></div></div>
+      <div class="card"><div style="font-weight:700;margin-bottom:6px;">ແຍກຕາມແທັກ</div><div id="tag-table"></div></div>`;
   } else if (reportState.tab === 'time'){
     html += `<div class="card"><div style="font-weight:700;margin-bottom:6px;">ລາຍຈ່າຍ-ລາຍຮັບ 6 ເດືອນຫຼ້າສຸດ</div><canvas id="time-chart" height="220"></canvas></div>`;
   } else if (reportState.tab === 'networth'){
@@ -1224,6 +1230,41 @@ function drawCategoryChart(){
   document.getElementById('cat-table').innerHTML = labels.map((k,i)=>
     `<div class="report-table-row"><div class="rt-left"><span class="dot" style="background:${colors[i%colors.length]};"></span>${catIcons[k]} ${k}</div><div>${total?Math.round(catTotals[k]/total*100):0}% · ${fmt(catTotals[k])}</div></div>`
   ).join('') || '<div class="empty-hint">ຍັງບໍ່ມີຂໍ້ມູນ</div>';
+}
+
+function drawTagBubbles(){
+  const wrap = document.getElementById('tag-bubble-wrap');
+  if (!wrap) return;
+  const list = reportFilteredTx().filter(t=>t.type===reportState.type);
+  const tagTotals={}, tagIcons={};
+  list.forEach(t=>{
+    const tag = STATE.tags.find(x=>x.id===t.tagId);
+    const key = tag ? tag.name : 'ບໍ່ມີແທັກ';
+    tagTotals[key] = (tagTotals[key]||0) + Number(t.amount);
+    tagIcons[key] = tag ? (tag.icon || '🏷️') : '🏷️';
+  });
+  const colors = ['#84A59D','#B39DDB','#F4A9B8','#8EB8E5','#F6BD60','#7FC8A9','#D9A441','#F4A261','#E76F51','#FF9F7F'];
+  const entries = Object.keys(tagTotals)
+    .map((k,i)=>({ name:k, amount:tagTotals[k], icon:tagIcons[k], color:colors[i%colors.length] }))
+    .sort((a,b)=>b.amount-a.amount);
+
+  if (!entries.length){ wrap.innerHTML = '<div class="empty-hint">ຍັງບໍ່ມີຂໍ້ມູນ</div>'; return; }
+
+  const maxAmt = entries[0].amount;
+  const minSize = 58, maxSize = 130;
+  wrap.innerHTML = entries.map(e=>{
+    // 🆕 ໃຊ້ sqrt ເພື່ອໃຫ້ "ພື້ນທີ່" ຂອງວົງມົນ ສະທ້ອນສັດສ່ວນຈຳນວນເງິນແທ້ໆ (ບໍ່ແມ່ນແຄ່ເສັ້ນຜ່າສູນກາງ)
+    const ratio = maxAmt ? Math.sqrt(e.amount / maxAmt) : 0;
+    const size = Math.round(minSize + ratio * (maxSize - minSize));
+    const fIcon = Math.max(14, Math.round(size*0.28));
+    const fName = Math.max(10, Math.round(size*0.13));
+    const fAmt  = Math.max(9,  Math.round(size*0.11));
+    return `<div class="tag-bubble" style="width:${size}px;height:${size}px;background:${e.color}33;border:2px solid ${e.color}88;">
+      <span class="tb-icon" style="font-size:${fIcon}px;">${e.icon}</span>
+      <span class="tb-name" style="font-size:${fName}px;">${e.name}</span>
+      <span class="tb-amt" style="font-size:${fAmt}px;">${fmt(e.amount)}</span>
+    </div>`;
+  }).join('');
 }
 
 function drawTagTable(){
