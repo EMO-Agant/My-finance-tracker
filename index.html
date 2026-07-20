@@ -215,7 +215,7 @@ button{cursor:pointer;font-family:inherit;}
     <h1 id="login-app-name">ບັນທຶກລາຍຈ່າຍດ້ວຍໃບເສັດ</h1>
     <p>ຕິດຕາມລາຍຮັບ-ລາຍຈ່າຍແບບໜ້າຮັກ 💛</p>
 
-    <!-- ເລືອກໂປຣໄຟລ໌ຂອງທ່ານກ່ອນ ແລ້ວປ້ອນ PIN -->
+    <!-- 🆕 ເລືອກໂປຣໄຟລ໌ຂອງທ່ານກ່ອນ ແລ້ວປ້ອນ PIN -->
     <div class="login-users-grid" id="login-users-grid"></div>
 
     <div class="login-box">
@@ -439,7 +439,7 @@ button{cursor:pointer;font-family:inherit;}
     </div>
   </div>
 
-  <!-- ===================== MODAL: EMOJI PICKER ===================== -->
+  <!-- ===================== 🆕 MODAL: EMOJI PICKER ===================== -->
   <div class="modal-overlay" id="modal-emoji-picker">
     <div class="modal-sheet">
       <button class="modal-close" onclick="closeModal('modal-emoji-picker')">✕</button>
@@ -485,12 +485,6 @@ let CURRENT_USER = null;
 let addTxType = 'expense';
 let pendingScanItems = [];
 
-// 🆕 ດຶງຂໍ້ມູນທັງໝົດ "ຂອງຄົນທີ່ login ຢູ່ໃນຂະນະນີ້" ຈາກ backend ສະເໝີ
-// (ຖ້າຍັງບໍ່ login ຈະໄດ້ພຽງ users/settings ສຳລັບໜ້າ login ເທົ່ານັ້ນ)
-function fetchAllData() {
-  return callApi('getAllData', { userId: CURRENT_USER ? CURRENT_USER.id : '' });
-}
-
 // ---------------- INIT ----------------
 window.onload = function () {
   const saved = localStorage.getItem('savedSession');
@@ -503,7 +497,7 @@ window.onload = function () {
       STATE = JSON.parse(cachedState);
       CURRENT_USER = user;
       applyTheme();
-      enterApp(); // ✅ ເຫັນໜ້າຫຼັກທັນທີ ດ້ວຍຂໍ້ມູນເກົ່າ (cache) ຂອງຄົນນີ້ເທົ່ານັ້ນ
+      enterApp(); // ✅ ເຫັນໜ້າຫຼັກທັນທີ ດ້ວຍຂໍ້ມູນເກົ່າ (cache)
     } catch (e) {
       localStorage.removeItem('savedSession');
       localStorage.removeItem('cachedState');
@@ -513,14 +507,8 @@ window.onload = function () {
     showLoading(true);
   }
 
-  // ✅ ຖ້າມີ session ຢູ່ແລ້ວ (ຈາກ localStorage) ໃຫ້ຮູ້ CURRENT_USER ໄວ້ກ່ອນຢິງ request
-  // ເພື່ອໃຫ້ getAllData ດຶງສະເພາະຂໍ້ມູນຂອງຄົນນີ້ຕັ້ງແຕ່ຄັ້ງທຳອິດ
-  if (saved && !CURRENT_USER) {
-    try { CURRENT_USER = JSON.parse(saved); } catch (e) {}
-  }
-
-  // ✅ ບໍ່ວ່າຈະມີ cache ຫຼືບໍ່ ກໍໄປດຶງຂໍ້ມູນຫຼ້າສຸດຢູ່ເບື້ອງຫຼັງສະເໝີ (ສະເພາະຂອງ CURRENT_USER)
-  fetchAllData().then(function (data) {
+  // ✅ ບໍ່ວ່າຈະມີ cache ຫຼືບໍ່ ກໍໄປດຶງຂໍ້ມູນຫຼ້າສຸດຢູ່ເບື້ອງຫຼັງສະເໝີ
+  callApi('getAllData').then(function (data) {
     STATE = data;
     localStorage.setItem('cachedState', JSON.stringify(data)); // ✅ ອັບເດດ cache ໃໝ່
     applyTheme();
@@ -536,7 +524,6 @@ window.onload = function () {
           renderAll(); // ✅ ອັບເດດໜ້າຈໍດ້ວຍຂໍ້ມູນຫຼ້າສຸດ (ຖ້າກ່ອນໜ້ານີ້ໃຊ້ cache)
           return;
         } else {
-          CURRENT_USER = null;
           localStorage.removeItem('savedSession');
           localStorage.removeItem('cachedState');
         }
@@ -556,7 +543,7 @@ window.onload = function () {
 
 
 function renderUserChips() {
-  // ສະແດງກຣິດຜູ້ໃຊ້ (ຮູບໂປຣໄຟລ໌ / emoji) ຢູ່ໜ້າ login ໃຫ້ເລືອກກ່ອນໃສ່ PIN
+  // 🆕 ສະແດງກຣິດຜູ້ໃຊ້ (ຮູບໂປຣໄຟລ໌ / emoji) ຢູ່ໜ້າ login ໃຫ້ເລືອກກ່ອນໃສ່ PIN
   const grid = document.getElementById('login-users-grid');
   if (!grid) return;
   grid.innerHTML = (STATE.users || []).map(function (u) {
@@ -585,7 +572,7 @@ function applyTheme() {
   document.getElementById('login-app-name').innerText = s.appName || 'ບັນທຶກລາຍຈ່າຍດ້ວຍໃບເສັດ';
 }
 
-// ແຕ່ງໜ້າແອັບສ່ວນຕົວຂອງຜູ້ໃຊ້ທີ່ Login ຢູ່ (ສີສັນ + ພື້ນຫລັງ wallpaper)
+// 🆕 ແຕ່ງໜ້າແອັບສ່ວນຕົວຂອງຜູ້ໃຊ້ທີ່ Login ຢູ່ (ສີສັນ + ພື້ນຫລັງ wallpaper)
 // override ຢູ່ຝັ່ງ browser ຂອງຕົນເອງເທົ່ານັ້ນ, ບໍ່ກະທົບ theme ກາງຂອງ admin
 function applyPersonalTheme() {
   if (!CURRENT_USER) return;
@@ -614,46 +601,39 @@ function doLogin() {
   if (!pin) { showToast('ກະລຸນາປ້ອນລະຫັດຜ່ານ'); return; }
   showLoading(true);
   callApi('login', { pin: pin }).then(function (res) {
-    if (!res.success) { showLoading(false); showToast(res.message); return; }
+    showLoading(false);
+    if (!res.success) { showToast(res.message); return; }
     CURRENT_USER = res.user;
-    // 🆕 ຫຼັງ login ສຳເລັດ ຕ້ອງດຶງຂໍ້ມູນສ່ວນຕົວຂອງຄົນນີ້ໂດຍສະເພາະ (ຄົນອື່ນຈະບໍ່ຖືກສົ່ງມາເລີຍ)
-    return fetchAllData().then(function (data) {
-      STATE = data;
-      localStorage.setItem('savedSession', JSON.stringify(CURRENT_USER)); // ✅ ຈື່ໄວ້ອັດຕະໂນມັດທຸກຄັ້ງ
-      localStorage.setItem('cachedState', JSON.stringify(STATE)); // ✅ ຈື່ຂໍ້ມູນຂອງຄົນນີ້ໄວ້ນຳ ເພື່ອໃຫ້ຄັ້ງໜ້າໂຫຼດໄວ
-      showLoading(false);
-      enterApp();
-    });
+    localStorage.setItem('savedSession', JSON.stringify(res.user)); // ✅ ຈື່ໄວ້ອັດຕະໂນມັດທຸກຄັ້ງ
+    localStorage.setItem('cachedState', JSON.stringify(STATE)); // ✅ ຈື່ຂໍ້ມູນໄວ້ນຳ ເພື່ອໃຫ້ຄັ້ງໜ້າໂຫຼດໄວ
+    enterApp();
   }).catch(function () { showLoading(false); });
 }
 function enterApp() {
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('main-app').classList.remove('hidden');
   document.getElementById('bottom-nav').classList.remove('hidden');
-  applyPersonalTheme(); // ນຳໃຊ້ສີ/ພື້ນຫລັງສ່ວນຕົວທັນທີທີ່ເຂົ້າແອັບ
-  // ເຊື່ອງເມນູ Admin ຖ້າບໍ່ແມ່ນ admin/manager
+  applyPersonalTheme(); // 🆕 ນຳໃຊ້ສີ/ພື້ນຫລັງສ່ວນຕົວທັນທີທີ່ເຂົ້າແອັບ
+  // 🆕 ເຊື່ອງເມນູ Admin ຖ້າບໍ່ແມ່ນ admin/manager
   const adminLink = document.getElementById('menu-admin-link');
   if (adminLink) {
     const canSeeAdmin = CURRENT_USER && (CURRENT_USER.role === 'admin' || CURRENT_USER.role === 'manager');
     adminLink.classList.toggle('hidden', !canSeeAdmin);
   }
-  renderAll();   // ✅ ໃຊ້ຂໍ້ມູນທີ່ໂຫຼດໄວ້ແລ້ວ (ສະເພາະຂອງ CURRENT_USER) ບໍ່ຕ້ອງດຶງຊ້ຳ
+  renderAll();   // ✅ ປ່ຽນຈາກ reloadData() ເປັນອັນນີ້ - ໃຊ້ຂໍ້ມູນທີ່ໂຫຼດໄວ້ແລ້ວ ບໍ່ຕ້ອງດຶງຊ້ຳ ບໍ່ມີ loading ອີກຄັ້ງ
 }
 function logout() {
-  CURRENT_USER = null;
   localStorage.removeItem('savedSession');
   localStorage.removeItem('cachedState');
   location.reload();
 }
 
 // ---------------- RELOAD HELPER ----------------
-// 🆕 reloadData() ດຶງຂໍ້ມູນຫຼ້າສຸດຂອງ CURRENT_USER ຄືນມາສະເໝີ ແລ້ວອັບເດດ cache
 function reloadData(cb) {
   showLoading(true);
-  fetchAllData().then(function (data) {
+  callApi('getAllData').then(function (data) {
     showLoading(false);
     STATE = data;
-    localStorage.setItem('cachedState', JSON.stringify(STATE));
     if (cb) cb(); else renderAll();
   }).catch(function () { showLoading(false); });
 }
@@ -683,7 +663,7 @@ function renderAll() {
 function fmt(n) { return Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 
-// ແປງວັນທີໃຫ້ເປັນ ISO ສະເໝີກ່ອນປຽບທຽບ (ປອດໄພຕໍ່ຮູບແບບ string/Date object ຈາກ Sheets)
+// 🆕 ແປງວັນທີໃຫ້ເປັນ ISO ສະເໝີກ່ອນປຽບທຽບ (ປອດໄພຕໍ່ຮູບແບບ string/Date object ຈາກ Sheets)
 function toISODate_(d) {
   const dt = new Date(d);
   return isNaN(dt) ? String(d) : dt.toISOString();
@@ -859,9 +839,9 @@ function editFromSlipView() {
 function removeTx(id) {
   if (!confirm('ແນ່ໃຈບໍ່ວ່າຈະລົບລາຍການນີ້?')) return;
   showLoading(true);
-  callApi('deleteTransaction', { id: id, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); renderAll(); })
+  callApi('deleteTransaction', { id: id })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; renderAll(); })
     .catch(function () { showLoading(false); });
 }
 
@@ -882,12 +862,11 @@ function renderWalletsPage() {
 function removeWallet(id) {
   if (!confirm('ລົບກະເປົາເງິນນີ້?')) return;
   showLoading(true);
-  callApi('deleteWallet', { id: id, userId: CURRENT_USER.id })
+  callApi('deleteWallet', { id: id })
     .then(function () {
       showLoading(false);
       // ✅ ອັບເດດທັນທີຈາກຄ່າໃນໜ່ວຍຄວາມຈຳ ບໍ່ຕ້ອງລໍ getAllData ອີກຮອບ (ໄວຂຶ້ນ)
       STATE.wallets = STATE.wallets.filter(w => w.id !== id);
-      localStorage.setItem('cachedState', JSON.stringify(STATE));
       renderAll();
     })
     .catch(function () { showLoading(false); });
@@ -909,7 +888,7 @@ function populateWalletSelects() {
   if (document.getElementById('tr-preview')) updateTransferPreview();
 }
 
-// ອັດຕາແລກປ່ຽນຝັ່ງໜ້າບ້ານ (fallback ຄືກັນກັບ backend)
+// 🆕 ອັດຕາແລກປ່ຽນຝັ່ງໜ້າບ້ານ (fallback ຄືກັນກັບ backend)
 function getExchangeRates() {
   return {
     LAK: 1,
@@ -918,7 +897,7 @@ function getExchangeRates() {
   };
 }
 
-// ສະແດງຕົວຢ່າງຈຳນວນເງິນທີ່ຈະໄດ້ຮັບ ຫຼັງແປງສະກຸນ
+// 🆕 ສະແດງຕົວຢ່າງຈຳນວນເງິນທີ່ຈະໄດ້ຮັບ ຫຼັງແປງສະກຸນ
 function updateTransferPreview() {
   const preview = document.getElementById('tr-preview');
   if (!preview) return;
@@ -1067,11 +1046,11 @@ function saveManualTx() {
       createdBy: CURRENT_USER.id
     };
     const call = editingTxId
-      ? callApi('updateTransaction', { obj: Object.assign({}, tx, { id: editingTxId }), userId: CURRENT_USER.id })
+      ? callApi('updateTransaction', { obj: Object.assign({}, tx, { id: editingTxId }) })
       : callApi('addTransaction', { obj: tx });
-    call.then(function () { return fetchAllData(); })
+    call.then(function () { return callApi('getAllData'); })
       .then(function (data) {
-        showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); renderAll(); closeModal('modal-add-tx');
+        showLoading(false); STATE = data; renderAll(); closeModal('modal-add-tx');
         editingTxId = null;
       })
       .catch(function () { showLoading(false); });
@@ -1170,9 +1149,9 @@ function saveScannedItems() {
       document.getElementById('scan-results').innerHTML = '';
       document.getElementById('scan-status').innerText = 'ເລືອກ ຫຼື ຖ່າຍຮູບໃບເສັດ (ຮອງຮັບຫຼາຍໃບພ້ອມກັນ)';
       document.getElementById('btn-save-scan').classList.add('hidden');
-      return fetchAllData();
+      return callApi('getAllData');
     })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); renderAll(); closeModal('modal-add-tx'); })
+    .then(function (data) { showLoading(false); STATE = data; renderAll(); closeModal('modal-add-tx'); })
     .catch(function () { showLoading(false); });
 }
 
@@ -1210,13 +1189,12 @@ function saveWalletUI() {
   const existing = editId ? walletById(editId) : null;
   const obj = { name, icon, color: (existing && existing.color) || '#F5C842', balance, type: (existing && existing.type) || 'custom', currency };
   if (editId) obj.id = editId;
-  callApi('saveWallet', { obj: obj, userId: CURRENT_USER.id })
+  callApi('saveWallet', { obj: obj })
     .then(function (savedObj) {
       showLoading(false);
       // ✅ ອັບເດດທັນທີດ້ວຍຄ່າຈາກ server ບໍ່ຕ້ອງລໍ getAllData ອີກຮອບ (ໄວຂຶ້ນ)
       const idx = STATE.wallets.findIndex(w => w.id === savedObj.id);
       if (idx > -1) STATE.wallets[idx] = savedObj; else STATE.wallets.push(savedObj);
-      localStorage.setItem('cachedState', JSON.stringify(STATE));
       renderAll();
       closeModal('modal-wallet');
     })
@@ -1229,10 +1207,10 @@ function doTransfer() {
   const amount = parseFloat(document.getElementById('tr-amount').value);
   if (!from || !to || !amount || from === to) { showToast('ກະລຸນາເລືອກກະເປົາ ແລະ ຈຳນວນເງິນໃຫ້ຖືກຕ້ອງ'); return; }
   showLoading(true);
-  callApi('transferBetweenWallets', { fromId: from, toId: to, amount: amount, note: '', userId: CURRENT_USER.id })
+  callApi('transferBetweenWallets', { fromId: from, toId: to, amount: amount, note: '' })
     .then(function (res) {
-      return fetchAllData().then(function (data) {
-        showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); renderAll();
+      return callApi('getAllData').then(function (data) {
+        showLoading(false); STATE = data; renderAll();
         document.getElementById('tr-amount').value = '';
         document.getElementById('tr-preview').innerHTML = '';
         if (res && res.convertedAmount !== undefined) {
@@ -1399,7 +1377,7 @@ function drawTagBubbles(){
   const maxAmt = entries[0].amount;
   const minSize = 58, maxSize = 130;
   wrap.innerHTML = entries.map(e=>{
-    // ໃຊ້ sqrt ເພື່ອໃຫ້ "ພື້ນທີ່" ຂອງວົງມົນ ສະທ້ອນສັດສ່ວນຈຳນວນເງິນແທ້ໆ (ບໍ່ແມ່ນແຄ່ເສັ້ນຜ່າສູນກາງ)
+    // 🆕 ໃຊ້ sqrt ເພື່ອໃຫ້ "ພື້ນທີ່" ຂອງວົງມົນ ສະທ້ອນສັດສ່ວນຈຳນວນເງິນແທ້ໆ (ບໍ່ແມ່ນແຄ່ເສັ້ນຜ່າສູນກາງ)
     const ratio = maxAmt ? Math.sqrt(e.amount / maxAmt) : 0;
     const size = Math.round(minSize + ratio * (maxSize - minSize));
     const fIcon = Math.max(14, Math.round(size*0.28));
@@ -1432,7 +1410,7 @@ function drawTimeChart(){
   const labels=[], expData=[], incData=[];
   for (let i=5;i>=0;i--){
     const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
-    const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); // ✅ ແກ້ໄຂແລ້ວ
     labels.push(LAO_MONTHS_SHORT[d.getMonth()]);
     const list = STATE.transactions.filter(t=>ymKey(t.date)===ym);
     expData.push(list.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0));
@@ -1452,7 +1430,7 @@ function drawTimeChart(){
 function drawNetWorthChart(){
   const centerEl = document.getElementById('networth-center');
   const tableEl = document.getElementById('networth-table');
-  if (!centerEl || !tableEl) return;   // ກັນ error ຖ້າ element ຍັງບໍ່ທັນຖືກສ້າງ
+  if (!centerEl || !tableEl) return;   // 🆕 ກັນ error ຖ້າ element ຍັງບໍ່ທັນຖືກສ້າງ
   const total = STATE.wallets.reduce((s,w)=>s+Number(w.balance||0),0);
   const colors = ['#F28482','#F6BD60','#84A59D','#B39DDB','#8EB8E5','#7FC8A9','#D9A441'];
   const ctx = document.getElementById('networth-chart');
@@ -1579,7 +1557,7 @@ function drawInstallmentsReport(){
 function renderBudgetSection() {
   return `<div class="modal-title">💰 ງົບປະມານ</div>
     <div class="card">
-      <div style="font-size:13px;color:var(--text-light);">ງົບປະຈຳວັນ (ລວມທຸກກະເປົາ, ຕັ້ງໂດຍ Admin ໃຊ້ຮ່ວມກັນທຸກຄົນ)</div>
+      <div style="font-size:13px;color:var(--text-light);">ງົບປະຈຳວັນ (ລວມທຸກກະເປົາ)</div>
       <input id="budget-daily" type="number" value="${STATE.settings.dailyBudget || 700}">
       <button class="btn-primary" onclick="saveDailyBudget()">ບັນທຶກງົບປະຈຳວັນ</button>
     </div>`;
@@ -1588,8 +1566,8 @@ function saveDailyBudget() {
   const val = parseFloat(document.getElementById('budget-daily').value);
   showLoading(true);
   callApi('saveSettings', { settingsObj: { dailyBudget: val }, requesterRole: CURRENT_USER.role })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); renderAll(); closeModal('modal-generic'); })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; renderAll(); closeModal('modal-generic'); })
     .catch(function () { showLoading(false); });
 }
 
@@ -1614,9 +1592,9 @@ function addGoalUI() {
   const target = parseFloat(document.getElementById('goal-target').value);
   if (!name || !target) return;
   showLoading(true);
-  callApi('saveGoal', { obj: { name, targetAmount: target, currentAmount: 0, icon: '🚩' }, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('goals'); })
+  callApi('saveGoal', { obj: { name, targetAmount: target, currentAmount: 0, icon: '🚩' } })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; openMenu('goals'); })
     .catch(function () { showLoading(false); });
 }
 
@@ -1653,16 +1631,16 @@ function addLoanUI() {
   const loanType = document.getElementById('loan-type').value;
   if (!name || !principal) return;
   showLoading(true);
-  callApi('saveInstallment', { obj: { name, loanType, principal, interestRate: rate, totalInstallments: total, paidInstallments: 0, startDate: todayStr(), status: 'ກຳລັງຜ່ອນຊຳລະ' }, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('installments'); })
+  callApi('saveInstallment', { obj: { name, loanType, principal, interestRate: rate, totalInstallments: total, paidInstallments: 0, startDate: todayStr(), status: 'ກຳລັງຜ່ອນຊຳລະ' } })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; openMenu('installments'); })
     .catch(function () { showLoading(false); });
 }
 function payInstallmentUI(id) {
   showLoading(true);
-  callApi('payInstallment', { id: id, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('installments'); })
+  callApi('payInstallment', { id: id })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; openMenu('installments'); })
     .catch(function () { showLoading(false); });
 }
 
@@ -1682,19 +1660,19 @@ function addTagUI() {
   const name = document.getElementById('tag-name').value.trim();
   if (!name) return;
   showLoading(true);
-  callApi('saveTag', { obj: { name, icon: '🏷️', startDate: todayStr(), endDate: '' }, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('tags'); })
+  callApi('saveTag', { obj: { name, icon: '🏷️', startDate: todayStr(), endDate: '' } })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; openMenu('tags'); })
     .catch(function () { showLoading(false); });
 }
 
-// ---------------- CATEGORIES (ໜ້າໃຫ້ຜູ້ໃຊ້ຈັດການໝວດໝູ່ຂອງຕົນເອງ) ----------------
+// ---------------- 🆕 CATEGORIES (ໜ້າໃຫ້ຜູ້ໃຊ້ຈັດການໝວດໝູ່ຂອງຕົນເອງ) ----------------
 function renderCategoriesSection() {
   const rows = STATE.categories.map(c => `
     <div class="link-row"><span>${c.icon} ${c.name}</span>
       <button class="del-x" onclick="removeCategoryUI('${c.id}')" title="ລົບໝວດໝູ່">🗑️</button>
     </div>`).join('') || '<div class="empty-hint">ຍັງບໍ່ມີໝວດໝູ່</div>';
-  return `<div class="modal-title">🍰 ໝວດໝູ່ລາຍຈ່າຍ/ລາຍຮັບ (ຂອງຂ້ອຍ)</div>
+  return `<div class="modal-title">🍰 ໝວດໝູ່ລາຍຈ່າຍ/ລາຍຮັບ</div>
     <div class="card">${rows}</div>
     <div class="card">
       <div style="font-size:13px;color:var(--text-light);margin-bottom:6px;">ເພີ່ມໝວດໝູ່ໃໝ່</div>
@@ -1722,21 +1700,21 @@ function addCategoryUI() {
   const color = document.getElementById('cat-color-selected').value || '#F5C842';
   if (!name) { showToast('ປ້ອນຊື່ໝວດໝູ່'); return; }
   showLoading(true);
-  callApi('saveCategory', { obj: { name, icon, color, isDefault: false }, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('categories'); renderAll(); })
+  callApi('saveCategory', { obj: { name, icon, color, isDefault: false } })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; openMenu('categories'); renderAll(); })
     .catch(function () { showLoading(false); });
 }
 function removeCategoryUI(id) {
   if (!confirm('ລົບໝວດໝູ່ນີ້?')) return;
   showLoading(true);
-  callApi('deleteCategory', { id: id, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('categories'); renderAll(); })
+  callApi('deleteCategory', { id: id })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; openMenu('categories'); renderAll(); })
     .catch(function () { showLoading(false); });
 }
 
-// ---------------- EMOJI PICKER (ໃຊ້ຮ່ວມກັນທົ່ວແອັບ) ----------------
+// ---------------- 🆕 EMOJI PICKER (ໃຊ້ຮ່ວມກັນທົ່ວແອັບ) ----------------
 const EMOJI_PRESETS = [
   '😀','😺','🐶','🐱','🐰','🐼','🦊','🐻','🐨','🦁','🐯','🐸','🐷','🐮','🐔','🦄',
   '🐢','🐬','🍜','🍕','🍔','🍰','🍩','🍦','☕','🧋','🍺','🍎','🥗','🍣','💰','💵',
@@ -1761,7 +1739,7 @@ function pickEmojiForTarget(emoji) {
   closeModal('modal-emoji-picker');
 }
 
-// ---------------- PROFILE (ໂປຣໄຟລ໌ຂອງຜູ້ໃຊ້ທີ່ Login ຢູ່) ----------------
+// ---------------- 🆕 PROFILE (ໂປຣໄຟລ໌ຂອງຜູ້ໃຊ້ທີ່ Login ຢູ່) ----------------
 function renderProfileSection() {
   const u = CURRENT_USER;
   const avatarHtml = u.avatarUrl
@@ -1871,7 +1849,7 @@ function pickAvatarEmoji(emoji) {
     .catch(function () { showLoading(false); });
 }
 
-// ---------------- MY THEME (ແຕ່ງໜ້າແອັບສ່ວນຕົວ: wallpaper + ສີ) ----------------
+// ---------------- 🆕 MY THEME (ແຕ່ງໜ້າແອັບສ່ວນຕົວ: wallpaper + ສີ) ----------------
 const PERSONAL_COLOR_PRESETS = ['#F5C842','#7FC8A9','#8EB8E5','#F28482','#B39DDB','#F6BD60','#3AAFA9','#E76F51'];
 function renderMyThemeSection() {
   const u = CURRENT_USER;
@@ -1960,8 +1938,8 @@ function renderAdminSection() {
   }
   let html = `<div class="modal-title">⚙️ ຕັ້ງຄ່າລະບົບ (${CURRENT_USER.role})</div>`;
   html += `<div class="card"><b>ພາບລວມທັງລະບົບ</b><div style="font-size:12px;color:var(--text-light);margin-top:6px;">
-    ຜູ້ໃຊ້ທັງໝົດ: ${STATE.users.length}
-  </div><div style="font-size:11px;color:var(--text-light);margin-top:4px;">ໝາຍເຫດ: ຂໍ້ມູນທຸລະກຳ/ກະເປົາເງິນ/ຍອດເງິນ ຂອງແຕ່ລະຄົນເປັນສ່ວນຕົວ, admin ຈະບໍ່ເຫັນຂໍ້ມູນການເງິນຂອງຄົນອື່ນ</div></div>`;
+    ຜູ້ໃຊ້ທັງໝົດ: ${STATE.users.length} · ກະເປົາເງິນ: ${STATE.wallets.length} · ທຸລະກຳ: ${STATE.transactions.length}
+  </div></div>`;
   const recentLogins = [...(STATE.loginLogs || [])]
     .sort(function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp); })
     .slice(0, 15);
@@ -1973,13 +1951,13 @@ function renderAdminSection() {
   if (isAdmin) {
     html += `<div class="card">
       <b>💱 ອັດຕາແລກປ່ຽນເງິນ (1 ໜ່ວຍ = ? ກີບ)</b>
-      <div style="font-size:12px;color:var(--text-light);margin:6px 0;">ໃຊ້ຄິດໄລ່ຕອນໂອນເງິນຂ້າມສະກຸນ (ຄ່າລວມ, ໃຊ້ຮ່ວມກັນທຸກຄົນ)</div>
+      <div style="font-size:12px;color:var(--text-light);margin:6px 0;">ໃຊ້ຄິດໄລ່ຕອນໂອນເງິນຂ້າມສະກຸນ</div>
       <input id="admin-rate-thb" type="number" value="${STATE.settings.rateTHB || 650}" placeholder="1 ฿ ບາດ = ? ກີບ">
       <input id="admin-rate-usd" type="number" value="${STATE.settings.rateUSD || 21000}" placeholder="1 $ ໂດລາ = ? ກີບ">
       <button class="btn-primary" onclick="saveExchangeRates()">ບັນທຶກອັດຕາແລກປ່ຽນ</button>
     </div>
     <div class="card">
-      <b>🎨 ໂຕນສີ / ໂລໂກ້ / ຊື່ແອັບ (ຄ່າເລີ່ມຕົ້ນລວມ)</b>
+      <b>🎨 ໂຕນສີ / ໂລໂກ້ / ຊື່ແອັບ</b
       <input id="admin-appname" value="${STATE.settings.appName || ''}" placeholder="ຊື່ແອັບ">
       <input id="admin-primary" type="color" value="${STATE.settings.primaryColor || '#F5C842'}" style="height:44px;">
       <input id="admin-bg" type="color" value="${STATE.settings.bgColor || '#FFF8E7'}" style="height:44px;">
@@ -1988,7 +1966,6 @@ function renderAdminSection() {
     </div>
     <div class="card">
       <b>👤 ຈັດການຜູ້ໃຊ້</b>
-      <div style="font-size:11px;color:var(--text-light);margin:2px 0 10px;">ສ້າງບັນຊີໃຫ້ສະມາຊິກໃໝ່ (ຊື່ + PIN) — ຫຼັງຈາກນັ້ນຜູ້ໃຊ້ຈະສາມາດ login ແລ້ວປ່ຽນຊື່/PIN ເອງໄດ້ໃນໜ້າ "ໂປຣໄຟລ໌ຂອງຂ້ອຍ". ຂໍ້ມູນທຸລະກຳ ແລະ ກະເປົາເງິນ ຂອງແຕ່ລະຄົນຈະແຍກກັນ ບໍ່ໃຊ້ຮ່ວມກັນ</div>
       ${STATE.users.map(u => `<div class="link-row"><span>${u.avatar || '🐱'} ${u.name} <span class="role-tag">${u.role}</span></span>
         <button class="del-x" onclick="removeUserUI('${u.id}')">✕</button></div>`).join('')}
       <input id="new-user-name" placeholder="ຊື່ຜູ້ໃຊ້ໃໝ່">
@@ -2008,8 +1985,8 @@ function saveAdminTheme() {
   };
   showLoading(true);
   callApi('saveSettings', { settingsObj: s, requesterRole: CURRENT_USER.role })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); applyTheme(); closeModal('modal-generic'); })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; applyTheme(); closeModal('modal-generic'); })
     .catch(function () { showLoading(false); });
 }
 
@@ -2018,8 +1995,8 @@ function saveExchangeRates() {
   const rateUSD = parseFloat(document.getElementById('admin-rate-usd').value) || 1;
   showLoading(true);
   callApi('saveSettings', { settingsObj: { rateTHB, rateUSD }, requesterRole: CURRENT_USER.role })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); showToast('✅ ບັນທຶກອັດຕາແລກປ່ຽນແລ້ວ'); })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; showToast('✅ ບັນທຶກອັດຕາແລກປ່ຽນແລ້ວ'); })
     .catch(function () { showLoading(false); });
 }
 
@@ -2030,16 +2007,16 @@ function addUserUI() {
   if (!name || !pin) return;
   showLoading(true);
   callApi('saveUser', { obj: { name, pin, role, avatar: '🐱' }, requesterRole: CURRENT_USER.role })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('admin'); })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; openMenu('admin'); })
     .catch(function () { showLoading(false); });
 }
 function removeUserUI(id) {
-  if (!confirm('ລົບຜູ້ໃຊ້ນີ້? (ຂໍ້ມູນທຸລະກຳ/ກະເປົາເງິນທີ່ເຄີຍບັນທຶກໄວ້ຂອງຄົນນີ້ຈະຍັງຄ້າງຢູ່ໃນ Sheet ແຕ່ຈະບໍ່ມີໃຜເຂົ້າເຖິງໄດ້ອີກ)')) return;
+  if (!confirm('ລົບຜູ້ໃຊ້ນີ້?')) return;
   showLoading(true);
   callApi('deleteUser', { id: id, requesterRole: CURRENT_USER.role })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('admin'); })
+    .then(function () { return callApi('getAllData'); })
+    .then(function (data) { showLoading(false); STATE = data; openMenu('admin'); })
     .catch(function () { showLoading(false); });
 }
 </script>
