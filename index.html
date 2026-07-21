@@ -448,6 +448,27 @@ button{cursor:pointer;font-family:inherit;}
     </div>
   </div>
 
+  <!-- ===================== MODAL: INSTALLMENT SLIP VIEW ===================== -->
+  <div class="modal-overlay" id="modal-installment-slip-view">
+    <div class="modal-sheet">
+      <button class="modal-close" onclick="closeModal('modal-installment-slip-view')">✕</button>
+      <div class="modal-title">🧾 ລາຍລະອຽດ Slip ຄ່າງວດ</div>
+      <div class="slip-image-wrap"><img id="ip-slip-view-img" src="" alt="slip"></div>
+      <div class="slip-detail-card">
+        <div class="slip-detail-row"><span>ປະເພດ</span><span id="ip-slip-view-type" class="slip-type-badge"></span></div>
+        <div class="slip-detail-row"><span>ວັນທີ</span><span id="ip-slip-view-date"></span></div>
+        <div class="slip-detail-row"><span>ລາຍການຜ່ອນຊຳລະ</span><span id="ip-slip-view-loan"></span></div>
+        <div class="slip-detail-row"><span>ງວດທີ</span><span id="ip-slip-view-period"></span></div>
+        <div class="slip-detail-row"><span>ໝາຍເຫດ</span><span id="ip-slip-view-note"></span></div>
+        <div class="slip-detail-row"><span>ຈຳນວນ</span><span id="ip-slip-view-amount"></span></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:12px;">
+        <a id="ip-slip-view-openfull" href="#" target="_blank" class="btn-outline" style="display:block;text-align:center;text-decoration:none;">🔗 ເປີດຮູບເຕັມ</a>
+        <button class="btn-primary" style="width:auto;padding:12px 18px;" onclick="editInstallmentPaymentFromSlipView()">✏️ ແກ້ໄຂ</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===================== MODAL: EMOJI PICKER ===================== -->
   <div class="modal-overlay" id="modal-emoji-picker">
     <div class="modal-sheet">
@@ -1670,7 +1691,7 @@ function drawInstallmentsReport(){
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
           <div class="goal-contrib-amt">${fmt(p.amount)} ${CURRENCY_SYMBOLS[p.currency||'LAK']||''}</div>
-          ${p.receiptUrl ? `<a href="${p.receiptUrl}" target="_blank" class="slip-thumb" title="ເບິ່ງບິນ"><img src="${p.receiptUrl}" alt="slip"></a>` : ''}
+          ${p.receiptUrl ? `<button class="slip-thumb" onclick="openInstallmentSlipView('${p.id}','${l.id}')" title="ເບິ່ງບິນ"><img src="${p.receiptUrl}" alt="slip"></button>` : ''}
           <button class="del-x" onclick="removeInstallmentPaymentUI('${p.id}','${l.id}')" title="ລົບ">🗑️</button>
         </div>
       </div>`).join('') : '<div class="empty-hint">ຍັງບໍ່ມີການຈ່າຍ, ເພີ່ມງວດທຳອິດເບິ່ງ 👆</div>';
@@ -1844,7 +1865,7 @@ function renderInstallmentDetailSection(loanId) {
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
         <div class="goal-contrib-amt">${fmt(p.amount)} ${CURRENCY_SYMBOLS[p.currency||'LAK']||''}</div>
-        ${p.receiptUrl ? `<a href="${p.receiptUrl}" target="_blank" class="slip-thumb" title="ເບິ່ງບິນ"><img src="${p.receiptUrl}" alt="slip"></a>` : ''}
+        ${p.receiptUrl ? `<button class="slip-thumb" onclick="openInstallmentSlipView('${p.id}','${loanId}')" title="ເບິ່ງບິນ"><img src="${p.receiptUrl}" alt="slip"></button>` : ''}
         <button class="del-x" onclick="removeInstallmentPaymentUI('${p.id}','${loanId}')" title="ລົບ">🗑️</button>
       </div>
     </div>`).join('') : '<div class="empty-hint">ຍັງບໍ່ມີການຈ່າຍ, ເພີ່ມງວດທຳອິດເບິ່ງ 👆</div>';
@@ -1871,6 +1892,7 @@ function renderInstallmentDetailSection(loanId) {
         </select>
       </div>
       <input id="ip-note" placeholder="ໝາຍເຫດ (ບໍ່ບັງຄັບ)">
+      <input id="ip-edit-id" type="hidden">
       <div class="slip-upload-row" id="ip-slip-zone">
         <span class="slip-upload-icon">☁️</span>
         <label class="slip-upload-label" for="ip-slip-file">ອັບໂຫລດຮູບ Slip (ບໍ່ບັງຄັບ)</label>
@@ -1883,6 +1905,56 @@ function renderInstallmentDetailSection(loanId) {
 }
 
 function fmtRaw_(n){ return Math.round(Number(n)||0); }
+
+// 🆕 ---------------- SLIP VIEW POPUP (ຄ່າງວດຜ່ອນຊຳລະ) ----------------
+let slipViewInstallmentPaymentId = null, slipViewInstallmentLoanId = null;
+function openInstallmentSlipView(paymentId, loanId) {
+  const p = (STATE.installmentPayments || []).find(x => x.id === paymentId);
+  const l = STATE.installments.find(x => x.id === loanId);
+  if (!p || !l || !p.receiptUrl) return;
+  slipViewInstallmentPaymentId = paymentId;
+  slipViewInstallmentLoanId = loanId;
+  document.getElementById('ip-slip-view-img').src = p.receiptUrl;
+  const badge = document.getElementById('ip-slip-view-type');
+  badge.innerText = 'ຈ່າຍຄ່າງວດ';
+  badge.style.background = 'var(--red)';
+  document.getElementById('ip-slip-view-date').innerText = dayKey(p.paymentDate);
+  document.getElementById('ip-slip-view-loan').innerText = l.name;
+  document.getElementById('ip-slip-view-period').innerText = 'ງວດທີ ' + p.periodNumber;
+  document.getElementById('ip-slip-view-note').innerText = p.note || '-';
+  const amtEl = document.getElementById('ip-slip-view-amount');
+  amtEl.innerText = '-' + fmt(p.amount) + ' ' + (CURRENCY_SYMBOLS[p.currency || 'LAK'] || '');
+  amtEl.style.color = 'var(--red)';
+  amtEl.style.fontWeight = '800';
+  document.getElementById('ip-slip-view-openfull').href = p.receiptUrl;
+  document.getElementById('modal-installment-slip-view').classList.add('show');
+}
+
+// 🆕 ກົດ "ແກ້ໄຂ" ຈາກ popup slip -> ເປີດ modal ລາຍລະອຽດຄ່າງວດ ແລ້ວຕື່ມຂໍ້ມູນເກົ່າໃສ່ຟອມ
+function editInstallmentPaymentFromSlipView() {
+  const paymentId = slipViewInstallmentPaymentId;
+  const loanId = slipViewInstallmentLoanId;
+  closeModal('modal-installment-slip-view');
+  if (!loanId) return;
+  openInstallmentDetail(loanId);
+  if (paymentId) setTimeout(function () { prefillInstallmentPaymentEdit(paymentId); }, 60);
+}
+
+// 🆕 ຕື່ມຂໍ້ມູນເກົ່າໃສ່ຟອມ "ບັນທຶກການຈ່າຍງວດ" ເພື່ອແກ້ໄຂ
+function prefillInstallmentPaymentEdit(paymentId) {
+  const p = (STATE.installmentPayments || []).find(x => x.id === paymentId);
+  if (!p) return;
+  document.getElementById('ip-edit-id').value = p.id;
+  document.getElementById('ip-period').value = p.periodNumber;
+  document.getElementById('ip-date').value = dayKey(p.paymentDate);
+  document.getElementById('ip-amount').value = p.amount;
+  document.getElementById('ip-currency').value = p.currency || 'LAK';
+  document.getElementById('ip-note').value = p.note || '';
+  ipPendingSlipBase64 = null; ipPendingSlipMime = null;
+  document.getElementById('ip-slip-preview').innerHTML = p.receiptUrl ? `<img src="${p.receiptUrl}" style="max-width:100%;border-radius:12px;margin-top:10px;max-height:180px;object-fit:contain;">` : '';
+  const btn = document.querySelector('#generic-content .btn-primary[onclick^="addInstallmentPaymentUI"]');
+  if (btn) btn.innerText = '✏️ ອັບເດດງວດນີ້';
+}
 
 let ipPendingSlipBase64 = null, ipPendingSlipMime = null;
 function handleInstallmentSlipFile(evt) {
@@ -1899,27 +1971,34 @@ function handleInstallmentSlipFile(evt) {
 
 // ✅ ບັນທຶກທັນທີ (optimistic update) - ບໍ່ຕ້ອງລໍ fetchAllData() ຄ້າງໜ້າຈໍ
 function addInstallmentPaymentUI(loanId) {
+  const editId = document.getElementById('ip-edit-id').value;
   const periodNumber = document.getElementById('ip-period').value;
   const paymentDate = document.getElementById('ip-date').value || todayStr();
   const amount = parseFloat(document.getElementById('ip-amount').value);
-  const currency = document.getElementById('ip-currency').value; // 🆕
+  const currency = document.getElementById('ip-currency').value;
   const note = document.getElementById('ip-note').value.trim();
   if (!amount) { showToast('ກະລຸນາປ້ອນຈຳນວນເງິນ'); return; }
 
+  // 🆕 ຖ້າແກ້ໄຂລາຍການເກົ່າ ແລະ ບໍ່ໄດ້ອັບໂຫລດ slip ໃໝ່ -> ໃຫ້ຮັກສາ slip ເກົ່າໄວ້
+  const existing = editId ? (STATE.installmentPayments || []).find(x => x.id === editId) : null;
+  const existingReceiptUrl = existing ? (existing.receiptUrl || '') : '';
+
   const finish = function (receiptUrl) {
     showLoading(true);
-    callApi('addInstallmentPayment', { obj: { installmentId: loanId, periodNumber, paymentDate, amount, currency, note, receiptUrl: receiptUrl || '' }, userId: CURRENT_USER.id })
+    const obj = { installmentId: loanId, periodNumber, paymentDate, amount, currency, note, receiptUrl: receiptUrl || existingReceiptUrl };
+    if (editId) obj.id = editId;
+    callApi('addInstallmentPayment', { obj: obj, userId: CURRENT_USER.id })
       .then(function (res) {
         showLoading(false);
-        // ✅ ອັບເດດ STATE ທັນທີຈາກຄ່າທີ່ server ສົ່ງກັບມາ ບໍ່ຕ້ອງ fetchAllData ຊ້ຳ
-        STATE.installmentPayments.push(res.payment);
+        const idx2 = STATE.installmentPayments.findIndex(x => x.id === res.payment.id);
+        if (idx2 > -1) STATE.installmentPayments[idx2] = res.payment; else STATE.installmentPayments.push(res.payment);
         const idx = STATE.installments.findIndex(x => x.id === loanId);
         if (idx > -1) STATE.installments[idx] = res.installment;
         localStorage.setItem('cachedState', JSON.stringify(STATE));
         ipPendingSlipBase64 = null; ipPendingSlipMime = null;
-        openInstallmentDetail(loanId); // ໂຫລດຄືນສະເພາະ modal ນີ້ (ໄວ, ບໍ່ໄປດຶງໝົດຈາກ server)
+        openInstallmentDetail(loanId);
         renderReportsPage();
-        showToast('✅ ບັນທຶກງວດແລ້ວ');
+        showToast(editId ? '✅ ອັບເດດງວດແລ້ວ' : '✅ ບັນທຶກງວດແລ້ວ');
       })
       .catch(function () { showLoading(false); });
   };
