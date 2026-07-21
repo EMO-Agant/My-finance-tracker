@@ -387,6 +387,7 @@ button{cursor:pointer;font-family:inherit;}
       <div class="seg">
         <button id="seg-manual" class="active" onclick="switchAddTab('manual')">✍️ ບັນທຶກເອງ</button>
         <button id="seg-scan" onclick="switchAddTab('scan')">📷 ສະແກນໃບເສັດ</button>
+        <button id="seg-attach" onclick="switchAddTab('attach')">📎 ຕິດ Slip</button>
       </div>
 
       <div id="tab-manual">
@@ -424,6 +425,23 @@ button{cursor:pointer;font-family:inherit;}
         <div id="scan-results"></div>
         <select id="scan-wallet" style="margin-top:8px;"></select>
         <button class="btn-primary hidden" id="btn-save-scan" style="margin-top:10px;" onclick="saveScannedItems()">ບັນທຶກລາຍການທັງໝົດ</button>
+      </div>
+      <div id="tab-attach" class="hidden">
+        <div style="display:flex;gap:10px;">
+          <div class="slip-upload-row" style="flex:1;padding:18px 6px;">
+            <span class="slip-upload-icon">📷</span>
+            <label class="slip-upload-label" for="attach-camera-file">ຖ່າຍຮູບໃບເສັດ</label>
+            <input type="file" id="attach-camera-file" accept="image/*" capture="environment" onchange="handleAttachReceiptFile(event)">
+          </div>
+          <div class="slip-upload-row" style="flex:1;padding:18px 6px;">
+            <span class="slip-upload-icon">☁️</span>
+            <label class="slip-upload-label" for="attach-gallery-file">Upload ຮູບໃບເສັດ</label>
+            <input type="file" id="attach-gallery-file" accept="image/*" onchange="handleAttachReceiptFile(event)">
+          </div>
+        </div>
+        <div id="attach-receipt-preview"></div>
+        <select id="attach-tx-select" style="margin-top:10px;"></select>
+        <button class="btn-primary" style="margin-top:14px;" onclick="saveAttachReceipt()">ບັນທຶກຮູບໃບເສັດ</button>
       </div>
     </div>
   </div>
@@ -1134,8 +1152,11 @@ function resetManualForm() {
 function switchAddTab(tab) {
   document.getElementById('seg-manual').classList.toggle('active', tab === 'manual');
   document.getElementById('seg-scan').classList.toggle('active', tab === 'scan');
+  document.getElementById('seg-attach').classList.toggle('active', tab === 'attach');
   document.getElementById('tab-manual').classList.toggle('hidden', tab !== 'manual');
   document.getElementById('tab-scan').classList.toggle('hidden', tab !== 'scan');
+  document.getElementById('tab-attach').classList.toggle('hidden', tab !== 'attach');
+  if (tab === 'attach') populateAttachTxSelect();
 }
 function setTxType(type) {
   addTxType = type;
@@ -1337,6 +1358,54 @@ function saveScannedItems() {
   callApi('addTransactionsBulk', { list: txs })
     .then(function () { syncInBackground(); })
     .catch(function () { syncInBackground(); });
+}
+
+let attachReceiptBase64 = null, attachReceiptMime = null;
+
+function handleAttachReceiptFile(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    attachReceiptBase64 = e.target.result.split(',')[1];
+    attachReceiptMime = file.type;
+    document.getElementById('attach-receipt-preview').innerHTML =
+      `<img src="${e.target.result}" style="max-width:100%;border-radius:12px;margin-top:10px;max-height:200px;object-fit:contain;">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function populateAttachTxSelect() {
+  const sel = document.getElementById('attach-tx-select');
+  if (!sel) return;
+  const list = [...STATE.transactions].sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+  sel.innerHTML = list.map(function (t) {
+    const cat = catById(t.categoryId);
+    return `<option value="${t.id}">${dayKey(t.date)} · ${t.note || (cat ? cat.name : 'ລາຍການ')} · ${fmt(t.amount)}</option>`;
+  }).join('') || '<option value="">ຍັງບໍ່ມີລາຍການ</option>';
+}
+
+function saveAttachReceipt() {
+  const txId = document.getElementById('attach-tx-select').value;
+  if (!txId) { showToast('ກະລຸນາເລືອກລາຍການ'); return; }
+  if (!attachReceiptBase64) { showToast('ກະລຸນາຖ່າຍ ຫຼື ເລືອກຮູບໃບເສັດກ່ອນ'); return; }
+  showLoading(true);
+  callApi('uploadSlip', { base64Data: attachReceiptBase64, mimeType: attachReceiptMime, fileName: 'receipt_' + Date.now() + '.jpg' })
+    .then(function (res) {
+      return callApi('attachReceiptToTransaction', { id: txId, receiptPoto: res.url, userId: CURRENT_USER.id });
+    })
+    .then(function (updatedTx) {
+      showLoading(false);
+      const idx = STATE.transactions.findIndex(t => t.id === updatedTx.id);
+      if (idx > -1) STATE.transactions[idx] = updatedTx;
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      renderAll();
+      closeModal('modal-add-tx');
+      attachReceiptBase64 = null; attachReceiptMime = null;
+      document.getElementById('attach-receipt-preview').innerHTML = '';
+      showToast('✅ ຕິດຮູບໃບເສັດແລ້ວ');
+    })
+    .catch(function () { showLoading(false); });
 }
 
 // ---------------- WALLET MODAL ----------------
