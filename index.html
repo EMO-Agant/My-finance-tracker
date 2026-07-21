@@ -664,6 +664,8 @@ function showPage(name) {
   document.getElementById('page-' + name).classList.add('active');
   document.querySelectorAll('.fab-nav button[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === name));
   window.scrollTo(0, 0);
+  // 🆕 ທຸກຄັ້ງທີ່ເປີດໜ້າລາຍງານ ໃຫ້ render ໃໝ່ດ້ວຍ STATE ຫຼ້າສຸດສະເໝີ
+  if (name === 'reports') renderReportsPage();
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
