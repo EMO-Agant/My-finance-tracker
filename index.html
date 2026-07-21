@@ -147,6 +147,7 @@ button{cursor:pointer;font-family:inherit;}
 .color-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
 .color-swatch{width:32px;height:32px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px #eee;}
 .link-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid #F3EAD0;font-size:14px;}
+.link-row.menu-active{background:#FFF3CE;border-radius:14px;padding-left:12px;padding-right:12px;color:var(--primary-dark);font-weight:700;}
 .role-tag{font-size:11px;background:#F3EAD0;padding:2px 8px;border-radius:8px;}
 .report-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;scroll-behavior:smooth;}
 .report-tabs button{flex-shrink:0;background:#F3EAD0;border:none;border-radius:14px;padding:9px 16px;font-size:13px;color:var(--text);}
@@ -326,14 +327,14 @@ button{cursor:pointer;font-family:inherit;}
     <div class="page" id="page-menu">
       <div class="section-title">🌸 ເມນູທັງໝົດ</div>
       <div class="card">
-        <div class="link-row" onclick="openMenu('profile')">👤 ໂປຣໄຟລ໌ຂອງຂ້ອຍ <span>›</span></div>
-        <div class="link-row" onclick="openMenu('mytheme')">🎨 ແຕ່ງໜ້າແອັບຂອງຂ້ອຍ <span>›</span></div>
-        <div class="link-row" onclick="openMenu('categories')">🍰 ໝວດໝູ່ຂອງຂ້ອຍ <span>›</span></div>
-        <div class="link-row" onclick="openMenu('budget')">💰 ງົບປະມານ <span>›</span></div>
-        <div class="link-row" onclick="openMenu('goals')">🚩 ເປົ້າໝາຍອອມເງິນ <span>›</span></div>
-        <div class="link-row" onclick="openMenu('installments')">🏷️ ຜ່ອນຊຳລະ <span>›</span></div>
-        <div class="link-row" onclick="openMenu('tags')">🏷️ ແທັກຕິດຕາມ <span>›</span></div>
-        <div class="link-row" id="menu-admin-link" onclick="openMenu('admin')">⚙️ ຕັ້ງຄ່າລະບົບ / Admin <span>›</span></div>
+        <div class="link-row" id="menu-row-profile" onclick="openMenu('profile')">👤 ໂປຣໄຟລ໌ຂອງຂ້ອຍ <span>›</span></div>
+        <div class="link-row" id="menu-row-mytheme" onclick="openMenu('mytheme')">🎨 ແຕ່ງໜ້າແອັບຂອງຂ້ອຍ <span>›</span></div>
+        <div class="link-row" id="menu-row-categories" onclick="openMenu('categories')">🍰 ໝວດໝູ່ຂອງຂ້ອຍ <span>›</span></div>
+        <div class="link-row" id="menu-row-budget" onclick="openMenu('budget')">💰 ງົບປະມານ <span>›</span></div>
+        <div class="link-row" id="menu-row-goals" onclick="openMenu('goals')">🚩 ເປົ້າໝາຍອອມເງິນ <span>›</span></div>
+        <div class="link-row" id="menu-row-installments" onclick="openMenu('installments')">🏷️ ຜ່ອນຊຳລະ <span>›</span></div>
+        <div class="link-row" id="menu-row-tags" onclick="openMenu('tags')">🏷️ ແທັກຕິດຕາມ <span>›</span></div>
+        <div class="link-row" id="menu-row-admin" onclick="openMenu('admin')">⚙️ ຕັ້ງຄ່າລະບົບ / Admin <span>›</span></div>
         <div class="link-row" onclick="logout()">🚪 ອອກຈາກລະບົບ <span>›</span></div>
       </div>
     </div>
@@ -673,7 +674,7 @@ function enterApp() {
   document.getElementById('bottom-nav').classList.remove('hidden');
   applyPersonalTheme(); // ນຳໃຊ້ສີ/ພື້ນຫລັງສ່ວນຕົວທັນທີທີ່ເຂົ້າແອັບ
   // ເຊື່ອງເມນູ Admin ຖ້າບໍ່ແມ່ນ admin/manager
-  const adminLink = document.getElementById('menu-admin-link');
+  const adminLink = document.getElementById('menu-row-admin');
   if (adminLink) {
     const canSeeAdmin = CURRENT_USER && (CURRENT_USER.role === 'admin' || CURRENT_USER.role === 'manager');
     adminLink.classList.toggle('hidden', !canSeeAdmin);
@@ -717,7 +718,12 @@ function showPage(name) {
   window.scrollTo(0, 0);
 }
 
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+  if (id === 'modal-generic') {
+    document.querySelectorAll('#page-menu .link-row').forEach(el => el.classList.remove('menu-active'));
+  }
+}
 
 // ---------------- RENDER ALL ----------------
 function renderAll() {
@@ -1529,6 +1535,9 @@ function drawNetWorthChart(){
 function openMenu(section) {
   document.getElementById('modal-generic').classList.add('show');
   const c = document.getElementById('generic-content');
+  document.querySelectorAll('#page-menu .link-row').forEach(el => el.classList.remove('menu-active'));
+  const activeRow = document.getElementById('menu-row-' + section);
+  if (activeRow) activeRow.classList.add('menu-active');
   if (section === 'budget') c.innerHTML = renderBudgetSection();
   if (section === 'goals') c.innerHTML = renderGoalsSection();
   if (section === 'installments') c.innerHTML = renderInstallmentsSection();
@@ -1548,10 +1557,9 @@ function drawGoalsReport(){
   wrap.innerHTML = STATE.goals.map(g=>{
     const pct = Math.min(100, Math.round((Number(g.currentAmount)/Number(g.targetAmount))*100));
     const remain = Math.max(0, Number(g.targetAmount) - Number(g.currentAmount));
-    return `<div class="card goal-detail-card" onclick="openGoalDetail('${g.id}')">
+    return `<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <b>${g.icon || '🚩'} ${g.name}</b>
-        <span style="font-weight:700;color:var(--primary-dark);">${pct}% ›</span>
+        <b>${g.icon || '🚩'} ${g.name}</b><span style="font-weight:700;color:var(--primary-dark);">${pct}%</span>
       </div>
       <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${pct}%;"></div></div>
       <div class="report-summary-row" style="margin-top:12px;">
@@ -1560,9 +1568,13 @@ function drawGoalsReport(){
         <div><div class="num">${fmt(g.targetAmount)}</div><div class="label">ເປົ້າໝາຍ</div></div>
       </div>
       ${g.targetDate ? `<div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:6px;">ພາຍໃນວັນທີ ${g.targetDate}</div>` : ''}
-      <div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:8px;">👆 ກົດເພື່ອເບິ່ງລາຍງານຄວາມຄືບໜ້າ</div>
+      <div class="section-title" style="margin:16px 0 6px;">📊 ລາຍງານຄວາມຄືບໜ້າ (ລາຍວັນ/ລາຍເດືອນ)</div>
+      <canvas id="goal-chart-${g.id}" height="180"></canvas>
+      <div style="margin-top:10px;">${buildGoalHistoryHtml(g.id)}</div>
+      <button class="btn-outline" style="margin-top:14px;" onclick="openGoalDetail('${g.id}')">➕ ເພີ່ມ/ແກ້ໄຂການອອມ</button>
     </div>`;
   }).join('');
+  STATE.goals.forEach(g => drawGoalProgressChart(g.id, 'goal-chart-' + g.id));
 }
 
 // 🆕 ---------------- GOAL DETAIL / ລາຍງານຄວາມຄືບໜ້າ ----------------
@@ -1570,9 +1582,58 @@ function contributionsForGoal(goalId) {
   return (STATE.goalContributions || []).filter(function (c) { return c.goalId === goalId; });
 }
 
+// 🆕 ດຶງ HTML ປະຫວັດການອອມ (ໃຊ້ຮ່ວມກັນທັງ popup ແລະ ໜ້າ tab ເປົ້າໝາຍ)
+function buildGoalHistoryHtml(goalId) {
+  const contribs = [...contributionsForGoal(goalId)].sort((a, b) => new Date(a.date) - new Date(b.date));
+  let running = 0;
+  const withRunning = contribs.map(c => { running += Number(c.amount) || 0; return Object.assign({}, c, { runningTotal: running }); });
+  const byMonth = {};
+  withRunning.forEach(c => { const mk = ymKey(c.date); (byMonth[mk] = byMonth[mk] || []).push(c); });
+  const monthKeys = Object.keys(byMonth).sort().reverse();
+  if (!monthKeys.length) return '<div class="empty-hint">ຍັງບໍ່ມີປະຫວັດການອອມ</div>';
+  let html = '';
+  monthKeys.forEach(mk => {
+    const d = new Date(mk + '-01');
+    const itemsDesc = [...byMonth[mk]].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const monthSum = byMonth[mk].reduce((s, c) => s + Number(c.amount), 0);
+    const monthEndRunning = Math.max(...byMonth[mk].map(c => c.runningTotal));
+    html += `<div class="goal-month-header"><span>📅 ${LAO_MONTHS_FULL[d.getMonth()]} ${d.getFullYear()}</span>
+      <span style="color:var(--green);">+${fmt(monthSum)} · ສະສົມ ${fmt(monthEndRunning)}</span></div>`;
+    html += itemsDesc.map(c => `<div class="report-table-row">
+        <div class="rt-left"><span>📌 ${dayKey(c.date)}</span>${c.note ? `<span style="color:var(--text-light);font-size:11px;">${c.note}</span>` : ''}</div>
+        <div><div class="goal-contrib-amt">+${fmt(c.amount)}</div><div class="goal-contrib-cum">ສະສົມ ${fmt(c.runningTotal)}</div></div>
+        <button class="del-x" onclick="removeGoalContributionUI('${c.id}','${goalId}')" title="ລົບ">🗑️</button>
+      </div>`).join('');
+  });
+  return html;
+}
+
+// 🆕 ວາດກຣາຟເສັ້ນຄວາມຄືບໜ້າ (ຄ້າຍຮູບຕົວຢ່າງທີ່ສົ່ງມາ)
+let _goalChartInstances = {};
+function drawGoalProgressChart(goalId, canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const contribs = [...contributionsForGoal(goalId)].sort((a, b) => new Date(a.date) - new Date(b.date));
+  let running = 0;
+  const labels = [], data = [];
+  contribs.forEach(c => { running += Number(c.amount) || 0; labels.push(dayKey(c.date)); data.push(running); });
+  if (_goalChartInstances[canvasId]) { _goalChartInstances[canvasId].destroy(); delete _goalChartInstances[canvasId]; }
+  if (!labels.length) return;
+  _goalChartInstances[canvasId] = new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets: [{
+      label: 'ຍອດສະສົມ', data, borderColor: '#7FC8A9',
+      backgroundColor: 'rgba(127,200,169,.15)', fill: true, tension: .35,
+      pointRadius: 4, pointBackgroundColor: '#7FC8A9'
+    }] },
+    options: { plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => fmt(v) } } } }
+  });
+}
+
 function openGoalDetail(goalId) {
   document.getElementById('modal-generic').classList.add('show');
   document.getElementById('generic-content').innerHTML = renderGoalDetailSection(goalId);
+  setTimeout(function(){ drawGoalProgressChart(goalId, 'goal-detail-chart'); }, 50);
 }
 
 function renderGoalDetailSection(goalId) {
@@ -1581,50 +1642,7 @@ function renderGoalDetailSection(goalId) {
   const pct = Math.min(100, Math.round((Number(g.currentAmount) / Number(g.targetAmount)) * 100) || 0);
   const remain = Math.max(0, Number(g.targetAmount) - Number(g.currentAmount));
 
-  const contribs = [...contributionsForGoal(goalId)].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  // ✅ ຄິດໄລ່ຍອດສະສົມ (running total) ຕາມລຳດັບເວລາ, ແລ້ວຈັດກຸ່ມຕາມເດືອນ
-  let running = 0;
-  const withRunning = contribs.map(function (c) {
-    running += Number(c.amount) || 0;
-    return Object.assign({}, c, { runningTotal: running });
-  });
-  const byMonth = {};
-  withRunning.forEach(function (c) {
-    const mk = ymKey(c.date);
-    if (!byMonth[mk]) byMonth[mk] = [];
-    byMonth[mk].push(c);
-  });
-  const monthKeys = Object.keys(byMonth).sort().reverse(); // ເດືອນຫຼ້າສຸດຂຶ້ນກ່ອນ
-
-  let listHtml = '';
-  if (!monthKeys.length) {
-    listHtml = '<div class="empty-hint">ຍັງບໍ່ມີປະຫວັດການອອມ, ລອງເພີ່ມການອອມເທື່ອທຳອິດເບິ່ງ 👆</div>';
-  } else {
-    monthKeys.forEach(function (mk) {
-      const d = new Date(mk + '-01');
-      const itemsDesc = [...byMonth[mk]].sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
-      const monthSum = byMonth[mk].reduce(function (s, c) { return s + Number(c.amount); }, 0);
-      const monthEndRunning = Math.max.apply(null, byMonth[mk].map(function (c) { return c.runningTotal; }));
-      listHtml += `<div class="goal-month-header">
-        <span>📅 ${LAO_MONTHS_FULL[d.getMonth()]} ${d.getFullYear()}</span>
-        <span style="color:var(--green);">+${fmt(monthSum)} · ສະສົມ ${fmt(monthEndRunning)}</span>
-      </div>`;
-      listHtml += itemsDesc.map(function (c) {
-        return `<div class="report-table-row">
-          <div class="rt-left">
-            <span>📌 ${dayKey(c.date)}</span>
-            ${c.note ? `<span style="color:var(--text-light);font-size:11px;">${c.note}</span>` : ''}
-          </div>
-          <div>
-            <div class="goal-contrib-amt">+${fmt(c.amount)}</div>
-            <div class="goal-contrib-cum">ສະສົມ ${fmt(c.runningTotal)}</div>
-          </div>
-          <button class="del-x" onclick="removeGoalContributionUI('${c.id}','${goalId}')" title="ລົບ">🗑️</button>
-        </div>`;
-      }).join('');
-    });
-  }
+  const listHtml = buildGoalHistoryHtml(goalId);
 
   return `<div class="modal-title">${g.icon || '🚩'} ${g.name}</div>
     <div class="card">
@@ -1644,7 +1662,8 @@ function renderGoalDetailSection(goalId) {
       <button class="btn-primary" onclick="addGoalContributionUI('${goalId}')">ບັນທຶກການອອມ</button>
     </div>
     <div class="section-title" style="margin-top:6px;">📊 ລາຍງານຄວາມຄືບໜ້າ (ລາຍວັນ/ລາຍເດືອນ)</div>
-    <div class="card">${listHtml}</div>`;
+      <div class="card"><canvas id="goal-detail-chart" height="200"></canvas></div>
+      <div class="card">${listHtml}</div>`;
 }
 
 function addGoalContributionUI(goalId) {
@@ -1652,28 +1671,34 @@ function addGoalContributionUI(goalId) {
   const date = document.getElementById('goal-contrib-date').value || todayStr();
   const note = document.getElementById('goal-contrib-note').value.trim();
   if (!amount) { showToast('ກະລຸນາປ້ອນຈຳນວນເງິນ'); return; }
-  showLoading(true);
-  callApi('addGoalContribution', { obj: { goalId: goalId, amount: amount, date: date, note: note }, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) {
-      showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE));
-      renderAll();
-      openGoalDetail(goalId);
-    })
-    .catch(function () { showLoading(false); });
+
+  const newContrib = { id: 'tmp' + Date.now(), goalId, amount, date, note, userId: CURRENT_USER.id };
+  STATE.goalContributions.push(newContrib);
+  const g = STATE.goals.find(x => x.id === goalId);
+  if (g) g.currentAmount = Number(g.currentAmount || 0) + amount;
+  localStorage.setItem('cachedState', JSON.stringify(STATE));
+  renderAll();
+  openGoalDetail(goalId);
+  showToast('✅ ບັນທຶກການອອມແລ້ວ');
+
+  callApi('addGoalContribution', { obj: { goalId, amount, date, note }, userId: CURRENT_USER.id })
+    .then(function () { syncInBackground(); })
+    .catch(function () { syncInBackground(); });
 }
 
 function removeGoalContributionUI(id, goalId) {
   if (!confirm('ລົບລາຍການອອມນີ້?')) return;
-  showLoading(true);
+  const item = STATE.goalContributions.find(x => x.id === id);
+  STATE.goalContributions = STATE.goalContributions.filter(x => x.id !== id);
+  const g = STATE.goals.find(x => x.id === goalId);
+  if (g && item) g.currentAmount = Math.max(0, Number(g.currentAmount || 0) - Number(item.amount || 0));
+  localStorage.setItem('cachedState', JSON.stringify(STATE));
+  renderAll();
+  openGoalDetail(goalId);
+
   callApi('deleteGoalContribution', { id: id, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) {
-      showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE));
-      renderAll();
-      openGoalDetail(goalId);
-    })
-    .catch(function () { showLoading(false); });
+    .then(function () { syncInBackground(); })
+    .catch(function () { syncInBackground(); });
 }
 
 function calcInstallmentDetails(l, payments){
