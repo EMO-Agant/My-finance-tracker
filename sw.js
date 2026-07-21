@@ -1,6 +1,6 @@
 // ອັນນີ້ເປັນ Service Worker ແບບພື້ນຖານ - ເຮັດໃຫ້ browser ຮູ້ວ່ານີ້ແມ່ນ "ແອັບ" ແທ້ໆ
 // ແລະ ຊ່ວຍໃຫ້ໄອຄອນ + ໜ້າຈໍ splash ໂຫລດໄດ້ໄວຂຶ້ນ ເມື່ອເປີດຈາກ Home Screen
-const CACHE_NAME = 'my-finance-tracker-v2';
+const CACHE_NAME = 'my-finance-tracker-v3';
 const CORE_ASSETS = [
   './',
   './index.html',
