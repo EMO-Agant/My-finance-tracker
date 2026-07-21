@@ -387,7 +387,7 @@ button{cursor:pointer;font-family:inherit;}
       <div class="seg">
         <button id="seg-manual" class="active" onclick="switchAddTab('manual')">✍️ ບັນທຶກເອງ</button>
         <button id="seg-scan" onclick="switchAddTab('scan')">📷 ສະແກນໃບເສັດ</button>
-        <button id="seg-attach" onclick="switchAddTab('attach')">📎 ຕິດ Slip</button>
+        <button id="seg-attach" onclick="switchAddTab('attach')">📎 upload ໃບເສັດ</button>
       </div>
 
       <div id="tab-manual">
@@ -914,7 +914,7 @@ function txRowHtml(t) {
     : `<button class="slip-thumb slip-empty" onclick="event.stopPropagation();openEditTx('${t.id}')" title="ບໍ່ມີ Slip, ກົດເພື່ອເພີ່ມ">📎</button>`;
 
   // 🆕 ຄໍລໍາ "ໃບເສັດ" (M) — ແຍກຈາກ receiptUrl (I) ໂດຍສະເພາະ
-  const receiptField = t['ໃບເສັດ'];
+  const receiptField = t.receiptPoto;
   const hasReceipt = receiptField && String(receiptField).trim() !== '';
   const receiptBtn = hasReceipt
     ? `<button class="slip-thumb" onclick="event.stopPropagation();openReceiptView('${t.id}')" title="ເບິ່ງໃບເສັດ"><img src="${receiptField}" alt="receipt" loading="lazy"></button>`
@@ -965,7 +965,7 @@ function editFromSlipView() {
 
 function openReceiptView(id) {
   const t = STATE.transactions.find(x => x.id === id);
-  const url = t && t['ໃບເສັດ'];
+  const url = t && t.receiptPoto;
   if (!t || !url) return;
   const cat = catById(t.categoryId);
   const w = walletById(t.walletId);
@@ -1339,7 +1339,7 @@ function saveScannedItems() {
     date: new Date().toISOString(), type: 'expense', walletId,
     categoryId: catMap[it.category] || '', amount: it.amount, note: it.name,
     tagId: '', createdBy: CURRENT_USER.id,
-    'ໃບເສັດ': it._receiptImgUrl || ''
+    receiptPoto: it._receiptImgUrl || ''
   }));
 
   // ✅ ອັບເດດ optimistic ທັນທີ
