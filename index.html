@@ -3,7 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>ບັນທຶກລາຍຮັບ-ລາຍຈ່າຍ</title>
+<title>My tracker ບັນທຶກລາຍຮັບ-ລາຍຈ່າຍ</title>
+
+<!-- ຊື່ແອັບ ຕອນຄົນຄ້າງໄວ້ໜ້າຈໍ / ໃນລິ້ງ share -->
+<meta name="description" content="ຕິດຕາມລາຍຮັບ-ລາຍຈ່າຍແບບໜ້າຮັກ ດ້ວຍການສະແກນໃບເສັດ">
+
+<!-- ສີແຖບເທິງ (browser UI / status bar) ໃຫ້ຕົງກັບໂຕນສີແອັບ -->
+<meta name="theme-color" content="#F5C842">
+
+<!-- ==== Manifest (ຕົວນີ້ຄືຫົວໃຈຫຼັກ ເຮັດໃຫ້ "Add to Home Screen" ໄດ້ໄອຄອນ+ຊື່ແອັບ) ==== -->
+<link rel="manifest" href="manifest.json">
+
+<!-- ==== Favicon (ໄອຄອນເທິງແທັບ browser) ==== -->
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png">
+
+<!-- ==== iOS / Safari: ເຮັດໃຫ້ເປີດແບບເຕັມຈໍ ບໍ່ມີແຖບ Safari (ຄືແອັບແທ້ໆ) ==== -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ບັນທຶກລາຍຈ່າຍ">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="120x120" href="icons/icon-120.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="167x167" href="icons/icon-167.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+
+<!-- ==== Android / Chrome: ໃຫ້ pin ໄອຄອນ (fallback ຖ້າບາງ browser ບໍ່ອ່ານ manifest icons) ==== -->
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 :root{
@@ -2664,6 +2693,15 @@ function removeUserUI(id) {
     .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('admin'); })
     .catch(function () { showLoading(false); });
 }
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function (err) {
+        console.warn('SW register failed:', err);
+      });
+    });
+  }
 </script>
 </body>
 </html>
