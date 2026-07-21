@@ -828,6 +828,13 @@ function renderDashboard() {
 
 function catById(id) { return STATE.categories.find(c => c.id === id); }
 function walletById(id) { return STATE.wallets.find(w => w.id === id); }
+// 🆕 ຍອດລວມກະເປົາປະເພດ "ເງິນອອມ" ສະເພາະສະກຸນທີ່ຕົງກັບເປົ້າໝາຍ
+function savingsWalletBalance(currency) {
+  const curr = currency || 'LAK';
+  return STATE.wallets
+    .filter(w => w.type === 'savings' && (w.currency || 'LAK') === curr)
+    .reduce((s, w) => s + Number(w.balance || 0), 0);
+}
 
 function txRowHtml(t) {
   const cat = catById(t.categoryId);
@@ -1563,18 +1570,37 @@ function drawGoalsReport(){
       </div>
       <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${pct}%;"></div></div>
       <div class="report-summary-row" style="margin-top:12px;">
-        <div><div class="num" style="color:var(--green);">${fmt(g.currentAmount)}</div><div class="label">ອອມແລ້ວ</div></div>
+        <div><div class="num" style="color:var(--green);">${fmt(g.currentAmount)}</div><div class="label">ອອມແລ້ວ (${CURRENCY_SYMBOLS[g.currency||'LAK']})</div></div>
         <div><div class="num" style="color:var(--red);">${fmt(remain)}</div><div class="label">ຄົງເຫຼືອ</div></div>
         <div><div class="num">${fmt(g.targetAmount)}</div><div class="label">ເປົ້າໝາຍ</div></div>
       </div>
       ${g.targetDate ? `<div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:6px;">ພາຍໃນວັນທີ ${g.targetDate}</div>` : ''}
-      <div class="section-title" style="margin:16px 0 6px;">📊 ລາຍງານຄວາມຄືບໜ້າ (ລາຍວັນ/ລາຍເດືອນ)</div>
-      <canvas id="goal-chart-${g.id}" height="180"></canvas>
-      <div style="margin-top:10px;">${buildGoalHistoryHtml(g.id)}</div>
+
+      <div class="slip-detail-card" style="margin-top:12px;">
+        <div class="slip-detail-row">
+          <span>👛 ຍອດຈິງໃນກະເປົາອອມ</span>
+          <span style="font-weight:800;color:var(--primary-dark);">${fmt(savingsWalletBalance(g.currency))} ${CURRENCY_SYMBOLS[g.currency||'LAK']}</span>
+        </div>
+        <div class="slip-detail-row">
+          <span>ຕ້ອງເພີ່ມອີກ (ຈາກຍອດຈິງ)</span>
+          <span style="font-weight:800;color:var(--red);">${fmt(Math.max(0, Number(g.targetAmount) - savingsWalletBalance(g.currency)))} ${CURRENCY_SYMBOLS[g.currency||'LAK']}</span>
+        </div>
+      </div>
+
       <button class="btn-outline" style="margin-top:14px;" onclick="openGoalDetail('${g.id}')">➕ ເພີ່ມ/ແກ້ໄຂການອອມ</button>
+
+      <div class="section-title" style="margin:16px 0 6px;">📊 ລາຍງານຄວາມຄືບໜ້າ (ລາຍວັນ/ລາຍເດືອນ)</div>
+      <div class="seg" style="margin-bottom:10px;">
+        <button class="${(goalChartMode[g.id]||'daily')==='daily'?'active':''}" onclick="setGoalChartView('${g.id}','daily','goal-chart-${g.id}')">ລາຍວັນ</button>
+        <button class="${(goalChartMode[g.id]||'daily')==='monthly'?'active':''}" onclick="setGoalChartView('${g.id}','monthly','goal-chart-${g.id}')">ລາຍເດືອນ</button>
+      </div>
+      <canvas id="goal-chart-${g.id}" height="180"></canvas>
+
+      <div class="section-title" style="margin:16px 0 6px;">📋 ລາຍການຕ່າງໆ</div>
+      <div>${buildGoalHistoryHtml(g.id)}</div>
     </div>`;
   }).join('');
-  STATE.goals.forEach(g => drawGoalProgressChart(g.id, 'goal-chart-' + g.id));
+  STATE.goals.forEach(g => drawGoalProgressChart(g.id, 'goal-chart-' + g.id, goalChartMode[g.id] || 'daily'));
 }
 
 // 🆕 ---------------- GOAL DETAIL / ລາຍງານຄວາມຄືບໜ້າ ----------------
@@ -1610,30 +1636,66 @@ function buildGoalHistoryHtml(goalId) {
 
 // 🆕 ວາດກຣາຟເສັ້ນຄວາມຄືບໜ້າ (ຄ້າຍຮູບຕົວຢ່າງທີ່ສົ່ງມາ)
 let _goalChartInstances = {};
-function drawGoalProgressChart(goalId, canvasId) {
+let goalChartMode = {}; // 🆕 { [goalId]: 'daily' | 'monthly' } ຈື່ວ່າແຕ່ລະເປົ້າໝາຍເລືອກແທັບໃດ
+function drawGoalProgressChart(goalId, canvasId, mode) {
+  mode = mode || goalChartMode[goalId] || 'daily';
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
   const contribs = [...contributionsForGoal(goalId)].sort((a, b) => new Date(a.date) - new Date(b.date));
-  let running = 0;
-  const labels = [], data = [];
-  contribs.forEach(c => { running += Number(c.amount) || 0; labels.push(dayKey(c.date)); data.push(running); });
+  let labels = [], data = [];
+
+  if (mode === 'monthly') {
+    const byMonth = {};
+    contribs.forEach(c => {
+      const mk = ymKey(c.date);
+      byMonth[mk] = (byMonth[mk] || 0) + (Number(c.amount) || 0);
+    });
+    let running = 0;
+    Object.keys(byMonth).sort().forEach(mk => {
+      running += byMonth[mk];
+      const d = new Date(mk + '-01');
+      labels.push(LAO_MONTHS_SHORT[d.getMonth()] + ' ' + d.getFullYear());
+      data.push(running);
+    });
+  } else {
+    let running = 0;
+    contribs.forEach(c => {
+      running += Number(c.amount) || 0;
+      labels.push(dayKey(c.date));
+      data.push(running);
+    });
+  }
+
   if (_goalChartInstances[canvasId]) { _goalChartInstances[canvasId].destroy(); delete _goalChartInstances[canvasId]; }
   if (!labels.length) return;
   _goalChartInstances[canvasId] = new Chart(canvas, {
     type: 'line',
     data: { labels, datasets: [{
       label: 'ຍອດສະສົມ', data, borderColor: '#7FC8A9',
-      backgroundColor: 'rgba(127,200,169,.15)', fill: true, tension: .35,
-      pointRadius: 4, pointBackgroundColor: '#7FC8A9'
+      backgroundColor: 'rgba(127,200,169,.15)', fill: true, tension: .4,
+      borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#7FC8A9'
     }] },
     options: { plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => fmt(v) } } } }
   });
 }
 
+// 🆕 ກົດແທັບ ລາຍວັນ/ລາຍເດືອນ ແລ້ວປ່ຽນກຣາຟ
+function setGoalChartView(goalId, mode, canvasId) {
+  goalChartMode[goalId] = mode;
+  const canvas = document.getElementById(canvasId);
+  const seg = canvas && (canvas.closest('.card')?.querySelector('.seg') || canvas.parentElement.querySelector('.seg'));
+  if (seg) {
+    const btns = seg.querySelectorAll('button');
+    btns.forEach(b => b.classList.remove('active'));
+    (mode === 'daily' ? btns[0] : btns[1])?.classList.add('active');
+  }
+  drawGoalProgressChart(goalId, canvasId, mode);
+}
+
 function openGoalDetail(goalId) {
   document.getElementById('modal-generic').classList.add('show');
   document.getElementById('generic-content').innerHTML = renderGoalDetailSection(goalId);
-  setTimeout(function(){ drawGoalProgressChart(goalId, 'goal-detail-chart'); }, 50);
+  setTimeout(function(){ drawGoalProgressChart(goalId, 'goal-detail-chart', goalChartMode[goalId] || 'daily'); }, 50);
 }
 
 function renderGoalDetailSection(goalId) {
@@ -1648,11 +1710,17 @@ function renderGoalDetailSection(goalId) {
     <div class="card">
       <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${pct}%;"></div></div>
       <div class="report-summary-row" style="margin-top:12px;">
-        <div><div class="num" style="color:var(--green);">${fmt(g.currentAmount)}</div><div class="label">ອອມແລ້ວ</div></div>
+        <div><div class="num" style="color:var(--green);">${fmt(g.currentAmount)}</div><div class="label">ອອມແລ້ວ (${CURRENCY_SYMBOLS[g.currency||'LAK']})</div></div>
         <div><div class="num" style="color:var(--red);">${fmt(remain)}</div><div class="label">ຄົງເຫຼືອ</div></div>
         <div><div class="num">${fmt(g.targetAmount)}</div><div class="label">ເປົ້າໝາຍ</div></div>
       </div>
       ${g.targetDate ? `<div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:6px;">ພາຍໃນວັນທີ ${g.targetDate}</div>` : ''}
+      <div class="slip-detail-card" style="margin-top:12px;">
+        <div class="slip-detail-row">
+          <span>👛 ຍອດຈິງໃນກະເປົາອອມ</span>
+          <span style="font-weight:800;color:var(--primary-dark);">${fmt(savingsWalletBalance(g.currency))} ${CURRENCY_SYMBOLS[g.currency||'LAK']}</span>
+        </div>
+      </div>
     </div>
     <div class="card">
       <div style="font-weight:700;margin-bottom:8px;">➕ ເພີ່ມການອອມ</div>
@@ -1662,7 +1730,13 @@ function renderGoalDetailSection(goalId) {
       <button class="btn-primary" onclick="addGoalContributionUI('${goalId}')">ບັນທຶກການອອມ</button>
     </div>
     <div class="section-title" style="margin-top:6px;">📊 ລາຍງານຄວາມຄືບໜ້າ (ລາຍວັນ/ລາຍເດືອນ)</div>
-      <div class="card"><canvas id="goal-detail-chart" height="200"></canvas></div>
+      <div class="card">
+        <div class="seg" style="margin-bottom:10px;">
+          <button class="${(goalChartMode[goalId]||'daily')==='daily'?'active':''}" onclick="setGoalChartView('${goalId}','daily','goal-detail-chart')">ລາຍວັນ</button>
+          <button class="${(goalChartMode[goalId]||'daily')==='monthly'?'active':''}" onclick="setGoalChartView('${goalId}','monthly','goal-detail-chart')">ລາຍເດືອນ</button>
+        </div>
+        <canvas id="goal-detail-chart" height="200"></canvas>
+      </div>
       <div class="card">${listHtml}</div>`;
 }
 
@@ -1824,7 +1898,7 @@ function renderGoalsSection() {
         </div>
       </div>
       <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${pct}%;"></div></div>
-      <div style="font-size:12px;color:var(--text-light);margin-top:6px;">${fmt(g.currentAmount)} / ${fmt(g.targetAmount)} ກີບ (${pct}%)</div>
+      <div style="font-size:12px;color:var(--text-light);margin-top:6px;">${fmt(g.currentAmount)} / ${fmt(g.targetAmount)} ${CURRENCY_SYMBOLS[g.currency||'LAK']} (${pct}%)</div>
     </div>`;
   }).join('') || '<div class="empty-hint">ຍັງບໍ່ມີເປົ້າໝາຍ</div>';
   return `<div class="modal-title">🚩 ເປົ້າໝາຍອອມເງິນ</div>${rows}
@@ -1834,7 +1908,14 @@ function renderGoalsSection() {
         <button type="button" class="icon-pick-btn" onclick="openEmojiPicker('goal-icon')">🙂</button>
       </div>
       <input id="goal-name" placeholder="ຊື່ເປົ້າໝາຍ">
-      <input id="goal-target" type="number" placeholder="ຈຳນວນເປົ້າໝາຍ">
+      <div style="display:flex;gap:10px;">
+        <input id="goal-target" type="number" placeholder="ຈຳນວນເປົ້າໝາຍ" style="flex:2;">
+        <select id="goal-currency" style="flex:1;">
+          <option value="LAK">ກີບ</option>
+          <option value="THB">฿ ບາດ</option>
+          <option value="USD">$ ໂດລາ</option>
+        </select>
+      </div>
       <input id="goal-targetdate" type="date">
       <input id="goal-edit-id" type="hidden">
       <button class="btn-primary" id="goal-submit-btn" onclick="addGoalUI()">+ ເພີ່ມເປົ້າໝາຍ</button>
@@ -1846,6 +1927,7 @@ function editGoalUI(id) {
   document.getElementById('goal-icon').value = g.icon || '🚩';
   document.getElementById('goal-name').value = g.name || '';
   document.getElementById('goal-target').value = g.targetAmount || '';
+  document.getElementById('goal-currency').value = g.currency || 'LAK';
   document.getElementById('goal-targetdate').value = g.targetDate || '';
   document.getElementById('goal-edit-id').value = g.id;
   const btn = document.getElementById('goal-submit-btn');
@@ -1856,12 +1938,12 @@ function addGoalUI() {
   const icon = document.getElementById('goal-icon').value.trim() || '🚩';
   const name = document.getElementById('goal-name').value.trim();
   const target = parseFloat(document.getElementById('goal-target').value);
+  const currency = document.getElementById('goal-currency').value;
   const targetDate = document.getElementById('goal-targetdate').value;
   const editId = document.getElementById('goal-edit-id').value;
   if (!name || !target) return;
   showLoading(true);
-  // 🆕 ຕອນແກ້ໄຂ ບໍ່ຕ້ອງສົ່ງ currentAmount ໄປ, Backend ຈະຮັກສາຄ່າເກົ່າໄວ້ໃຫ້ (mergeWithExisting_)
-  const obj = editId ? { id: editId, name, targetAmount: target, icon, targetDate } : { name, targetAmount: target, currentAmount: 0, icon, targetDate };
+  const obj = editId ? { id: editId, name, targetAmount: target, icon, targetDate, currency } : { name, targetAmount: target, currentAmount: 0, icon, targetDate, currency };
   callApi('saveGoal', { obj: obj, userId: CURRENT_USER.id })
     .then(function (savedGoal) {
       showLoading(false);
