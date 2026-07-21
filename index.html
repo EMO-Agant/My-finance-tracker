@@ -1259,7 +1259,7 @@ function reportFilteredTx(){
 function setReportTab(tab){ reportState.tab = tab; renderAndRefreshReports(); }
 function renderAndRefreshReports(){
   document.getElementById('reports-content').innerHTML = renderReportsSection();
-  setTimeout(drawActiveReportChart, 50);
+  setTimeout(function(){ drawActiveReportChart(); centerActiveReportTab(); }, 50);
 }
 function drawActiveReportChart(){
   try {
@@ -1272,6 +1272,15 @@ function drawActiveReportChart(){
   } catch (err) {
     console.error('ວາດລາຍງານຜິດພາດ:', err);
   }
+}
+
+function centerActiveReportTab(){
+  const container = document.querySelector('.report-tabs');
+  if (!container) return;
+  const activeBtn = container.querySelector('button.active');
+  if (!activeBtn) return;
+  const target = activeBtn.offsetLeft - (container.clientWidth/2) + (activeBtn.clientWidth/2);
+  container.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
 }
 
 function renderReportsSection(){
@@ -1344,7 +1353,7 @@ function renderReportsSection(){
 
 function renderReportsPage() {
   document.getElementById('reports-content').innerHTML = renderReportsSection();
-  setTimeout(drawActiveReportChart, 50);
+  setTimeout(function(){ drawActiveReportChart(); centerActiveReportTab(); }, 50);
 }
 
 function drawCategoryChart(){
@@ -1499,8 +1508,81 @@ function drawGoalsReport(){
         <div><div class="num">${fmt(g.targetAmount)}</div><div class="label">ເປົ້າໝາຍ</div></div>
       </div>
       ${g.targetDate ? `<div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:6px;">ພາຍໃນວັນທີ ${g.targetDate}</div>` : ''}
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn-outline" style="flex:1;padding:10px;" onclick="openGoalDeposit('${g.id}')">💵 ຝາກເງິນ</button>
+        <button class="btn-outline" style="flex:1;padding:10px;" onclick="openGoalProgress('${g.id}')">📈 ຄວາມຄືບໜ້າ</button>
+      </div>
     </div>`;
   }).join('');
+}
+
+function openGoalDeposit(goalId){
+  const g = STATE.goals.find(x=>x.id===goalId);
+  if (!g) return;
+  document.getElementById('modal-generic').classList.add('show');
+  document.getElementById('generic-content').innerHTML = `
+    <div class="modal-title">💵 ຝາກເງິນເຂົ້າ "${g.name}"</div>
+    <div class="card">
+      <div style="font-size:12px;color:var(--text-light);">ອອມແລ້ວ ${fmt(g.currentAmount)} / ${fmt(g.targetAmount)} ກີບ</div>
+      <input id="goal-deposit-amount" type="number" placeholder="ຈຳນວນເງິນທີ່ຝາກ">
+      <button class="btn-primary" onclick="submitGoalDeposit('${g.id}')">ບັນທຶກການຝາກ</button>
+    </div>`;
+}
+function submitGoalDeposit(goalId){
+  const amount = parseFloat(document.getElementById('goal-deposit-amount').value);
+  if (!amount || amount<=0){ showToast('ກະລຸນາປ້ອນຈຳນວນເງິນ'); return; }
+  showLoading(true);
+  callApi('depositGoal', { id: goalId, amount: amount, userId: CURRENT_USER.id })
+    .then(function(){ return fetchAllData(); })
+    .then(function(data){
+      showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE));
+      closeModal('modal-generic'); drawGoalsReport(); showToast('✅ ຝາກເງິນສຳເລັດ');
+    })
+    .catch(function(){ showLoading(false); });
+}
+
+function openGoalProgress(goalId){
+  const g = STATE.goals.find(x=>x.id===goalId);
+  if (!g) return;
+  let hist = [];
+  try { hist = g.history ? JSON.parse(g.history) : []; } catch(e){ hist = []; }
+  hist.sort((a,b)=> new Date(a.date) - new Date(b.date));
+
+  // ສະສົມແຕ່ລະມື້
+  let running = 0;
+  const dailyRows = hist.map(h => {
+    running += Number(h.amount);
+    return { date: dayKey(h.date), amount: Number(h.amount), cumulative: running };
+  });
+
+  // ສະສົມແຕ່ລະເດືອນ (ເອົາຍອດ ณ ທ້າຍເດືອນ)
+  const monthlyMap = {};
+  dailyRows.forEach(r => { monthlyMap[ymKey(r.date)] = r.cumulative; });
+  const monthlyRows = Object.keys(monthlyMap).sort().map(m => ({ month:m, cumulative: monthlyMap[m] }));
+
+  document.getElementById('modal-generic').classList.add('show');
+  document.getElementById('generic-content').innerHTML = `
+    <div class="modal-title">📈 ຄວາມຄືບໜ້າ "${g.name}"</div>
+    <div class="card">
+      <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${Math.min(100,Math.round(g.currentAmount/g.targetAmount*100))}%;"></div></div>
+      <div style="font-size:12px;color:var(--text-light);margin-top:6px;">${fmt(g.currentAmount)} / ${fmt(g.targetAmount)} ກີບ</div>
+    </div>
+
+    <div class="section-title">📅 ສະສົມແຕ່ລະເດືອນ</div>
+    <div class="card">${
+      monthlyRows.length
+        ? monthlyRows.map(r=>`<div class="report-table-row"><span>${r.month}</span><span><b>${fmt(r.cumulative)}</b> ກີບ</span></div>`).join('')
+        : '<div class="empty-hint">ຍັງບໍ່ມີການຝາກ</div>'
+    }</div>
+
+    <div class="section-title">🗓️ ສະສົມແຕ່ລະມື້ (ລາຍລະອຽດ)</div>
+    <div class="card">${
+      dailyRows.length
+        ? [...dailyRows].reverse().map(r=>`<div class="report-table-row">
+            <span>${r.date} <span style="color:var(--text-light);">(+${fmt(r.amount)})</span></span>
+            <span><b>${fmt(r.cumulative)}</b> ກີບ</span></div>`).join('')
+        : '<div class="empty-hint">ຍັງບໍ່ມີການຝາກ</div>'
+    }</div>`;
 }
 
 function calcInstallmentDetails(l){
