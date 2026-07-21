@@ -1616,7 +1616,7 @@ function removeGoalContributionUI(id, goalId) {
     .catch(function () { showLoading(false); });
 }
 
-function calcInstallmentDetails(l){
+function calcInstallmentDetails(l, payments){
   const principal = Number(l.principal) || 0;
   const rate = Number(l.interestRate) || 0;
   const total = Number(l.totalInstallments) || 1;
@@ -1640,8 +1640,8 @@ function calcInstallmentDetails(l){
     nextInterest = flatMonthly;
   }
 
-  const principalPaid = monthlyPrincipal * Math.min(paid, total);
-  const paidAmount = principalPaid + interestPaid;
+  // 🆕 "ຈ່າຍໄປແລ້ວ" ຄິດຈາກຍອດຈິງທີ່ບັນທຶກໄວ້ໃນປະຫວັດການຈ່າຍແຕ່ລະງວດ ບໍ່ແມ່ນສູດທິດສະດີອີກຕໍ່ໄປ
+  const paidAmount = (payments || []).reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
   const totalAmount = principal + totalInterest;
   const remainingAmount = Math.max(0, totalAmount - paidAmount);
   const nextInstallmentAmount = monthlyPrincipal + nextInterest;
@@ -1654,7 +1654,7 @@ function drawInstallmentsReport(){
   if (!STATE.installments.length){ wrap.innerHTML = '<div class="card"><div class="empty-hint">ຍັງບໍ່ມີລາຍການຜ່ອນຊຳລະ</div></div>'; return; }
 
   wrap.innerHTML = STATE.installments.map(l=>{
-    const d = calcInstallmentDetails(l);
+    const d = calcInstallmentDetails(l, paymentsForInstallment(l.id));
     const pct = Math.min(100, Math.round((Number(l.paidInstallments)/Number(l.totalInstallments))*100));
     let dots = '';
     for (let i = 1; i <= Number(l.totalInstallments); i++) {
@@ -1685,6 +1685,7 @@ function drawInstallmentsReport(){
         ຕາຕະລາງການຜ່ອນຊຳລະ ${l.paidInstallments}/${l.totalInstallments} (ເຫຼືອ ${Number(l.totalInstallments)-Number(l.paidInstallments)} ງວດ)
       </div>
       <div class="install-grid">${dots}</div>
+      <button class="btn-outline" style="margin-top:14px;" onclick="openInstallmentDetail('${l.id}')">📋 ຈັດການ / ບັນທຶກການຈ່າຍແຕ່ລະງວດ</button>
     </div>`;
   }).join('');
 }
@@ -1752,13 +1753,19 @@ function renderInstallmentsSection() {
         ເງິນຕົ້ນ ${fmt(l.principal)} ກີບ · ດອກເບ້ຍ ${l.interestRate}%/ປີ · ຈ່າຍແລ້ວ ${l.paidInstallments}/${l.totalInstallments} ງວດ
       </div>
       <div class="install-grid">${dots}</div>
-      <button class="btn-outline" style="margin-top:10px;" onclick="openInstallmentDetail('${l.id}')">📋 ຈັດການການຈ່າຍແຕ່ລະງວດ</button>
     </div>`;
   }).join('') || '<div class="empty-hint">ຍັງບໍ່ມີລາຍການຜ່ອນຊຳລະ</div>';
   return `<div class="modal-title">🏷️ ຜ່ອນຊຳລະ</div>${rows}
     <div class="card">
       <input id="loan-name" placeholder="ຊື່ລາຍການ (ເຊັ່ນ ຜ່ອນລົດ)">
-      <input id="loan-principal" type="number" placeholder="ເງິນຕົ້ນ">
+      <div style="display:flex;gap:10px;">
+        <input id="loan-principal" type="number" placeholder="ເງິນຕົ້ນ" style="flex:2;">
+        <select id="loan-currency" style="flex:1;">
+          <option value="LAK">ກີບ</option>
+          <option value="THB">฿ ບາດ</option>
+          <option value="USD">$ ໂດລາ</option>
+        </select>
+      </div>
       <input id="loan-rate" type="number" placeholder="ອັດຕາດອກເບ້ຍ % ຕໍ່ປີ">
       <input id="loan-total" type="number" placeholder="ຈຳນວນງວດທັງໝົດ">
       <select id="loan-type"><option value="fixed">ຄິດດອກແບບຄົງທີ່</option><option value="declining">ລົດຕົ້ນລົດດອກ</option></select>
@@ -1768,12 +1775,13 @@ function renderInstallmentsSection() {
 function addLoanUI() {
   const name = document.getElementById('loan-name').value.trim();
   const principal = parseFloat(document.getElementById('loan-principal').value);
+  const currency = document.getElementById('loan-currency').value; // 🆕
   const rate = parseFloat(document.getElementById('loan-rate').value) || 0;
   const total = parseInt(document.getElementById('loan-total').value) || 1;
   const loanType = document.getElementById('loan-type').value;
   if (!name || !principal) return;
   showLoading(true);
-  callApi('saveInstallment', { obj: { name, loanType, principal, interestRate: rate, totalInstallments: total, paidInstallments: 0, startDate: todayStr(), status: 'ກຳລັງຜ່ອນຊຳລະ' }, userId: CURRENT_USER.id })
+  callApi('saveInstallment', { obj: { name, loanType, principal, currency, interestRate: rate, totalInstallments: total, paidInstallments: 0, startDate: todayStr(), status: 'ກຳລັງຜ່ອນຊຳລະ' }, userId: CURRENT_USER.id })
     .then(function () { return fetchAllData(); })
     .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('installments'); })
     .catch(function () { showLoading(false); });
@@ -1799,8 +1807,8 @@ function openInstallmentDetail(loanId) {
 function renderInstallmentDetailSection(loanId) {
   const l = STATE.installments.find(x => x.id === loanId);
   if (!l) return '<div class="empty-hint">ບໍ່ພົບລາຍການ</div>';
-  const d = calcInstallmentDetails(l);
   const payments = [...paymentsForInstallment(loanId)].sort((a,b)=> Number(a.periodNumber) - Number(b.periodNumber));
+  const d = calcInstallmentDetails(l, payments);
   const paidPeriods = payments.map(p => Number(p.periodNumber));
   // ງວດຖັດໄປທີ່ຍັງບໍ່ໄດ້ຈ່າຍ (ຄ່າ default ໃນ dropdown)
   let nextPeriod = 1;
@@ -1817,7 +1825,7 @@ function renderInstallmentDetailSection(loanId) {
         ${p.note ? `<span style="color:var(--text-light);font-size:11px;">${p.note}</span>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
-        <div class="goal-contrib-amt">${fmt(p.amount)}</div>
+        <div class="goal-contrib-amt">${fmt(p.amount)} ${CURRENCY_SYMBOLS[p.currency||'LAK']||''}</div>
         ${p.receiptUrl ? `<a href="${p.receiptUrl}" target="_blank" class="slip-thumb" title="ເບິ່ງບິນ"><img src="${p.receiptUrl}" alt="slip"></a>` : ''}
         <button class="del-x" onclick="removeInstallmentPaymentUI('${p.id}','${loanId}')" title="ລົບ">🗑️</button>
       </div>
@@ -1836,7 +1844,14 @@ function renderInstallmentDetailSection(loanId) {
       <div style="font-weight:700;margin-bottom:8px;">➕ ບັນທຶກການຈ່າຍງວດ</div>
       <select id="ip-period">${periodOpts}</select>
       <input id="ip-date" type="date" value="${todayStr()}">
-      <input id="ip-amount" type="number" placeholder="ຈຳນວນເງິນທີ່ຈ່າຍ" value="${fmtRaw_(d.nextInstallmentAmount)}">
+      <div style="display:flex;gap:10px;">
+        <input id="ip-amount" type="number" placeholder="ຈຳນວນເງິນທີ່ຈ່າຍ" value="${fmtRaw_(d.nextInstallmentAmount)}" style="flex:2;">
+        <select id="ip-currency" style="flex:1;">
+          <option value="LAK" ${(l.currency||'LAK')==='LAK'?'selected':''}>ກີບ</option>
+          <option value="THB" ${l.currency==='THB'?'selected':''}>฿ ບາດ</option>
+          <option value="USD" ${l.currency==='USD'?'selected':''}>$ ໂດລາ</option>
+        </select>
+      </div>
       <input id="ip-note" placeholder="ໝາຍເຫດ (ບໍ່ບັງຄັບ)">
       <div class="slip-upload-row" id="ip-slip-zone">
         <span class="slip-upload-icon">☁️</span>
@@ -1870,12 +1885,13 @@ function addInstallmentPaymentUI(loanId) {
   const periodNumber = document.getElementById('ip-period').value;
   const paymentDate = document.getElementById('ip-date').value || todayStr();
   const amount = parseFloat(document.getElementById('ip-amount').value);
+  const currency = document.getElementById('ip-currency').value; // 🆕
   const note = document.getElementById('ip-note').value.trim();
   if (!amount) { showToast('ກະລຸນາປ້ອນຈຳນວນເງິນ'); return; }
 
   const finish = function (receiptUrl) {
     showLoading(true);
-    callApi('addInstallmentPayment', { obj: { installmentId: loanId, periodNumber, paymentDate, amount, note, receiptUrl: receiptUrl || '' }, userId: CURRENT_USER.id })
+    callApi('addInstallmentPayment', { obj: { installmentId: loanId, periodNumber, paymentDate, amount, currency, note, receiptUrl: receiptUrl || '' }, userId: CURRENT_USER.id })
       .then(function (res) {
         showLoading(false);
         // ✅ ອັບເດດ STATE ທັນທີຈາກຄ່າທີ່ server ສົ່ງກັບມາ ບໍ່ຕ້ອງ fetchAllData ຊ້ຳ
