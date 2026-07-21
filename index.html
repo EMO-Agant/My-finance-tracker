@@ -1654,12 +1654,27 @@ function drawInstallmentsReport(){
   if (!STATE.installments.length){ wrap.innerHTML = '<div class="card"><div class="empty-hint">ຍັງບໍ່ມີລາຍການຜ່ອນຊຳລະ</div></div>'; return; }
 
   wrap.innerHTML = STATE.installments.map(l=>{
-    const d = calcInstallmentDetails(l, paymentsForInstallment(l.id));
+    const payments = [...paymentsForInstallment(l.id)].sort((a,b)=> Number(a.periodNumber) - Number(b.periodNumber));
+    const d = calcInstallmentDetails(l, payments);
     const pct = Math.min(100, Math.round((Number(l.paidInstallments)/Number(l.totalInstallments))*100));
     let dots = '';
     for (let i = 1; i <= Number(l.totalInstallments); i++) {
       dots += `<div class="install-dot ${i <= Number(l.paidInstallments) ? 'paid' : ''}">${i}</div>`;
     }
+    // 🆕 ປະຫວັດການຈ່າຍແຕ່ລະງວດ ສະແດງໂດຍກົງຢູ່ນີ້ (ບໍ່ຕ້ອງເປີດ modal ອີກຕໍ່ໄປ)
+    const paymentsListHtml = payments.length ? [...payments].reverse().map(p => `
+      <div class="report-table-row">
+        <div class="rt-left">
+          <span>📌 ງວດທີ ${p.periodNumber} · ${dayKey(p.paymentDate)}</span>
+          ${p.note ? `<span style="color:var(--text-light);font-size:11px;">${p.note}</span>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div class="goal-contrib-amt">${fmt(p.amount)} ${CURRENCY_SYMBOLS[p.currency||'LAK']||''}</div>
+          ${p.receiptUrl ? `<a href="${p.receiptUrl}" target="_blank" class="slip-thumb" title="ເບິ່ງບິນ"><img src="${p.receiptUrl}" alt="slip"></a>` : ''}
+          <button class="del-x" onclick="removeInstallmentPaymentUI('${p.id}','${l.id}')" title="ລົບ">🗑️</button>
+        </div>
+      </div>`).join('') : '<div class="empty-hint">ຍັງບໍ່ມີການຈ່າຍ, ເພີ່ມງວດທຳອິດເບິ່ງ 👆</div>';
+
     return `<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <b>${l.name}</b>
@@ -1685,7 +1700,10 @@ function drawInstallmentsReport(){
         ຕາຕະລາງການຜ່ອນຊຳລະ ${l.paidInstallments}/${l.totalInstallments} (ເຫຼືອ ${Number(l.totalInstallments)-Number(l.paidInstallments)} ງວດ)
       </div>
       <div class="install-grid">${dots}</div>
-      <button class="btn-outline" style="margin-top:14px;" onclick="openInstallmentDetail('${l.id}')">📋 ຈັດການ / ບັນທຶກການຈ່າຍແຕ່ລະງວດ</button>
+      <button class="btn-outline" style="margin-top:14px;" onclick="openInstallmentDetail('${l.id}')">➕ ບັນທຶກການຈ່າຍງວດໃໝ່</button>
+
+      <div style="font-size:12px;font-weight:700;margin:16px 0 6px;">📋 ປະຫວັດການຈ່າຍແຕ່ລະງວດ</div>
+      <div>${paymentsListHtml}</div>
     </div>`;
   }).join('');
 }
@@ -1861,7 +1879,6 @@ function renderInstallmentDetailSection(loanId) {
       </div>
       <button class="btn-primary" onclick="addInstallmentPaymentUI('${loanId}')">ບັນທຶກງວດນີ້</button>
     </div>
-    <div class="section-title" style="margin-top:6px;">📋 ປະຫວັດການຈ່າຍແຕ່ລະງວດ</div>
     <div class="card">${listHtml}</div>`;
 }
 
