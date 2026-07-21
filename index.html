@@ -477,6 +477,23 @@ button{cursor:pointer;font-family:inherit;}
       </div>
     </div>
   </div>
+  
+  <div class="modal-overlay" id="modal-receipt-view">
+    <div class="modal-sheet">
+      <button class="modal-close" onclick="closeModal('modal-receipt-view')">✕</button>
+      <div class="modal-title">🧾 ລາຍລະອຽດໃບເສັດ</div>
+      <div class="slip-image-wrap"><img id="receipt-view-img" src="" alt="receipt"></div>
+      <div class="slip-detail-card">
+        <div class="slip-detail-row"><span>ປະເພດ</span><span id="receipt-view-type" class="slip-type-badge"></span></div>
+        <div class="slip-detail-row"><span>ວັນທີ</span><span id="receipt-view-date"></span></div>
+        <div class="slip-detail-row"><span>ລາຍລະອຽດ</span><span id="receipt-view-note"></span></div>
+        <div class="slip-detail-row"><span>ໝວດໝູ່</span><span id="receipt-view-cat"></span></div>
+        <div class="slip-detail-row"><span>ກະເປົາ</span><span id="receipt-view-wallet"></span></div>
+        <div class="slip-detail-row"><span>ຈຳນວນ</span><span id="receipt-view-amount"></span></div>
+      </div>
+      <a id="receipt-view-openfull" href="#" target="_blank" class="btn-outline" style="display:block;text-align:center;text-decoration:none;margin-top:12px;">🔗 ເປີດຮູບເຕັມ</a>
+    </div>
+  </div>
 
   <!-- ===================== MODAL: INSTALLMENT SLIP VIEW ===================== -->
   <div class="modal-overlay" id="modal-installment-slip-view">
@@ -872,13 +889,22 @@ function txRowHtml(t) {
   const amtClass = t.type === 'income' ? 'income' : (t.type === 'expense' ? 'expense' : '');
   const sign = t.type === 'income' ? '+' : (t.type === 'expense' ? '-' : '');
   const curr = t.currency || (w ? w.currency : '') || 'LAK';
+
   const hasSlip = t.receiptUrl && String(t.receiptUrl).trim() !== '';
   const slipBtn = hasSlip
-    ? `<button class="slip-thumb" onclick="event.stopPropagation();openSlipView('${t.id}')" title="ເບິ່ງບິນ"><img src="${t.receiptUrl}" alt="slip" loading="lazy"></button>`
-    : `<button class="slip-thumb slip-empty" onclick="event.stopPropagation();openEditTx('${t.id}')" title="ບໍ່ມີບິນ, ກົດເພື່ອເພີ່ມ">📎</button>`;
+    ? `<button class="slip-thumb" onclick="event.stopPropagation();openSlipView('${t.id}')" title="ເບິ່ງ Slip ໂອນ"><img src="${t.receiptUrl}" alt="slip" loading="lazy"></button>`
+    : `<button class="slip-thumb slip-empty" onclick="event.stopPropagation();openEditTx('${t.id}')" title="ບໍ່ມີ Slip, ກົດເພື່ອເພີ່ມ">📎</button>`;
+
+  // 🆕 ຄໍລໍາ "ໃບເສັດ" (M) — ແຍກຈາກ receiptUrl (I) ໂດຍສະເພາະ
+  const receiptField = t['ໃບເສັດ'];
+  const hasReceipt = receiptField && String(receiptField).trim() !== '';
+  const receiptBtn = hasReceipt
+    ? `<button class="slip-thumb" onclick="event.stopPropagation();openReceiptView('${t.id}')" title="ເບິ່ງໃບເສັດ"><img src="${receiptField}" alt="receipt" loading="lazy"></button>`
+    : '';
+
   return `<div class="tx-item" onclick="openEditTx('${t.id}')">
     <div class="icon-badge">${icon}</div>
-    ${slipBtn}
+    <div style="display:flex;flex-direction:column;gap:4px;">${slipBtn}${receiptBtn}</div>
     <div class="info">
       <div class="t1">${t.note || (cat ? cat.name : 'ລາຍການ')}</div>
       <div class="t2">${w ? w.name : ''} · ${dayKey(t.date)}</div>
@@ -917,6 +943,29 @@ function editFromSlipView() {
   const id = slipViewTxId;
   closeModal('modal-slip-view');
   if (id) openEditTx(id);
+}
+
+function openReceiptView(id) {
+  const t = STATE.transactions.find(x => x.id === id);
+  const url = t && t['ໃບເສັດ'];
+  if (!t || !url) return;
+  const cat = catById(t.categoryId);
+  const w = walletById(t.walletId);
+  const curr = t.currency || (w ? w.currency : '') || 'LAK';
+  document.getElementById('receipt-view-img').src = url;
+  const badge = document.getElementById('receipt-view-type');
+  badge.innerText = t.type === 'income' ? 'ລາຍຮັບ' : (t.type === 'expense' ? 'ລາຍຈ່າຍ' : 'ໂອນເງິນ');
+  badge.style.background = t.type === 'income' ? 'var(--green)' : (t.type === 'expense' ? 'var(--red)' : '#B0A6C9');
+  document.getElementById('receipt-view-date').innerText = dayKey(t.date);
+  document.getElementById('receipt-view-note').innerText = t.note || '-';
+  document.getElementById('receipt-view-cat').innerText = cat ? (cat.icon + ' ' + cat.name) : '-';
+  document.getElementById('receipt-view-wallet').innerText = w ? (w.icon + ' ' + w.name) : '-';
+  const sign = t.type === 'income' ? '+' : (t.type === 'expense' ? '-' : '');
+  const amtEl = document.getElementById('receipt-view-amount');
+  amtEl.innerText = sign + fmt(t.amount) + ' ' + (CURRENCY_SYMBOLS[curr] || '');
+  amtEl.style.fontWeight = '800';
+  document.getElementById('receipt-view-openfull').href = url;
+  document.getElementById('modal-receipt-view').classList.add('show');
 }
 
 // 🆕 ລົບແບບ optimistic: ອັບເດດໜ້າຈໍທັນທີ ບໍ່ຕ້ອງລໍ fetchAllData() ຄ້າງໜ້າຈໍ
@@ -1215,7 +1264,14 @@ function addScanResult(result, fileName, receiptImgUrl) {
 }
 function renderScanResults() {
   document.getElementById('scan-results').innerHTML = pendingScanItems.map(function (it) {
+    const receiptThumb = it._receiptImgUrl
+      ? `<img src="${it._receiptImgUrl}" alt="receipt" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`
+      : '📎';
     return `<div class="receipt-item-row" id="row-${it._uid}">
+      <label style="width:38px;height:38px;border-radius:12px;background:#F3EAD0;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;overflow:hidden;" title="ກົດເພື່ອເລືອກ/ປ່ຽນຮູບໃບເສັດ">
+        ${receiptThumb}
+        <input type="file" accept="image/*" style="display:none;" onchange="changeScanItemReceipt('${it._uid}', event)">
+      </label>
       <div class="ri-name">${it.name}<br><span style="color:var(--text-light);font-size:11px;">${it.category || ''} · ${it._file || ''}</span></div>
       <input type="number" value="${it.amount}" style="width:80px;" onchange="updateScanAmount('${it._uid}', this.value)">
       <button class="ri-del" onclick="removeScanItem('${it._uid}')">✕</button>
@@ -1230,6 +1286,27 @@ function removeScanItem(uid) {
   pendingScanItems = pendingScanItems.filter(i => i._uid !== uid);
   renderScanResults();
 }
+
+function changeScanItemReceipt(uid, evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const item = pendingScanItems.find(i => i._uid === uid);
+  if (!item) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const base64 = e.target.result.split(',')[1];
+    showLoading(true);
+    callApi('uploadSlip', { base64Data: base64, mimeType: file.type, fileName: 'receipt_item_' + Date.now() + '.jpg' })
+      .then(function (res) {
+        showLoading(false);
+        item._receiptImgUrl = res.url;   // ✅ ຮູບນີ້ຈະຖືກບັນທຶກໃສ່ຄໍລໍາ "ໃບເສັດ" (M) ຕອນກົດບັນທຶກ
+        renderScanResults();
+      })
+      .catch(function () { showLoading(false); });
+  };
+  reader.readAsDataURL(file);
+}
+
 // 🆕 ບັນທຶກແບບ optimistic: ປິດ modal ທັນທີ ບໍ່ຕ້ອງລໍ fetchAllData()
 function saveScannedItems() {
   const walletId = document.getElementById('scan-wallet').value;
