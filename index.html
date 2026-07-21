@@ -148,12 +148,12 @@ button{cursor:pointer;font-family:inherit;}
 .color-swatch{width:32px;height:32px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px #eee;}
 .link-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid #F3EAD0;font-size:14px;}
 .role-tag{font-size:11px;background:#F3EAD0;padding:2px 8px;border-radius:8px;}
-.report-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;}
+.report-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;scroll-behavior:smooth;}
 .report-tabs button{flex-shrink:0;background:#F3EAD0;border:none;border-radius:14px;padding:9px 16px;font-size:13px;color:var(--text);}
 .report-tabs button.active{background:var(--green);color:#fff;font-weight:700;}
 .report-filter-row{display:flex;gap:8px;margin-bottom:10px;overflow-x:auto;}
 .report-filter-row select{width:auto;flex-shrink:0;padding:8px 12px;font-size:12px;margin-bottom:0;}
-.month-scroll{display:flex;gap:6px;overflow-x:auto;padding:6px 2px 12px;}
+.month-scroll{display:flex;gap:6px;overflow-x:auto;padding:6px 2px 12px;scroll-behavior:smooth;}
 .month-pill{flex-shrink:0;width:52px;height:52px;border-radius:50%;background:#FFFDF5;border:1px solid #eee0c0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-light);flex-direction:column;cursor:pointer;}
 .month-pill.active{background:var(--primary);color:#fff;font-weight:700;border-color:var(--primary);}
 .report-summary-row{display:flex;justify-content:space-between;text-align:center;margin:10px 0;}
@@ -169,8 +169,8 @@ button{cursor:pointer;font-family:inherit;}
 .report-donut-center{position:absolute;text-align:center;pointer-events:none;}
 .report-donut-center .amt{font-weight:800;font-size:18px;}
 .report-donut-center .lbl{font-size:11px;color:var(--text-light);}
-.report-table-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F3EAD0;font-size:13px;}
-.report-table-row .rt-left{display:flex;align-items:center;gap:8px;}
+.report-table-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F3EAD0;font-size:13px;gap:8px;}
+.report-table-row .rt-left{display:flex;align-items:center;gap:8px;flex-direction:column;align-items:flex-start;}
 .tag-bubble-wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;padding:14px 6px;}
 .tag-bubble{border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#5B4636;flex-shrink:0;transition:.2s;}
 .tag-bubble .tb-icon{line-height:1;}
@@ -178,7 +178,7 @@ button{cursor:pointer;font-family:inherit;}
 .tag-bubble .tb-amt{opacity:.7;line-height:1.1;}
 
 /* ---------- 🆕 LOGIN USER PICKER ---------- */
-.login-users-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:22px;margin-bottom:6px;}
+.login-users-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:22px;margin-bottom:6px;min-height:74px;}
 .login-user-chip{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:8px 6px;border-radius:16px;border:2px solid transparent;width:74px;transition:.15s;}
 .login-user-chip:active{background:#FFF3CE;}
 .login-user-chip.selected{border-color:var(--primary);background:#FFF3CE;}
@@ -193,6 +193,15 @@ button{cursor:pointer;font-family:inherit;}
 .icon-pick-row input{flex:1;text-align:center;}
 .icon-pick-btn{flex-shrink:0;background:#FFF3CE;border:2px solid var(--primary);color:var(--primary-dark);border-radius:14px;padding:0 16px;height:48px;font-size:18px;}
 .wallpaper-preview{width:100%;border-radius:14px;margin-bottom:10px;max-height:140px;object-fit:cover;display:block;}
+
+/* ---------- 🆕 GOAL DETAIL / PROGRESS REPORT ---------- */
+.goal-detail-card{background:var(--card);border-radius:16px;padding:14px 16px;cursor:pointer;transition:.15s;}
+.goal-detail-card:active{background:#FFFBF0;}
+.goal-month-header{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;
+  color:var(--text-light);background:#FFF3CE;border-radius:10px;padding:8px 12px;margin:14px 0 6px;}
+.goal-month-header:first-child{margin-top:0;}
+.goal-contrib-amt{color:var(--green);font-weight:700;text-align:right;}
+.goal-contrib-cum{font-size:11px;color:var(--text-light);text-align:right;}
 
 /* ---------- LOADING / TOAST ---------- */
 #global-loading{position:fixed;inset:0;background:rgba(255,248,231,.85);display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:9999;font-size:14px;color:var(--text-light);}
@@ -480,7 +489,7 @@ function showToast(msg) {
   setTimeout(function () { t.classList.remove('show'); }, 2500);
 }
 
-let STATE = { wallets:[], categories:[], transactions:[], budgets:[], goals:[], installments:[], tags:[], users:[], settings:{} };
+let STATE = { wallets:[], categories:[], transactions:[], budgets:[], goals:[], goalContributions:[], installments:[], tags:[], users:[], settings:{} };
 let CURRENT_USER = null;
 let addTxType = 'expense';
 let pendingScanItems = [];
@@ -492,6 +501,9 @@ function fetchAllData() {
 }
 
 // ---------------- INIT ----------------
+// 🆕 ອັບເດດຮອບນີ້: ບໍ່ບລັອກໜ້າຈໍດ້ວຍ loading spinner ຕອນເປີດແອັບອີກຕໍ່ໄປ.
+// ຖ້າມີ cache -> ເຂົ້າແອັບທັນທີ. ຖ້າບໍ່ມີ -> ສະແດງໜ້າ login ທັນທີ (ຄົນສາມາດພິມ PIN
+// ໄດ້ເລີຍ ໂດຍບໍ່ຕ້ອງລໍ) ແລ້ວຄ່ອຍດຶງຂໍ້ມູນ (chip ຜູ້ໃຊ້/settings) ຢູ່ເບື້ອງຫຼັງ.
 window.onload = function () {
   const saved = localStorage.getItem('savedSession');
   const cachedState = localStorage.getItem('cachedState');
@@ -507,10 +519,11 @@ window.onload = function () {
     } catch (e) {
       localStorage.removeItem('savedSession');
       localStorage.removeItem('cachedState');
+      document.getElementById('login-screen').classList.remove('hidden');
     }
   } else {
-    // ບໍ່ມີ cache → ຕ້ອງລໍໂຫຼດ, ສະແດງ loading spinner ລະຫວ່າງລໍ
-    showLoading(true);
+    // ✅ ບໍ່ມີ cache -> ສະແດງໜ້າ login ໃຫ້ເຫັນທັນທີ, ບໍ່ຕ້ອງລໍໂຫຼດ ບໍ່ບລັອກໜ້າຈໍ
+    document.getElementById('login-screen').classList.remove('hidden');
   }
 
   // ✅ ຖ້າມີ session ຢູ່ແລ້ວ (ຈາກ localStorage) ໃຫ້ຮູ້ CURRENT_USER ໄວ້ກ່ອນຢິງ request
@@ -520,12 +533,12 @@ window.onload = function () {
   }
 
   // ✅ ບໍ່ວ່າຈະມີ cache ຫຼືບໍ່ ກໍໄປດຶງຂໍ້ມູນຫຼ້າສຸດຢູ່ເບື້ອງຫຼັງສະເໝີ (ສະເພາະຂອງ CURRENT_USER)
+  // ໂດຍບໍ່ສະແດງ loading overlay ບລັອກໜ້າຈໍ login
   fetchAllData().then(function (data) {
     STATE = data;
     localStorage.setItem('cachedState', JSON.stringify(data)); // ✅ ອັບເດດ cache ໃໝ່
     applyTheme();
     renderUserChips();
-    showLoading(false);
 
     if (saved) {
       try {
@@ -539,14 +552,14 @@ window.onload = function () {
           CURRENT_USER = null;
           localStorage.removeItem('savedSession');
           localStorage.removeItem('cachedState');
+          document.getElementById('login-screen').classList.remove('hidden');
         }
       } catch (e) {}
-    }
-    if (!saved) {
-      document.getElementById('login-screen').classList.remove('hidden');
+    } else if (CURRENT_USER) {
+      // ອາດຈະຫາກໍ login ສຳເລັດໄປແລ້ວກ່ອນ fetch ນີ້ຈະສຳເລັດ (ເບິ່ງ doLogin) -> ອັບເດດໜ້າຈໍ
+      renderAll();
     }
   }).catch(function () {
-    showLoading(false);
     if (!saved || !cachedState) {
       showToast('ໂຫຼດຂໍ້ມູນລົ້ມເຫຼວ, ກະລຸນາລອງໃໝ່');
       document.getElementById('login-screen').classList.remove('hidden');
@@ -609,22 +622,29 @@ function applyPersonalTheme() {
 }
 
 // ---------------- AUTH ----------------
+// 🆕 ອັບເດດຮອບນີ້: login ໄດ້ ເຂົ້າແອັບທັນທີ ບໍ່ຕ້ອງລໍ loading spinner.
+// ດຶງຂໍ້ມູນສ່ວນຕົວອັນເຕັມ (wallets/transactions/...) ຢູ່ເບື້ອງຫຼັງ ແລ້ວອັບເດດ
+// ໜ້າຈໍທັນທີທີ່ໄດ້ຮັບ (ໜ້າຈໍຈະສະແດງແບບຄ່ອຍໆເຕັມ ບໍ່ຄ້າງລໍ)
 function doLogin() {
   const pin = document.getElementById('login-pin').value.trim();
   if (!pin) { showToast('ກະລຸນາປ້ອນລະຫັດຜ່ານ'); return; }
-  showLoading(true);
   callApi('login', { pin: pin }).then(function (res) {
-    if (!res.success) { showLoading(false); showToast(res.message); return; }
+    if (!res.success) { showToast(res.message); return; }
     CURRENT_USER = res.user;
-    // 🆕 ຫຼັງ login ສຳເລັດ ຕ້ອງດຶງຂໍ້ມູນສ່ວນຕົວຂອງຄົນນີ້ໂດຍສະເພາະ (ຄົນອື່ນຈະບໍ່ຖືກສົ່ງມາເລີຍ)
-    return fetchAllData().then(function (data) {
+    localStorage.setItem('savedSession', JSON.stringify(CURRENT_USER)); // ✅ ຈື່ໄວ້ອັດຕະໂນມັດທຸກຄັ້ງ
+
+    // ✅ ເຂົ້າແອັບທັນທີ ບໍ່ຕ້ອງລໍຂໍ້ມູນສ່ວນຕົວທັງໝົດ (ໜ້າຈໍອາດຫວ່າງໆກ່ອນ ແລ້ວຄ່ອຍເຕັມ)
+    enterApp();
+
+    // ດຶງຂໍ້ມູນສ່ວນຕົວອັນເຕັມຢູ່ເບື້ອງຫຼັງ ແລ້ວອັບເດດໜ້າຈໍ (ບໍ່ບລັອກ)
+    fetchAllData().then(function (data) {
       STATE = data;
-      localStorage.setItem('savedSession', JSON.stringify(CURRENT_USER)); // ✅ ຈື່ໄວ້ອັດຕະໂນມັດທຸກຄັ້ງ
-      localStorage.setItem('cachedState', JSON.stringify(STATE)); // ✅ ຈື່ຂໍ້ມູນຂອງຄົນນີ້ໄວ້ນຳ ເພື່ອໃຫ້ຄັ້ງໜ້າໂຫຼດໄວ
-      showLoading(false);
-      enterApp();
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      renderAll();
+    }).catch(function () {
+      showToast('ໂຫຼດຂໍ້ມູນລົ້ມເຫລວ, ກະລຸນາລອງໃໝ່');
     });
-  }).catch(function () { showLoading(false); });
+  }).catch(function () {});
 }
 function enterApp() {
   document.getElementById('login-screen').classList.add('hidden');
@@ -770,36 +790,6 @@ function renderDashboard() {
 }
 
 function catById(id) { return STATE.categories.find(c => c.id === id); }
-let _ovReportChartInstance = null;
-const LAO_MONTHS_FULL_OV = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
-function renderOverviewReportPreview(){
-  const now = new Date();
-  const ym = now.toISOString().slice(0,7);
-  const list = STATE.transactions.filter(t => t.type === 'expense' && ymKey(t.date) === ym);
-  const catTotals = {}, catIcons = {};
-  list.forEach(t=>{
-    const cat = catById(t.categoryId);
-    const key = cat ? cat.name : 'ອື່ນໆ';
-    catTotals[key] = (catTotals[key]||0) + Number(t.amount);
-    catIcons[key] = cat ? cat.icon : '❔';
-  });
-  const total = Object.values(catTotals).reduce((a,b)=>a+b,0);
-  const colors = ['#F28482','#F6BD60','#84A59D','#B39DDB','#8EB8E5','#7FC8A9','#D9A441','#F4A261','#E76F51','#FF9F7F'];
-  const labels = Object.keys(catTotals);
-  const ctx = document.getElementById('ov-report-chart');
-  if (_ovReportChartInstance){ _ovReportChartInstance.destroy(); _ovReportChartInstance=null; }
-  if (ctx && labels.length){
-    _ovReportChartInstance = new Chart(ctx, { type:'doughnut',
-      data:{ labels, datasets:[{ data:Object.values(catTotals), backgroundColor:labels.map((_,i)=>colors[i%colors.length]), borderWidth:2, borderColor:'#fff' }] },
-      options:{ cutout:'68%', plugins:{ legend:{ display:false } } } });
-  }
-  document.getElementById('ov-report-center').innerHTML = total
-    ? `<div class="amt">${fmt(total)}</div><div class="lbl">${LAO_MONTHS_FULL_OV[now.getMonth()]}</div>`
-    : `<div class="lbl">ບໍ່ມີຂໍ້ມູນ</div>`;
-  document.getElementById('ov-report-legend').innerHTML = labels.slice(0,4).map((k,i)=>
-    `<div class="cat-legend-item"><span class="dot" style="background:${colors[i%colors.length]};"></span>${catIcons[k]} ${k} ${total?Math.round(catTotals[k]/total*100):0}%</div>`
-  ).join('') || '<div class="empty-hint">ຍັງບໍ່ມີຂໍ້ມູນເດືອນນີ້</div>';
-}
 function walletById(id) { return STATE.wallets.find(w => w.id === id); }
 
 function txRowHtml(t) {
@@ -1256,7 +1246,16 @@ function reportFilteredTx(){
   return list;
 }
 
-function setReportTab(tab){ reportState.tab = tab; renderAndRefreshReports(); }
+// 🆕 ອັບເດດ setReportTab: ພາ tab ທີ່ຖືກເລືອກ scroll ມາຢູ່ "ກາງ" ຂອງແຖບ tab ອັດຕະໂນມັດ
+// (ແກ້ບັນຫາທີ່ tab ຢູ່ນອກຈໍ ຕ້ອງ swipe ຫາເອງ)
+function setReportTab(tab){
+  reportState.tab = tab;
+  renderAndRefreshReports();
+  setTimeout(function () {
+    const activeTab = document.querySelector('.report-tabs button.active');
+    if (activeTab) activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, 60);
+}
 function renderAndRefreshReports(){
   document.getElementById('reports-content').innerHTML = renderReportsSection();
   setTimeout(drawActiveReportChart, 50);
@@ -1374,7 +1373,7 @@ function drawCategoryChart(){
     `<div class="cat-legend-item"><span class="dot" style="background:${colors[i%colors.length]};"></span>${catIcons[k]} ${k} ${total?Math.round(catTotals[k]/total*100):0}%</div>`
   ).join('') || '<div class="empty-hint">ບໍ່ມີຂໍ້ມູນ</div>';
   document.getElementById('cat-table').innerHTML = labels.map((k,i)=>
-    `<div class="report-table-row"><div class="rt-left"><span class="dot" style="background:${colors[i%colors.length]};"></span>${catIcons[k]} ${k}</div><div>${total?Math.round(catTotals[k]/total*100):0}% · ${fmt(catTotals[k])}</div></div>`
+    `<div class="report-table-row"><div class="rt-left" style="flex-direction:row;"><span class="dot" style="background:${colors[i%colors.length]};"></span>${catIcons[k]} ${k}</div><div>${total?Math.round(catTotals[k]/total*100):0}% · ${fmt(catTotals[k])}</div></div>`
   ).join('') || '<div class="empty-hint">ຍັງບໍ່ມີຂໍ້ມູນ</div>';
 }
 
@@ -1464,7 +1463,7 @@ function drawNetWorthChart(){
   }
   document.getElementById('networth-center').innerHTML = `<div class="amt">${fmt(total)}</div><div class="lbl">ຊັບສິນສຸດທິ</div>`;
   document.getElementById('networth-table').innerHTML = STATE.wallets.map((w,i)=>
-    `<div class="report-table-row"><div class="rt-left"><span class="dot" style="background:${colors[i%colors.length]};"></span>${w.icon} ${w.name}</div><div>${total?Math.round(Number(w.balance||0)/total*100):0}% · ${fmt(w.balance)}</div></div>`
+    `<div class="report-table-row"><div class="rt-left" style="flex-direction:row;"><span class="dot" style="background:${colors[i%colors.length]};"></span>${w.icon} ${w.name}</div><div>${total?Math.round(Number(w.balance||0)/total*100):0}% · ${fmt(w.balance)}</div></div>`
   ).join('') || '<div class="empty-hint">ຍັງບໍ່ມີກະເປົາເງິນ</div>';
 }
 function openMenu(section) {
@@ -1480,6 +1479,8 @@ function openMenu(section) {
   if (section === 'categories') { c.innerHTML = renderCategoriesSection(); setTimeout(renderCatColorSwatches, 30); }
 }
 
+// 🆕 Reports > 🚩 ເປົ້າໝາຍ: ດຽວນີ້ແຕ່ລະການ໌ດ ຄິກໄດ້ ເພື່ອເປີດ "ໜ້າລາຍງານຄວາມຄືບໜ້າ"
+// (ປະຫວັດການອອມແຕ່ລະມື້/ເດືອນ ສະສົມເງິນໄດ້ຮອດໃສ) ຂອງເປົ້າໝາຍນັ້ນ
 function drawGoalsReport(){
   const wrap = document.getElementById('goals-report-wrap');
   if (!wrap) return;
@@ -1487,10 +1488,10 @@ function drawGoalsReport(){
   wrap.innerHTML = STATE.goals.map(g=>{
     const pct = Math.min(100, Math.round((Number(g.currentAmount)/Number(g.targetAmount))*100));
     const remain = Math.max(0, Number(g.targetAmount) - Number(g.currentAmount));
-    return `<div class="card">
+    return `<div class="card goal-detail-card" onclick="openGoalDetail('${g.id}')">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <b>${g.icon || '🚩'} ${g.name}</b>
-        <span style="font-weight:700;color:var(--primary-dark);">${pct}%</span>
+        <span style="font-weight:700;color:var(--primary-dark);">${pct}% ›</span>
       </div>
       <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${pct}%;"></div></div>
       <div class="report-summary-row" style="margin-top:12px;">
@@ -1499,8 +1500,120 @@ function drawGoalsReport(){
         <div><div class="num">${fmt(g.targetAmount)}</div><div class="label">ເປົ້າໝາຍ</div></div>
       </div>
       ${g.targetDate ? `<div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:6px;">ພາຍໃນວັນທີ ${g.targetDate}</div>` : ''}
+      <div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:8px;">👆 ກົດເພື່ອເບິ່ງລາຍງານຄວາມຄືບໜ້າ</div>
     </div>`;
   }).join('');
+}
+
+// 🆕 ---------------- GOAL DETAIL / ລາຍງານຄວາມຄືບໜ້າ ----------------
+function contributionsForGoal(goalId) {
+  return (STATE.goalContributions || []).filter(function (c) { return c.goalId === goalId; });
+}
+
+function openGoalDetail(goalId) {
+  document.getElementById('modal-generic').classList.add('show');
+  document.getElementById('generic-content').innerHTML = renderGoalDetailSection(goalId);
+}
+
+function renderGoalDetailSection(goalId) {
+  const g = STATE.goals.find(x => x.id === goalId);
+  if (!g) return '<div class="empty-hint">ບໍ່ພົບເປົ້າໝາຍ</div>';
+  const pct = Math.min(100, Math.round((Number(g.currentAmount) / Number(g.targetAmount)) * 100) || 0);
+  const remain = Math.max(0, Number(g.targetAmount) - Number(g.currentAmount));
+
+  const contribs = [...contributionsForGoal(goalId)].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // ✅ ຄິດໄລ່ຍອດສະສົມ (running total) ຕາມລຳດັບເວລາ, ແລ້ວຈັດກຸ່ມຕາມເດືອນ
+  let running = 0;
+  const withRunning = contribs.map(function (c) {
+    running += Number(c.amount) || 0;
+    return Object.assign({}, c, { runningTotal: running });
+  });
+  const byMonth = {};
+  withRunning.forEach(function (c) {
+    const mk = ymKey(c.date);
+    if (!byMonth[mk]) byMonth[mk] = [];
+    byMonth[mk].push(c);
+  });
+  const monthKeys = Object.keys(byMonth).sort().reverse(); // ເດືອນຫຼ້າສຸດຂຶ້ນກ່ອນ
+
+  let listHtml = '';
+  if (!monthKeys.length) {
+    listHtml = '<div class="empty-hint">ຍັງບໍ່ມີປະຫວັດການອອມ, ລອງເພີ່ມການອອມເທື່ອທຳອິດເບິ່ງ 👆</div>';
+  } else {
+    monthKeys.forEach(function (mk) {
+      const d = new Date(mk + '-01');
+      const itemsDesc = [...byMonth[mk]].sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+      const monthSum = byMonth[mk].reduce(function (s, c) { return s + Number(c.amount); }, 0);
+      const monthEndRunning = Math.max.apply(null, byMonth[mk].map(function (c) { return c.runningTotal; }));
+      listHtml += `<div class="goal-month-header">
+        <span>📅 ${LAO_MONTHS_FULL[d.getMonth()]} ${d.getFullYear()}</span>
+        <span style="color:var(--green);">+${fmt(monthSum)} · ສະສົມ ${fmt(monthEndRunning)}</span>
+      </div>`;
+      listHtml += itemsDesc.map(function (c) {
+        return `<div class="report-table-row">
+          <div class="rt-left">
+            <span>📌 ${dayKey(c.date)}</span>
+            ${c.note ? `<span style="color:var(--text-light);font-size:11px;">${c.note}</span>` : ''}
+          </div>
+          <div>
+            <div class="goal-contrib-amt">+${fmt(c.amount)}</div>
+            <div class="goal-contrib-cum">ສະສົມ ${fmt(c.runningTotal)}</div>
+          </div>
+          <button class="del-x" onclick="removeGoalContributionUI('${c.id}','${goalId}')" title="ລົບ">🗑️</button>
+        </div>`;
+      }).join('');
+    });
+  }
+
+  return `<div class="modal-title">${g.icon || '🚩'} ${g.name}</div>
+    <div class="card">
+      <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${pct}%;"></div></div>
+      <div class="report-summary-row" style="margin-top:12px;">
+        <div><div class="num" style="color:var(--green);">${fmt(g.currentAmount)}</div><div class="label">ອອມແລ້ວ</div></div>
+        <div><div class="num" style="color:var(--red);">${fmt(remain)}</div><div class="label">ຄົງເຫຼືອ</div></div>
+        <div><div class="num">${fmt(g.targetAmount)}</div><div class="label">ເປົ້າໝາຍ</div></div>
+      </div>
+      ${g.targetDate ? `<div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:6px;">ພາຍໃນວັນທີ ${g.targetDate}</div>` : ''}
+    </div>
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:8px;">➕ ເພີ່ມການອອມ</div>
+      <input id="goal-contrib-amount" type="number" placeholder="ຈຳນວນເງິນ">
+      <input id="goal-contrib-date" type="date" value="${todayStr()}">
+      <input id="goal-contrib-note" placeholder="ໝາຍເຫດ (ບໍ່ບັງຄັບ)">
+      <button class="btn-primary" onclick="addGoalContributionUI('${goalId}')">ບັນທຶກການອອມ</button>
+    </div>
+    <div class="section-title" style="margin-top:6px;">📊 ລາຍງານຄວາມຄືບໜ້າ (ລາຍວັນ/ລາຍເດືອນ)</div>
+    <div class="card">${listHtml}</div>`;
+}
+
+function addGoalContributionUI(goalId) {
+  const amount = parseFloat(document.getElementById('goal-contrib-amount').value);
+  const date = document.getElementById('goal-contrib-date').value || todayStr();
+  const note = document.getElementById('goal-contrib-note').value.trim();
+  if (!amount) { showToast('ກະລຸນາປ້ອນຈຳນວນເງິນ'); return; }
+  showLoading(true);
+  callApi('addGoalContribution', { obj: { goalId: goalId, amount: amount, date: date, note: note }, userId: CURRENT_USER.id })
+    .then(function () { return fetchAllData(); })
+    .then(function (data) {
+      showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE));
+      renderAll();
+      openGoalDetail(goalId);
+    })
+    .catch(function () { showLoading(false); });
+}
+
+function removeGoalContributionUI(id, goalId) {
+  if (!confirm('ລົບລາຍການອອມນີ້?')) return;
+  showLoading(true);
+  callApi('deleteGoalContribution', { id: id, userId: CURRENT_USER.id })
+    .then(function () { return fetchAllData(); })
+    .then(function (data) {
+      showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE));
+      renderAll();
+      openGoalDetail(goalId);
+    })
+    .catch(function () { showLoading(false); });
 }
 
 function calcInstallmentDetails(l){
@@ -1593,11 +1706,14 @@ function saveDailyBudget() {
     .catch(function () { showLoading(false); });
 }
 
+// 🆕 Menu > 🚩 ເປົ້າໝາຍອອມເງິນ: ດຽວນີ້ແຕ່ລະການ໌ດຄິກໄດ້ ເພື່ອເປີດລາຍງານຄວາມຄືບໜ້າຄືກັນ
 function renderGoalsSection() {
   const rows = STATE.goals.map(g => {
     const pct = Math.min(100, Math.round((Number(g.currentAmount) / Number(g.targetAmount)) * 100));
-    return `<div class="card">
-      <b>${g.icon || '🚩'} ${g.name}</b>
+    return `<div class="card goal-detail-card" onclick="openGoalDetail('${g.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <b>${g.icon || '🚩'} ${g.name}</b><span>›</span>
+      </div>
       <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${pct}%;"></div></div>
       <div style="font-size:12px;color:var(--text-light);margin-top:6px;">${fmt(g.currentAmount)} / ${fmt(g.targetAmount)} ກີບ (${pct}%)</div>
     </div>`;
