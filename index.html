@@ -228,7 +228,7 @@ button{cursor:pointer;font-family:inherit;}
     <div class="login-users-grid" id="login-users-grid"></div>
 
     <div class="login-box">
-      <input id="login-pin" placeholder="ລະຫັດຜ່ານ (PIN)" type="password" maxlength="6">
+      <input id="login-pin" placeholder="ລະຫັດຜ່ານ (PIN)" type="password" maxlength="6" onkeydown="if(event.key==='Enter'){doLogin();}">
       <button class="btn-primary" onclick="doLogin()">ເຂົ້າສູ່ລະບົບ</button>
       <p style="font-size:11px;color:var(--text-light);margin-top:10px;">ບັນຊີເລີ່ມຕົ້ນ PIN: 0000</p>
     </div>
@@ -699,6 +699,16 @@ function reloadData(cb) {
   }).catch(function () { showLoading(false); });
 }
 
+// 🆕 ດຶງຂໍ້ມູນຫຼ້າສຸດ "ຢູ່ເບື້ອງຫຼັງ" ແບບບໍ່ບລັອກໜ້າຈໍ (ບໍ່ສະແດງ loading, ບໍ່ throw error)
+// ໃຊ້ຫຼັງຈາກອັບເດດ STATE ແບບ optimistic ໄປແລ້ວ, ເພື່ອຮັບປະກັນຂໍ້ມູນຖືກຕ້ອງ 100% ໃນທີ່ສຸດ
+function syncInBackground() {
+  fetchAllData().then(function (data) {
+    STATE = data;
+    localStorage.setItem('cachedState', JSON.stringify(STATE));
+    renderAll();
+  }).catch(function () {});
+}
+
 // ---------------- NAV ----------------
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -867,13 +877,15 @@ function editFromSlipView() {
   if (id) openEditTx(id);
 }
 
+// 🆕 ລົບແບບ optimistic: ອັບເດດໜ້າຈໍທັນທີ ບໍ່ຕ້ອງລໍ fetchAllData() ຄ້າງໜ້າຈໍ
 function removeTx(id) {
   if (!confirm('ແນ່ໃຈບໍ່ວ່າຈະລົບລາຍການນີ້?')) return;
-  showLoading(true);
+  STATE.transactions = STATE.transactions.filter(t => t.id !== id);
+  localStorage.setItem('cachedState', JSON.stringify(STATE));
+  renderAll();
   callApi('deleteTransaction', { id: id, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); renderAll(); })
-    .catch(function () { showLoading(false); });
+    .then(function () { syncInBackground(); })
+    .catch(function () { syncInBackground(); });
 }
 
 function renderTransactions() {
@@ -1057,6 +1069,9 @@ function renderSlipPreview(src) {
   el.innerHTML = src ? `<img src="${src}" alt="slip preview">` : '';
 }
 
+// 🆕 ບັນທຶກທຸລະກຳແບບ optimistic — ອັບເດດລາຍການ+ປິດໜ້າຕ່າງທັນທີ ບໍ່ຕ້ອງລໍ
+// fetchAllData() ຮອບໃໝ່ (ໄວຂຶ້ນຫຼາຍ), ແລ້ວຄ່ອຍ sync ຍອດກະເປົາ/ຂໍ້ມູນທັງໝົດ
+// ໃຫ້ຖືກຕ້ອງ 100% ຢູ່ເບື້ອງຫຼັງແບບບໍ່ບລັອກໜ້າຈໍ
 function saveManualTx() {
   const walletId = document.getElementById('manual-wallet').value;
   const amount = parseFloat(document.getElementById('manual-amount').value);
@@ -1067,8 +1082,6 @@ function saveManualTx() {
   const tagId = document.getElementById('manual-tag').value;
   if (!walletId || !amount) { showToast('ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບ'); return; }
 
-  showLoading(true);
-
   const finish = function (receiptUrl) {
     const baseTime = new Date().toISOString().slice(11); // ຮັກສາເວລາປັດຈຸບັນ, ປ່ຽນສະເພາະວັນທີ
     const tx = {
@@ -1077,20 +1090,33 @@ function saveManualTx() {
       receiptUrl: receiptUrl || '',
       createdBy: CURRENT_USER.id
     };
-    const call = editingTxId
-      ? callApi('updateTransaction', { obj: Object.assign({}, tx, { id: editingTxId }), userId: CURRENT_USER.id })
+    const localEditId = editingTxId;
+    const call = localEditId
+      ? callApi('updateTransaction', { obj: Object.assign({}, tx, { id: localEditId }), userId: CURRENT_USER.id })
       : callApi('addTransaction', { obj: tx });
-    call.then(function () { return fetchAllData(); })
-      .then(function (data) {
-        showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); renderAll(); closeModal('modal-add-tx');
-        editingTxId = null;
-      })
-      .catch(function () { showLoading(false); });
+
+    // ✅ ປິດຟອມ+ໂຊວ໌ລາຍການທັນທີແບບ optimistic (ໃຊ້ id ຊົ່ວຄາວຖ້າເປັນລາຍການໃໝ່)
+    const optimisticTx = Object.assign({}, tx, { id: localEditId || ('tmp' + Date.now()) });
+    if (localEditId) {
+      const idx = STATE.transactions.findIndex(t => t.id === localEditId);
+      if (idx > -1) STATE.transactions[idx] = optimisticTx; else STATE.transactions.push(optimisticTx);
+    } else {
+      STATE.transactions.push(optimisticTx);
+    }
+    localStorage.setItem('cachedState', JSON.stringify(STATE));
+    renderAll();
+    closeModal('modal-add-tx');
+    editingTxId = null;
+    showToast('✅ ບັນທຶກລາຍການແລ້ວ');
+
+    // sync ຢູ່ເບື້ອງຫຼັງ ເພື່ອອັບເດດຍອດກະເປົາ ແລະ id ຈິງໃຫ້ຖືກຕ້ອງ
+    call.then(function () { syncInBackground(); }).catch(function () { syncInBackground(); });
   };
 
   if (pendingSlipBase64) {
+    showLoading(true);
     callApi('uploadSlip', { base64Data: pendingSlipBase64, mimeType: pendingSlipMime, fileName: 'slip_' + Date.now() + '.jpg' })
-      .then(function (res) { finish(res.url); })
+      .then(function (res) { showLoading(false); finish(res.url); })
       .catch(function () { showLoading(false); });
   } else {
     finish(pendingSlipExistingUrl);
@@ -1162,6 +1188,7 @@ function removeScanItem(uid) {
   pendingScanItems = pendingScanItems.filter(i => i._uid !== uid);
   renderScanResults();
 }
+// 🆕 ບັນທຶກແບບ optimistic: ປິດ modal ທັນທີ ບໍ່ຕ້ອງລໍ fetchAllData()
 function saveScannedItems() {
   const walletId = document.getElementById('scan-wallet').value;
   if (!walletId) { showToast('ເລືອກກະເປົາເງິນກ່ອນ'); return; }
@@ -1174,17 +1201,23 @@ function saveScannedItems() {
     tagId: '', createdBy: CURRENT_USER.id,
     'ໃບເສັດ': it._receiptImgUrl || ''
   }));
-  showLoading(true);
+
+  // ✅ ອັບເດດ optimistic ທັນທີ
+  txs.forEach(function (tx) {
+    STATE.transactions.push(Object.assign({}, tx, { id: 'tmp' + Date.now() + Math.random().toString(36).slice(2) }));
+  });
+  localStorage.setItem('cachedState', JSON.stringify(STATE));
+  pendingScanItems = [];
+  document.getElementById('scan-results').innerHTML = '';
+  document.getElementById('scan-status').innerText = 'ເລືອກ ຫຼື ຖ່າຍຮູບໃບເສັດ (ຮອງຮັບຫຼາຍໃບພ້ອມກັນ)';
+  document.getElementById('btn-save-scan').classList.add('hidden');
+  renderAll();
+  closeModal('modal-add-tx');
+  showToast('✅ ບັນທຶກລາຍການແລ້ວ');
+
   callApi('addTransactionsBulk', { list: txs })
-    .then(function () {
-      pendingScanItems = [];
-      document.getElementById('scan-results').innerHTML = '';
-      document.getElementById('scan-status').innerText = 'ເລືອກ ຫຼື ຖ່າຍຮູບໃບເສັດ (ຮອງຮັບຫຼາຍໃບພ້ອມກັນ)';
-      document.getElementById('btn-save-scan').classList.add('hidden');
-      return fetchAllData();
-    })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); renderAll(); closeModal('modal-add-tx'); })
-    .catch(function () { showLoading(false); });
+    .then(function () { syncInBackground(); })
+    .catch(function () { syncInBackground(); });
 }
 
 // ---------------- WALLET MODAL ----------------
@@ -1272,14 +1305,19 @@ function reportFilteredTx(){
 function setReportTab(tab){
   reportState.tab = tab;
   renderAndRefreshReports();
-  setTimeout(function () {
-    const activeTab = document.querySelector('.report-tabs button.active');
-    if (activeTab) activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  }, 60);
+}
+// 🆕 ພາ chip ເດືອນ ຫຼື tab ທີ່ Active ຢູ່ ໃຫ້ເລື່ອນມາຢູ່ "ກາງ" ຂອງແຖບສະເໝີ
+// (ໃຊ້ຮ່ວມກັນທັງ report-tabs ແລະ month-scroll)
+function centerActiveScrollers_() {
+  const activeTab = document.querySelector('.report-tabs button.active');
+  if (activeTab) activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  const activeMonth = document.querySelector('.month-pill.active');
+  if (activeMonth) activeMonth.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 }
 function renderAndRefreshReports(){
   document.getElementById('reports-content').innerHTML = renderReportsSection();
   setTimeout(drawActiveReportChart, 50);
+  setTimeout(centerActiveScrollers_, 60);
 }
 function drawActiveReportChart(){
   try {
@@ -1365,6 +1403,7 @@ function renderReportsSection(){
 function renderReportsPage() {
   document.getElementById('reports-content').innerHTML = renderReportsSection();
   setTimeout(drawActiveReportChart, 50);
+  setTimeout(centerActiveScrollers_, 60);
 }
 
 function drawCategoryChart(){
@@ -1746,13 +1785,18 @@ function saveDailyBudget() {
     .catch(function () { showLoading(false); });
 }
 
-// 🆕 Menu > 🚩 ເປົ້າໝາຍອອມເງິນ: ດຽວນີ້ແຕ່ລະການ໌ດຄິກໄດ້ ເພື່ອເປີດລາຍງານຄວາມຄືບໜ້າຄືກັນ
+// 🆕 Menu > 🚩 ເປົ້າໝາຍອອມເງິນ: ດຽວນີ້ແຕ່ລະການ໌ດ ຄິກໄດ້ ເພື່ອເປີດລາຍງານຄວາມຄືບໜ້າຄືກັນ, ແລະ
+// ມີປຸ່ມ ✏️ ແກ້ໄຂ ຊື່/ຈຳນວນເປົ້າໝາຍ/icon/ວັນທີ ໄດ້ໂດຍກົງ (ບໍ່ກະທົບ currentAmount ເກົ່າ)
 function renderGoalsSection() {
   const rows = STATE.goals.map(g => {
     const pct = Math.min(100, Math.round((Number(g.currentAmount) / Number(g.targetAmount)) * 100));
     return `<div class="card goal-detail-card" onclick="openGoalDetail('${g.id}')">
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <b>${g.icon || '🚩'} ${g.name}</b><span>›</span>
+        <b>${g.icon || '🚩'} ${g.name}</b>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="icon-pick-btn" style="height:28px;padding:0 8px;font-size:13px;" onclick="event.stopPropagation();editGoalUI('${g.id}')" title="ແກ້ໄຂ">✏️</button>
+          <span>›</span>
+        </div>
       </div>
       <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${pct}%;"></div></div>
       <div style="font-size:12px;color:var(--text-light);margin-top:6px;">${fmt(g.currentAmount)} / ${fmt(g.targetAmount)} ກີບ (${pct}%)</div>
@@ -1760,20 +1804,44 @@ function renderGoalsSection() {
   }).join('') || '<div class="empty-hint">ຍັງບໍ່ມີເປົ້າໝາຍ</div>';
   return `<div class="modal-title">🚩 ເປົ້າໝາຍອອມເງິນ</div>${rows}
     <div class="card">
+      <div class="icon-pick-row" style="margin-bottom:12px;">
+        <input id="goal-icon" placeholder="emoji" value="🚩">
+        <button type="button" class="icon-pick-btn" onclick="openEmojiPicker('goal-icon')">🙂</button>
+      </div>
       <input id="goal-name" placeholder="ຊື່ເປົ້າໝາຍ">
       <input id="goal-target" type="number" placeholder="ຈຳນວນເປົ້າໝາຍ">
-      <button class="btn-primary" onclick="addGoalUI()">+ ເພີ່ມເປົ້າໝາຍ</button>
+      <input id="goal-targetdate" type="date">
+      <input id="goal-edit-id" type="hidden">
+      <button class="btn-primary" id="goal-submit-btn" onclick="addGoalUI()">+ ເພີ່ມເປົ້າໝາຍ</button>
     </div>`;
 }
+function editGoalUI(id) {
+  const g = STATE.goals.find(x => x.id === id);
+  if (!g) return;
+  document.getElementById('goal-icon').value = g.icon || '🚩';
+  document.getElementById('goal-name').value = g.name || '';
+  document.getElementById('goal-target').value = g.targetAmount || '';
+  document.getElementById('goal-targetdate').value = g.targetDate || '';
+  document.getElementById('goal-edit-id').value = g.id;
+  const btn = document.getElementById('goal-submit-btn');
+  if (btn) btn.innerText = '💾 ບັນທຶກການແກ້ໄຂ';
+  showToast('✏️ ກຳລັງແກ້ໄຂ "' + g.name + '"');
+}
 function addGoalUI() {
+  const icon = document.getElementById('goal-icon').value.trim() || '🚩';
   const name = document.getElementById('goal-name').value.trim();
   const target = parseFloat(document.getElementById('goal-target').value);
+  const targetDate = document.getElementById('goal-targetdate').value;
+  const editId = document.getElementById('goal-edit-id').value;
   if (!name || !target) return;
   showLoading(true);
-  callApi('saveGoal', { obj: { name, targetAmount: target, currentAmount: 0, icon: '🚩' }, userId: CURRENT_USER.id })
+  // 🆕 ຕອນແກ້ໄຂ ບໍ່ຕ້ອງສົ່ງ currentAmount ໄປ, Backend ຈະຮັກສາຄ່າເກົ່າໄວ້ໃຫ້ (mergeWithExisting_)
+  const obj = editId ? { id: editId, name, targetAmount: target, icon, targetDate } : { name, targetAmount: target, currentAmount: 0, icon, targetDate };
+  callApi('saveGoal', { obj: obj, userId: CURRENT_USER.id })
     .then(function (savedGoal) {
       showLoading(false);
-      STATE.goals.push(savedGoal);
+      const idx = STATE.goals.findIndex(x => x.id === savedGoal.id);
+      if (idx > -1) STATE.goals[idx] = savedGoal; else STATE.goals.push(savedGoal);
       localStorage.setItem('cachedState', JSON.stringify(STATE));
       openMenu('goals');
     })
@@ -2031,38 +2099,79 @@ function removeInstallmentPaymentUI(id, loanId) {
     .catch(function () { showLoading(false); });
 }
 
+// 🆕 ໜ້າ "ແທັກຕິດຕາມ" ດຽວນີ້ແກ້ໄຂ (ຊື່/icon) ແລະ ລົບໄດ້ຄົບຖ້ວນ
 function renderTagsSection() {
   const rows = STATE.tags.map(t => {
     const txs = STATE.transactions.filter(x => x.tagId === t.id);
     const sum = txs.reduce((s, x) => s + Number(x.amount), 0);
-    return `<div class="card"><b>${t.icon || '🏷️'} ${t.name}</b><div style="font-size:12px;color:var(--text-light);">ລາຍຈ່າຍລວມ: ${fmt(sum)} ກີບ (${txs.length} ລາຍການ)</div></div>`;
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <b>${t.icon || '🏷️'} ${t.name}</b>
+        <div style="display:flex;gap:6px;">
+          <button class="icon-pick-btn" style="height:32px;padding:0 10px;font-size:14px;" onclick="editTagUI('${t.id}')" title="ແກ້ໄຂ">✏️</button>
+          <button class="del-x" onclick="removeTagUI('${t.id}')" title="ລົບ">🗑️</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text-light);margin-top:4px;">ລາຍຈ່າຍລວມ: ${fmt(sum)} ກີບ (${txs.length} ລາຍການ)</div>
+    </div>`;
   }).join('') || '<div class="empty-hint">ຍັງບໍ່ມີແທັກ</div>';
   return `<div class="modal-title">🏷️ ແທັກຕິດຕາມ</div>${rows}
     <div class="card">
+      <div class="icon-pick-row" style="margin-bottom:12px;">
+        <input id="tag-icon" placeholder="emoji" value="🏷️">
+        <button type="button" class="icon-pick-btn" onclick="openEmojiPicker('tag-icon')">🙂</button>
+      </div>
       <input id="tag-name" placeholder="ຊື່ແທັກ (ເຊັ່ນ ທ່ຽວເລີຍ)">
-      <button class="btn-primary" onclick="addTagUI()">+ ເພີ່ມແທັກ</button>
+      <input id="tag-edit-id" type="hidden">
+      <button class="btn-primary" id="tag-submit-btn" onclick="addTagUI()">+ ເພີ່ມແທັກ</button>
     </div>`;
 }
+function editTagUI(id) {
+  const t = STATE.tags.find(x => x.id === id);
+  if (!t) return;
+  document.getElementById('tag-icon').value = t.icon || '🏷️';
+  document.getElementById('tag-name').value = t.name || '';
+  document.getElementById('tag-edit-id').value = t.id;
+  const btn = document.getElementById('tag-submit-btn');
+  if (btn) btn.innerText = '💾 ບັນທຶກການແກ້ໄຂ';
+  showToast('✏️ ກຳລັງແກ້ໄຂ "' + t.name + '"');
+}
 function addTagUI() {
+  const icon = document.getElementById('tag-icon').value.trim() || '🏷️';
   const name = document.getElementById('tag-name').value.trim();
+  const editId = document.getElementById('tag-edit-id').value;
   if (!name) return;
   showLoading(true);
-  callApi('saveTag', { obj: { name, icon: '🏷️', startDate: todayStr(), endDate: '' }, userId: CURRENT_USER.id })
+  // 🆕 ຕອນແກ້ໄຂ ບໍ່ຕ້ອງສົ່ງ startDate/endDate ໄປ, Backend ຈະຮັກສາຄ່າເກົ່າໄວ້ໃຫ້
+  const obj = editId ? { id: editId, name, icon } : { name, icon, startDate: todayStr(), endDate: '' };
+  callApi('saveTag', { obj: obj, userId: CURRENT_USER.id })
+    .then(function () { return fetchAllData(); })
+    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('tags'); })
+    .catch(function () { showLoading(false); });
+}
+function removeTagUI(id) {
+  if (!confirm('ລົບແທັກນີ້?')) return;
+  showLoading(true);
+  callApi('deleteTag', { id: id, userId: CURRENT_USER.id })
     .then(function () { return fetchAllData(); })
     .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('tags'); })
     .catch(function () { showLoading(false); });
 }
 
 // ---------------- CATEGORIES (ໜ້າໃຫ້ຜູ້ໃຊ້ຈັດການໝວດໝູ່ຂອງຕົນເອງ) ----------------
+// 🆕 ດຽວນີ້ແກ້ໄຂ (ຊື່/icon/ສີ) ໄດ້ນຳ ບໍ່ແມ່ນແຄ່ ເພີ່ມ/ລົບ ອີກຕໍ່ໄປ
 function renderCategoriesSection() {
   const rows = STATE.categories.map(c => `
     <div class="link-row"><span>${c.icon} ${c.name}</span>
-      <button class="del-x" onclick="removeCategoryUI('${c.id}')" title="ລົບໝວດໝູ່">🗑️</button>
+      <div style="display:flex;gap:6px;">
+        <button class="icon-pick-btn" style="height:32px;padding:0 10px;font-size:14px;" onclick="editCategoryUI('${c.id}')" title="ແກ້ໄຂ">✏️</button>
+        <button class="del-x" onclick="removeCategoryUI('${c.id}')" title="ລົບໝວດໝູ່">🗑️</button>
+      </div>
     </div>`).join('') || '<div class="empty-hint">ຍັງບໍ່ມີໝວດໝູ່</div>';
   return `<div class="modal-title">🍰 ໝວດໝູ່ລາຍຈ່າຍ/ລາຍຮັບ (ຂອງຂ້ອຍ)</div>
     <div class="card">${rows}</div>
     <div class="card">
-      <div style="font-size:13px;color:var(--text-light);margin-bottom:6px;">ເພີ່ມໝວດໝູ່ໃໝ່</div>
+      <div style="font-size:13px;color:var(--text-light);margin-bottom:6px;" id="cat-form-hint">ເພີ່ມໝວດໝູ່ໃໝ່</div>
       <div class="icon-pick-row" style="margin-bottom:12px;">
         <input id="cat-icon" placeholder="emoji" value="🍰">
         <button type="button" class="icon-pick-btn" onclick="openEmojiPicker('cat-icon')">🙂</button>
@@ -2070,7 +2179,8 @@ function renderCategoriesSection() {
       <input id="cat-name" placeholder="ຊື່ໝວດໝູ່">
       <div class="color-row" id="cat-color-row"></div>
       <input id="cat-color-selected" type="hidden" value="#F5C842">
-      <button class="btn-primary" onclick="addCategoryUI()">+ ເພີ່ມໝວດໝູ່</button>
+      <input id="cat-edit-id" type="hidden">
+      <button class="btn-primary" id="cat-submit-btn" onclick="addCategoryUI()">+ ເພີ່ມໝວດໝູ່</button>
     </div>`;
 }
 const CATEGORY_COLOR_PRESETS = ['#F28482','#F6BD60','#84A59D','#B39DDB','#8EB8E5','#7FC8A9','#D9A441','#E76F51'];
@@ -2081,13 +2191,29 @@ function renderCatColorSwatches() {
     `<div class="color-swatch" style="background:${c};cursor:pointer;" onclick="document.getElementById('cat-color-selected').value='${c}';"></div>`
   ).join('');
 }
+function editCategoryUI(id) {
+  const c = STATE.categories.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('cat-icon').value = c.icon || '🍰';
+  document.getElementById('cat-name').value = c.name || '';
+  document.getElementById('cat-color-selected').value = c.color || '#F5C842';
+  document.getElementById('cat-edit-id').value = c.id;
+  const hint = document.getElementById('cat-form-hint');
+  if (hint) hint.innerText = 'ກຳລັງແກ້ໄຂໝວດໝູ່ "' + c.name + '"';
+  const btn = document.getElementById('cat-submit-btn');
+  if (btn) btn.innerText = '💾 ບັນທຶກການແກ້ໄຂ';
+  showToast('✏️ ກຳລັງແກ້ໄຂ "' + c.name + '"');
+}
 function addCategoryUI() {
   const icon = document.getElementById('cat-icon').value.trim() || '🍰';
   const name = document.getElementById('cat-name').value.trim();
   const color = document.getElementById('cat-color-selected').value || '#F5C842';
+  const editId = document.getElementById('cat-edit-id').value;
   if (!name) { showToast('ປ້ອນຊື່ໝວດໝູ່'); return; }
   showLoading(true);
-  callApi('saveCategory', { obj: { name, icon, color, isDefault: false }, userId: CURRENT_USER.id })
+  // 🆕 ຕອນແກ້ໄຂ ບໍ່ຕ້ອງສົ່ງ isDefault ໄປ, Backend ຈະຮັກສາຄ່າເກົ່າໄວ້ໃຫ້ (mergeWithExisting_)
+  const obj = editId ? { id: editId, name, icon, color } : { name, icon, color, isDefault: false };
+  callApi('saveCategory', { obj: obj, userId: CURRENT_USER.id })
     .then(function () { return fetchAllData(); })
     .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('categories'); renderAll(); })
     .catch(function () { showLoading(false); });
@@ -2353,16 +2479,34 @@ function renderAdminSection() {
     </div>
     <div class="card">
       <b>👤 ຈັດການຜູ້ໃຊ້</b>
-      <div style="font-size:11px;color:var(--text-light);margin:2px 0 10px;">ສ້າງບັນຊີໃຫ້ສະມາຊິກໃໝ່ (ຊື່ + PIN) — ຫຼັງຈາກນັ້ນຜູ້ໃຊ້ຈະສາມາດ login ແລ້ວປ່ຽນຊື່/PIN ເອງໄດ້ໃນໜ້າ "ໂປຣໄຟລ໌ຂອງຂ້ອຍ". ຂໍ້ມູນທຸລະກຳ ແລະ ກະເປົາເງິນ ຂອງແຕ່ລະຄົນຈະແຍກກັນ ບໍ່ໃຊ້ຮ່ວມກັນ</div>
+      <div style="font-size:11px;color:var(--text-light);margin:2px 0 10px;">ສ້າງບັນຊີໃຫ້ສະມາຊິກໃໝ່ (ຊື່ + PIN) ຫຼື ກົດ ✏️ ເພື່ອແກ້ໄຂຊື່/role ຂອງຜູ້ໃຊ້ທີ່ມີຢູ່ແລ້ວ (ປ່ອຍຊ່ອງ PIN ວ່າງໄວ້ຖ້າບໍ່ຢາກປ່ຽນ PIN). ຂໍ້ມູນທຸລະກຳ ແລະ ກະເປົາເງິນ ຂອງແຕ່ລະຄົນຈະແຍກກັນ ບໍ່ໃຊ້ຮ່ວມກັນ</div>
       ${STATE.users.map(u => `<div class="link-row"><span>${u.avatar || '🐱'} ${u.name} <span class="role-tag">${u.role}</span></span>
-        <button class="del-x" onclick="removeUserUI('${u.id}')">✕</button></div>`).join('')}
+        <div style="display:flex;gap:6px;">
+          <button class="icon-pick-btn" style="height:28px;padding:0 8px;font-size:13px;" onclick="editUserUI('${u.id}')" title="ແກ້ໄຂ">✏️</button>
+          <button class="del-x" onclick="removeUserUI('${u.id}')">✕</button>
+        </div></div>`).join('')}
+      <div style="font-size:13px;color:var(--text-light);margin:10px 0 4px;" id="user-form-hint">ເພີ່ມຜູ້ໃຊ້ໃໝ່</div>
       <input id="new-user-name" placeholder="ຊື່ຜູ້ໃຊ້ໃໝ່">
-      <input id="new-user-pin" placeholder="PIN">
+      <input id="new-user-pin" placeholder="PIN (ປ່ອຍວ່າງ = ບໍ່ປ່ຽນ PIN ຕອນແກ້ໄຂ)">
       <select id="new-user-role"><option value="member">Member</option><option value="manager">Manager</option><option value="admin">Admin</option></select>
-      <button class="btn-primary" onclick="addUserUI()">+ ເພີ່ມຜູ້ໃຊ້</button>
+      <input id="user-edit-id" type="hidden">
+      <button class="btn-primary" id="user-submit-btn" onclick="addUserUI()">+ ເພີ່ມຜູ້ໃຊ້</button>
     </div>`;
   }
   return html;
+}
+function editUserUI(id) {
+  const u = STATE.users.find(x => x.id === id);
+  if (!u) return;
+  document.getElementById('new-user-name').value = u.name || '';
+  document.getElementById('new-user-pin').value = '';
+  document.getElementById('new-user-role').value = u.role || 'member';
+  document.getElementById('user-edit-id').value = u.id;
+  const hint = document.getElementById('user-form-hint');
+  if (hint) hint.innerText = 'ກຳລັງແກ້ໄຂຜູ້ໃຊ້ "' + u.name + '" (ປ່ອຍ PIN ວ່າງ ຖ້າບໍ່ຕ້ອງການປ່ຽນ PIN)';
+  const btn = document.getElementById('user-submit-btn');
+  if (btn) btn.innerText = '💾 ບັນທຶກການແກ້ໄຂ';
+  showToast('✏️ ກຳລັງແກ້ໄຂ "' + u.name + '"');
 }
 function saveAdminTheme() {
   const s = {
@@ -2388,13 +2532,19 @@ function saveExchangeRates() {
     .catch(function () { showLoading(false); });
 }
 
+// 🆕 ຮອງຮັບທັງ "ເພີ່ມຜູ້ໃຊ້ໃໝ່" ແລະ "ແກ້ໄຂຜູ້ໃຊ້ເກົ່າ" (ຖ້າ user-edit-id ມີຄ່າ)
+// ຖ້າແກ້ໄຂ ແລະ ບໍ່ໄດ້ໃສ່ PIN ໃໝ່ -> PIN ເກົ່າຈະຖືກຮັກສາໄວ້ (mergeWithExisting_ ຢູ່ Backend)
 function addUserUI() {
   const name = document.getElementById('new-user-name').value.trim();
   const pin = document.getElementById('new-user-pin').value.trim();
   const role = document.getElementById('new-user-role').value;
-  if (!name || !pin) return;
+  const editId = document.getElementById('user-edit-id').value;
+  if (!name) return;
+  if (!editId && !pin) { showToast('ກະລຸນາປ້ອນ PIN ສຳລັບຜູ້ໃຊ້ໃໝ່'); return; }
   showLoading(true);
-  callApi('saveUser', { obj: { name, pin, role, avatar: '🐱' }, requesterRole: CURRENT_USER.role })
+  const obj = editId ? { id: editId, name, role } : { name, pin, role, avatar: '🐱' };
+  if (editId && pin) obj.pin = pin;
+  callApi('saveUser', { obj: obj, requesterRole: CURRENT_USER.role })
     .then(function () { return fetchAllData(); })
     .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('admin'); })
     .catch(function () { showLoading(false); });
