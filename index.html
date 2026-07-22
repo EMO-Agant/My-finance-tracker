@@ -1224,7 +1224,7 @@ function removeTx(id) {
 // 🆕 ---------------- ລາຍງານປະຈຳວັນ (ປະຕິທິນ) ຢູ່ໜ້າທຸລະກຳ ----------------
 let txCalDate = new Date(); // ເດືອນທີ່ກຳລັງເບິ່ງຢູ່ໃນປະຕິທິນ
 const LAO_MONTHS_CAL = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
-const LAO_DOW_CAL = ['ອາ','ຈ','ອ','ພ','ພຫ','ສຸ','ສ'];
+const LAO_DOW_CAL = ['ອາທິດ','ຈັນ','ຄານ','ພຸດ','ພະຫັດ','ສຸກ','ເສົາ'];
 
 function txCalMonthShift(n) {
   txCalDate = new Date(txCalDate.getFullYear(), txCalDate.getMonth() + n, 1);
