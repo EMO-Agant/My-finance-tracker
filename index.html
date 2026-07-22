@@ -1045,6 +1045,85 @@ function savingsWalletBalance(currency) {
     .reduce((s, w) => s + Number(w.balance || 0), 0);
 }
 
+// 🆕 ---------------- ສຸຂະພາບທາງການເງິນ (Financial Health Score) ----------------
+function calcFinancialHealthScore(){
+  const totalAssets = STATE.wallets.reduce((s,w)=>s+Number(w.balance||0),0);
+
+  const totalDebtRemaining = STATE.installments.reduce((s,l)=>{
+    const payments = paymentsForInstallment(l.id);
+    const d = calcInstallmentDetails(l, payments);
+    return s + d.remainingAmount;
+  }, 0);
+  const debtRatio = totalAssets > 0 ? Math.min(1, totalDebtRemaining/totalAssets) : (totalDebtRemaining>0?1:0);
+  const debtScore = (1 - debtRatio) * 4; // 0-4 ຄະແນນ
+
+  const now = new Date();
+  const ym = now.toISOString().slice(0,7);
+  const txThisMonth = STATE.transactions.filter(t=>ymKey(t.date)===ym);
+  const inc = txThisMonth.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
+  const exp = txThisMonth.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
+  const savingsRate = inc>0 ? Math.max(-1, Math.min(1,(inc-exp)/inc)) : (exp>0? -1:0);
+  const savingsScore = ((savingsRate+1)/2) * 3; // 0-3 ຄະແນນ
+
+  const liquidAssets = STATE.wallets.filter(w=>w.type==='cash'||w.type==='bank'||w.type==='savings')
+    .reduce((s,w)=>s+Number(w.balance||0),0);
+  const avgMonthlyExpense = exp > 0 ? exp : 1;
+  const monthsCovered = liquidAssets/avgMonthlyExpense;
+  const emergencyScore = Math.min(1, monthsCovered/6) * 3; // 0-3 ຄະແນນ
+
+  const total = Math.max(0, Math.min(10, debtScore+savingsScore+emergencyScore));
+  return { total, debtRatio, savingsRate, monthsCovered };
+}
+
+function fhLabelColor(score){
+  if (score < 2) return {label:'ອ່ອນແອ', color:'#F28482'};
+  if (score < 4) return {label:'ຄວນປັບປຸງ', color:'#F6BD60'};
+  if (score < 6) return {label:'ປານກາງ', color:'#F5C842'};
+  if (score < 8) return {label:'ດີ', color:'#84A59D'};
+  return {label:'ດີເລີດ', color:'#3AAFA9'};
+}
+
+function renderFinancialHealthGauge(score){
+  const cx=100, cy=100, r=80;
+  const zones = [
+    {from:0,to:2,color:'#F28482'},{from:2,to:4,color:'#F6BD60'},
+    {from:4,to:6,color:'#F5C842'},{from:6,to:8,color:'#84A59D'},
+    {from:8,to:10,color:'#3AAFA9'}
+  ];
+  function pt(val){
+    const ang = Math.PI - (val/10)*Math.PI;
+    return { x: cx + r*Math.cos(ang), y: cy - r*Math.sin(ang) };
+  }
+  const arcs = zones.map(z=>{
+    const p1=pt(z.from), p2=pt(z.to);
+    return `<path d="M ${p1.x} ${p1.y} A ${r} ${r} 0 0 1 ${p2.x} ${p2.y}" stroke="${z.color}" stroke-width="16" fill="none" stroke-linecap="round"/>`;
+  }).join('');
+  const needleP = pt(score);
+  const {label,color} = fhLabelColor(score);
+  return `<svg viewBox="0 0 200 112" style="width:100%;max-width:260px;display:block;margin:0 auto;">
+    ${arcs}
+    <circle cx="${cx}" cy="${cy}" r="6" fill="${color}"/>
+    <line x1="${cx}" y1="${cy}" x2="${needleP.x}" y2="${needleP.y}" stroke="${color}" stroke-width="4" stroke-linecap="round"/>
+  </svg>
+  <div style="text-align:center;margin-top:-4px;">
+    <div style="font-size:26px;font-weight:800;color:${color};">${score.toFixed(1)} <span style="font-size:13px;color:var(--text-light);font-weight:600;">/10</span></div>
+    <div style="font-weight:700;color:${color};">${label}</div>
+  </div>`;
+}
+
+function renderFinancialHealthSection(){
+  const s = calcFinancialHealthScore();
+  return `<div class="card">
+    <div style="font-weight:700;margin-bottom:6px;text-align:center;">💗 ສຸຂະພາບທາງການເງິນ</div>
+    ${renderFinancialHealthGauge(s.total)}
+    <div class="slip-detail-card" style="margin-top:14px;">
+      <div class="slip-detail-row"><span>📉 ອັດຕາໜີ້ສິນ/ຊັບສິນ</span><span>${Math.round(s.debtRatio*100)}%</span></div>
+      <div class="slip-detail-row"><span>💰 ອັດຕາການອອມເດືອນນີ້</span><span>${Math.round(s.savingsRate*100)}%</span></div>
+      <div class="slip-detail-row"><span>🛟 ເງິນສຳຮອງໄດ້</span><span>${s.monthsCovered.toFixed(1)} ເດືອນ</span></div>
+    </div>
+  </div>`;
+}
+
 function txRowHtml(t) {
   const cat = catById(t.categoryId);
   const w = walletById(t.walletId);
@@ -1808,6 +1887,7 @@ function renderReportsSection(){
   } else if (reportState.tab === 'time'){
     html += `<div class="card"><div style="font-weight:700;margin-bottom:6px;">ລາຍຈ່າຍ-ລາຍຮັບ 6 ເດືອນຫຼ້າສຸດ</div><canvas id="time-chart" height="220"></canvas></div>`;
   } else if (reportState.tab === 'networth'){
+    html += renderFinancialHealthSection();   // 🆕 ເພີ່ມແຖວນີ້ - ຢູ່ເທິງສຸດຂອງແທັບ
     html += `<div class="card"><div class="report-donut-wrap"><canvas id="networth-chart" height="240"></canvas>
       <div class="report-donut-center" id="networth-center"></div></div></div>
       <div class="card" id="networth-table"></div>`;
