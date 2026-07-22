@@ -108,6 +108,33 @@ button{cursor:pointer;font-family:inherit;}
 .tx-item .amt.income{color:var(--green);}
 .tx-item .del-x{background:none;border:none;color:var(--red);font-size:15px;padding:6px;flex-shrink:0;}
 
+/* ---------- 🆕 ລາຍງານປະຈຳວັນ (ປະຕິທິນ) ຢູ່ໜ້າທຸລະກຳ ---------- */
+.tx-summary-row{display:flex;gap:8px;margin-bottom:14px;}
+.tx-summary-card{flex:1;border-radius:16px;padding:12px 6px;text-align:center;}
+.tx-summary-card.income{background:#DFF3E6;}
+.tx-summary-card.expense{background:#FBE1E6;}
+.tx-summary-card.balance{background:#DCEAF7;}
+.tx-summary-card .label{font-size:11px;color:var(--text-light);margin-bottom:4px;}
+.tx-summary-card .val{font-weight:800;font-size:13px;}
+.tx-summary-card.income .val{color:#3AAFA9;}
+.tx-summary-card.expense .val{color:#E4574C;}
+.tx-summary-card.balance .val{color:#2C3E66;}
+
+.tx-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.tx-cal-nav button{background:#F3EAD0;border:none;border-radius:10px;font-size:16px;color:var(--primary-dark);padding:4px 12px;}
+.tx-cal-title{font-weight:700;font-size:14px;}
+.tx-cal-today-row{text-align:right;margin-bottom:8px;}
+.tx-cal-today-btn{background:#FFF3CE;border:none;border-radius:12px;padding:6px 14px;font-size:12px;color:var(--primary-dark);font-weight:700;}
+
+.tx-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.tx-cal-dow{text-align:center;font-size:11px;color:var(--text-light);font-weight:700;padding:4px 0;}
+.tx-cal-cell{min-height:52px;border-radius:8px;padding:3px 1px;text-align:center;cursor:pointer;}
+.tx-cal-cell.empty{visibility:hidden;cursor:default;}
+.tx-cal-cell.today{background:#E7DFF7;}
+.tx-cal-cell .tx-cal-daynum{font-size:12px;font-weight:600;color:var(--text);}
+.tx-cal-cell .tx-cal-inc{font-size:9px;color:#3AAFA9;line-height:1.3;}
+.tx-cal-cell .tx-cal-exp{font-size:9px;color:#E4574C;line-height:1.3;}
+
 /* ---------- SLIP THUMBNAIL & VIEWER ---------- */
 .slip-thumb{width:38px;height:38px;border-radius:12px;border:none;padding:0;overflow:hidden;background:#F3EAD0;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;}
 .slip-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -422,6 +449,18 @@ button{cursor:pointer;font-family:inherit;}
 
     <!-- ---------- TRANSACTIONS ---------- -->
     <div class="page" id="page-transactions">
+      <div class="card">
+        <div class="tx-summary-row" id="tx-summary-row"></div>
+        <div class="tx-cal-nav">
+          <button onclick="txCalMonthShift(-1)">‹</button>
+          <div class="tx-cal-title" id="tx-cal-title"></div>
+          <button onclick="txCalMonthShift(1)">›</button>
+        </div>
+        <div class="tx-cal-today-row">
+          <button class="tx-cal-today-btn" onclick="txCalGoToday()">📅 ວັນນີ້</button>
+        </div>
+        <div class="tx-cal-grid" id="tx-cal-grid"></div>
+      </div>
       <div class="section-title">📋 ທຸລະກຳທັງໝົດ</div>
       <div id="tx-list"></div>
     </div>
@@ -1091,7 +1130,78 @@ function removeTx(id) {
     .catch(function () { syncInBackground(); });
 }
 
+// 🆕 ---------------- ລາຍງານປະຈຳວັນ (ປະຕິທິນ) ຢູ່ໜ້າທຸລະກຳ ----------------
+let txCalDate = new Date(); // ເດືອນທີ່ກຳລັງເບິ່ງຢູ່ໃນປະຕິທິນ
+const LAO_MONTHS_CAL = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
+const LAO_DOW_CAL = ['ອາ','ຈ','ອ','ພ','ພຫ','ສຸ','ສ'];
+
+function txCalMonthShift(n) {
+  txCalDate = new Date(txCalDate.getFullYear(), txCalDate.getMonth() + n, 1);
+  renderTxCalendar();
+}
+function txCalGoToday() {
+  txCalDate = new Date();
+  renderTxCalendar();
+  renderTransactions(); // ຄືນລາຍການທັງໝົດ (ຍົກເລີກຕົວກອງວັນທີ່ເລືອກໄວ້)
+}
+
+function renderTxCalendar() {
+  const y = txCalDate.getFullYear(), m = txCalDate.getMonth();
+  const ym = y + '-' + String(m + 1).padStart(2, '0');
+
+  const txThisMonth = STATE.transactions.filter(t => ymKey(t.date) === ym);
+  const monthIncome = txThisMonth.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+  const monthExpense = txThisMonth.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+  const monthBalance = monthIncome - monthExpense;
+
+  document.getElementById('tx-summary-row').innerHTML = `
+    <div class="tx-summary-card income"><div class="label">ລາຍຮັບ</div><div class="val">${fmt(monthIncome)}</div></div>
+    <div class="tx-summary-card expense"><div class="label">ລາຍຈ່າຍ</div><div class="val">${fmt(monthExpense)}</div></div>
+    <div class="tx-summary-card balance"><div class="label">ຄົງເຫຼືອ</div><div class="val">${fmt(monthBalance)}</div></div>`;
+
+  document.getElementById('tx-cal-title').innerText = LAO_MONTHS_CAL[m] + ' ' + y;
+
+  const dayTotals = {};
+  txThisMonth.forEach(t => {
+    const dk = dayKey(t.date);
+    if (!dayTotals[dk]) dayTotals[dk] = { income: 0, expense: 0 };
+    if (t.type === 'income') dayTotals[dk].income += Number(t.amount);
+    else if (t.type === 'expense') dayTotals[dk].expense += Number(t.amount);
+  });
+
+  const firstDow = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const tKey = todayStr();
+
+  let html = LAO_DOW_CAL.map(d => `<div class="tx-cal-dow">${d}</div>`).join('');
+  for (let i = 0; i < firstDow; i++) html += `<div class="tx-cal-cell empty"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dk = y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    const totals = dayTotals[dk];
+    html += `<div class="tx-cal-cell ${dk === tKey ? 'today' : ''}" onclick="txCalOpenDay('${dk}')">
+      <div class="tx-cal-daynum">${d}</div>
+      ${totals && totals.income ? `<div class="tx-cal-inc">${fmt(totals.income)}</div>` : ''}
+      ${totals && totals.expense ? `<div class="tx-cal-exp">${fmt(totals.expense)}</div>` : ''}
+    </div>`;
+  }
+  document.getElementById('tx-cal-grid').innerHTML = html;
+}
+
+// ກົດວັນທີໃນປະຕິທິນ -> ສະແດງສະເພາະລາຍການວັນນັ້ນຢູ່ລຸ່ມ
+function txCalOpenDay(dk) {
+  const list = [...STATE.transactions]
+    .filter(t => dayKey(t.date) === dk)
+    .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+  document.getElementById('tx-list').innerHTML =
+    `<div class="empty-hint" style="text-align:left;padding:6px 2px;display:flex;justify-content:space-between;align-items:center;">
+       <span>📅 ລາຍການວັນທີ ${dk}</span>
+       <button class="icon-pick-btn" style="height:26px;padding:0 10px;font-size:11px;" onclick="renderTransactions()">ເບິ່ງທັງໝົດ</button>
+     </div>` +
+    (list.map(txRowHtml).join('') || '<div class="empty-hint">ບໍ່ມີລາຍການໃນວັນນີ້</div>');
+}
+
 function renderTransactions() {
+  renderTxCalendar(); // 🆕
   const list = [...STATE.transactions].sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
   document.getElementById('tx-list').innerHTML = list.map(txRowHtml).join('') || '<div class="empty-hint">ຍັງບໍ່ມີລາຍການ</div>';
 }
