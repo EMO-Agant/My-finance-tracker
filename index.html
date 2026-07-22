@@ -314,7 +314,7 @@ button{cursor:pointer;font-family:inherit;}
     max-height:85vh;
   }
 
-/* ✅ ຈຳກັດຂະໜາດວົງກົມ donut chart ບໍ່ໃຫ້ໃຫຍ່ໂພດຕອນຈໍໃຫຍ່ */
+  /* ✅ ຈຳກັດຂະໜາດວົງກົມ donut chart ບໍ່ໃຫ້ໃຫຍ່ໂພດຕອນຈໍໃຫຍ່ */
   .report-donut-wrap{
     max-width: 320px;
     margin: 0 auto;
@@ -322,6 +322,13 @@ button{cursor:pointer;font-family:inherit;}
   .report-donut-wrap canvas{
     max-width: 100% !important;
     height: auto !important;
+  }
+
+  /* ✅ ຈຳກັດຄວາມກວ້າງ card ທີ່ຫໍ່ກຣາຟແທ່ງ/ກຣາຟເສັ້ນ ບໍ່ໃຫ້ໃຫຍ່ໂພດຕອນຈໍໃຫຍ່ */
+  #time-chart,
+  #goal-detail-chart,
+  [id^="goal-chart-"]{
+    max-height: 260px !important;
   }
 }
 
