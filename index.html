@@ -314,16 +314,11 @@ button{cursor:pointer;font-family:inherit;}
     max-height:85vh;
   }
 
-  /* ✅ ໜ້າ overview: ໃຫ້ dashboard + wallet ຢູ່ຄຽງກັນແທນຊ້ອນກັນ */
-  #page-overview{
-    display:grid;
-    grid-template-columns: 1.1fr .9fr;
-    gap:16px;
-    align-items:start;
+  /* ✅ ຈຳກັດຄວາມກວ້າງເນື້ອຫາ ແລະ ຈັດກາງ ໃຫ້ອ່ານງ່າຍຕອນຈໍໃຫຍ່ (ບໍ່ບັງຄັບແບ່ງຖັນອີກຕໍ່ໄປ) */
+  .page{
+    max-width: 820px;
+    margin: 0 auto;
   }
-  #page-overview > .card:first-child,
-  #page-overview > .section-title:nth-of-type(1),
-  #page-overview > .card:nth-of-type(2){ grid-column:1; }
 }
 
 </style>
