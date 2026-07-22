@@ -246,10 +246,16 @@ button:active{transform:scale(.965);}
   pointer-events:none;
 }
 #page-overview > .card:first-child > *{position:relative;}
-.balance-amount{font-size:34px;font-weight:800;margin:2px 0 4px;letter-spacing:-1.2px;line-height:1.15;}
+.balance-amount{
+  font-size:34px;font-weight:800;margin:2px 0 4px;letter-spacing:-1.2px;line-height:1.15;
+  background:linear-gradient(100deg,#3C63A6 0%,#6D5BD0 45%,#9B5FC0 100%);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+}
 .mascot-bubble{
-  background:rgba(255,255,255,.85);border:1px solid #fff;border-radius:18px;padding:9px 15px;
-  font-size:12.5px;font-weight:600;display:inline-block;box-shadow:var(--sh-1);white-space:nowrap;
+  background:rgba(255,255,255,.85);border:1px solid #fff;border-radius:18px;padding:9px 13px;
+  font-size:12px;font-weight:600;display:inline-block;box-shadow:var(--sh-1);
+  white-space:normal;text-align:center;max-width:120px;flex-shrink:0;line-height:1.35;
 }
 .progress-track{background:rgba(255,255,255,.6);border-radius:20px;height:12px;overflow:hidden;display:flex;
   margin-top:8px;box-shadow:inset 0 1px 3px rgba(84,71,140,.12);}
@@ -636,8 +642,9 @@ button:active{transform:scale(.965);}
     <!-- ---------- OVERVIEW ---------- -->
     <div class="page active" id="page-overview">
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:nowrap;">
           <div>
+          <div style="min-width:0;">
             <div style="font-size:12.5px;color:var(--text-light);font-weight:600;">ຍອດຄົງເຫຼືອ</div>
             <div class="balance-amount" id="ov-balance">0 ກີບ</div>
             <div id="ov-other-currencies" style="font-size:12px;color:var(--text-light);font-weight:600;"></div>
