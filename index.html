@@ -479,9 +479,18 @@ button{cursor:pointer;font-family:inherit;}
       <div class="card">
         <select id="tr-from" onchange="updateTransferPreview()"></select>
         <select id="tr-to" onchange="updateTransferPreview()"></select>
-        <input id="tr-amount" type="number" placeholder="ຈຳນວນເງິນ" oninput="updateTransferPreview()">
-        <div id="tr-preview" style="font-size:13px;color:var(--text-light);margin:-4px 0 12px;"></div>
-        <button class="btn-primary" onclick="doTransfer()">ໂອນເງິນ</button>
+
+        <!-- 🆕 ແຖວຈຳນວນເງິນ + ສະກຸນເງິນ (ອັດຕະໂນມັດຕາມກະເປົາຕົ້ນທາງ) -->
+        <div style="display:flex;gap:10px;">
+          <input id="tr-amount" type="number" placeholder="ຈຳນວນເງິນ" oninput="updateTransferPreview()" style="flex:2;margin-bottom:0;">
+          <input id="tr-amount-currency" type="text" readonly style="flex:1;text-align:center;background:#F3EAD0;font-weight:700;margin-bottom:0;">
+        </div>
+
+        <!-- 🆕 ແຖວປຸ່ມໂອນ + ຜົນການແປງສະກຸນເງິນ -->
+        <div style="display:flex;gap:10px;align-items:center;margin-top:12px;">
+          <button class="btn-primary" style="flex:2;" onclick="doTransfer()">ໂອນເງິນ</button>
+          <div id="tr-preview" style="flex:1;font-size:11px;color:var(--text-light);text-align:center;"></div>
+        </div>
       </div>
     </div>
     <!-- ---------- REPORTS ---------- -->
@@ -1271,20 +1280,24 @@ function getExchangeRates() {
 // ສະແດງຕົວຢ່າງຈຳນວນເງິນທີ່ຈະໄດ້ຮັບ ຫຼັງແປງສະກຸນ
 function updateTransferPreview() {
   const preview = document.getElementById('tr-preview');
+  const currBadge = document.getElementById('tr-amount-currency');
   if (!preview) return;
   const fromEl = document.getElementById('tr-from');
   const toEl = document.getElementById('tr-to');
   const fromW = walletById(fromEl.value);
   const toW = walletById(toEl.value);
   const amount = parseFloat(document.getElementById('tr-amount').value) || 0;
+
+  // 🆕 ສະແດງສະກຸນເງິນຂອງກະເປົາຕົ້ນທາງໃສ່ຊ່ອງອັດຕະໂນມັດ (ຄົນໃຊ້ບໍ່ຕ້ອງເລືອກເອງ ກັນພິມຜິດ)
+  if (currBadge) currBadge.value = fromW ? (CURRENCY_SYMBOLS[fromW.currency || 'LAK'] || fromW.currency || '') : '';
+
   if (!fromW || !toW || !amount) { preview.innerHTML = ''; return; }
   const fromCurr = fromW.currency || 'LAK';
   const toCurr = toW.currency || 'LAK';
-  if (fromCurr === toCurr) { preview.innerHTML = ''; return; }
+  if (fromCurr === toCurr) { preview.innerHTML = '✅ ສະກຸນດຽວກັນ'; return; }
   const rates = getExchangeRates();
   const converted = (amount * rates[fromCurr]) / rates[toCurr];
-  preview.innerHTML = '💱 ' + fmt(amount) + ' ' + (CURRENCY_SYMBOLS[fromCurr] || '') +
-    ' ≈ <b style="color:var(--text);">' + fmt(converted) + ' ' + (CURRENCY_SYMBOLS[toCurr] || '') + '</b>';
+  preview.innerHTML = '💱 ຈະໄດ້ຮັບ ≈ <b style="color:var(--text);">' + fmt(converted) + ' ' + (CURRENCY_SYMBOLS[toCurr] || '') + '</b>';
 }
 
 function populateTagSelect() {
