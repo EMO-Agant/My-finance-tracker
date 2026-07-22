@@ -109,11 +109,14 @@ button{cursor:pointer;font-family:inherit;}
 .tx-item .del-x{background:none;border:none;color:var(--red);font-size:15px;padding:6px;flex-shrink:0;}
 
 /* ---------- 🆕 ລາຍງານປະຈຳວັນ (ປະຕິທິນ) ຢູ່ໜ້າທຸລະກຳ ---------- */
-.tx-summary-row{display:flex;gap:8px;margin-bottom:14px;}
+.tx-summary-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.tx-summary-row .tx-summary-card{flex:1 1 40%;min-width:120px;}
 .tx-summary-card{flex:1;border-radius:16px;padding:12px 6px;text-align:center;}
 .tx-summary-card.income{background:#DFF3E6;}
 .tx-summary-card.expense{background:#FBE1E6;}
 .tx-summary-card.balance{background:#DCEAF7;}
+.tx-summary-card.daily{background:#FFF3CE;}
+.tx-summary-card.daily .val{color:#B8860B;}
 .tx-summary-card .label{font-size:11px;color:var(--text-light);margin-bottom:4px;}
 .tx-summary-card .val{font-weight:800;font-size:13px;}
 .tx-summary-card.income .val{color:#3AAFA9;}
@@ -1152,12 +1155,23 @@ function renderTxCalendar() {
   const txThisMonth = STATE.transactions.filter(t => ymKey(t.date) === ym);
   const monthIncome = txThisMonth.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
   const monthExpense = txThisMonth.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
-  const monthBalance = monthIncome - monthExpense;
+
+  // 🆕 ຍອດຄົງເຫຼືອຈິງ = ຍອດລວມທຸກກະເປົາເງິນສະກຸນ LAK (ຄືກັນກັບໜ້າພາບລວມ) ບໍ່ແມ່ນລາຍຮັບ-ລາຍຈ່າຍຂອງເດືອນ
+  const overallBalance = STATE.wallets
+    .filter(w => (w.currency || 'LAK') === 'LAK')
+    .reduce((s, w) => s + Number(w.balance || 0), 0);
+
+  // 🆕 ລາຍຈ່າຍສະເພາະ "ມື້ນີ້" (ບໍ່ແມ່ນລວມທັງເດືອນ)
+  const today = todayStr();
+  const todayExpense = STATE.transactions
+    .filter(t => t.type === 'expense' && dayKey(t.date) === today)
+    .reduce((s, t) => s + Number(t.amount), 0);
 
   document.getElementById('tx-summary-row').innerHTML = `
-    <div class="tx-summary-card income"><div class="label">ລາຍຮັບ</div><div class="val">${fmt(monthIncome)}</div></div>
-    <div class="tx-summary-card expense"><div class="label">ລາຍຈ່າຍ</div><div class="val">${fmt(monthExpense)}</div></div>
-    <div class="tx-summary-card balance"><div class="label">ຄົງເຫຼືອ</div><div class="val">${fmt(monthBalance)}</div></div>`;
+    <div class="tx-summary-card income"><div class="label">ລາຍຮັບ (ເດືອນນີ້)</div><div class="val">${fmt(monthIncome)}</div></div>
+    <div class="tx-summary-card expense"><div class="label">ລາຍຈ່າຍ (ເດືອນນີ້)</div><div class="val">${fmt(monthExpense)}</div></div>
+    <div class="tx-summary-card daily"><div class="label">ລາຍຈ່າຍມື້ນີ້</div><div class="val">${fmt(todayExpense)}</div></div>
+    <div class="tx-summary-card balance"><div class="label">ຍອດຄົງເຫຼືອ</div><div class="val">${fmt(overallBalance)}</div></div>`;
 
   document.getElementById('tx-cal-title').innerText = LAO_MONTHS_CAL[m] + ' ' + y;
 
