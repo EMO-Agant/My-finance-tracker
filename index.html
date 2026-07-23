@@ -698,6 +698,16 @@ button:active{transform:scale(.965);}
 
     <!-- ---------- TRANSACTIONS ---------- -->
     <div class="page" id="page-transactions">
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="openReminders()">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="icon-badge" style="background:var(--grad-hero);">🔔</div>
+          <div>
+            <div style="font-weight:800;font-size:14px;">ຕັ້ງເຕືອນ ຮັບ-ຈ່າຍ</div>
+            <div style="font-size:11px;color:var(--text-light);" id="reminder-summary-line">ກວດຮາຍການທີ່ໃກ້ຮອດກຳນົດ...</div>
+          </div>
+        </div>
+        <span style="font-size:18px;color:var(--text-light);">›</span>
+      </div>
       <div class="card">
         <div class="tx-summary-row" id="tx-summary-row"></div>
         <div class="tx-cal-nav">
@@ -979,7 +989,7 @@ function showToast(msg) {
   t._timer = setTimeout(function () { t.classList.remove('show'); }, 2500);
 }
 
-let STATE = { wallets:[], categories:[], transactions:[], budgets:[], goals:[], goalContributions:[], installments:[], installmentPayments:[], tags:[], users:[], settings:{} };
+let STATE = { wallets:[], categories:[], transactions:[], budgets:[], goals:[], goalContributions:[], installments:[], installmentPayments:[], tags:[], reminders:[], users:[], settings:{} };
 let CURRENT_USER = null;
 let addTxType = 'expense';
 let pendingScanItems = [];
@@ -1120,6 +1130,9 @@ function enterApp() {
   document.getElementById('main-app').classList.remove('hidden');
   document.getElementById('bottom-nav').classList.remove('hidden');
   applyPersonalTheme();
+  if (window.Notification && Notification.permission === 'default') Notification.requestPermission();
+  setTimeout(checkDueReminders, 1500);
+  if (!window._reminderInterval) window._reminderInterval = setInterval(checkDueReminders, 5 * 60 * 1000);
   const adminLink = document.getElementById('menu-row-admin');
   if (adminLink) {
     const canSeeAdmin = CURRENT_USER && (CURRENT_USER.role === 'admin' || CURRENT_USER.role === 'manager');
@@ -2891,6 +2904,216 @@ function removeInstallmentPaymentUI(id, loanId) {
       renderReportsPage();
     })
     .catch(function () { showLoading(false); });
+}
+
+// ---------------- REMINDERS (ຕັ້ງເຕືອນ ຮັບ-ຈ່າຍ) ----------------
+let reminderTab = 'upcoming'; // upcoming | done | overdue
+
+function reminderDaysLeft(dueDate) {
+  const d1 = new Date(todayStr()); const d2 = new Date(dueDate);
+  return Math.round((d2 - d1) / 86400000);
+}
+
+function classifyReminders() {
+  const upcoming = [], done = [], overdue = [];
+  (STATE.reminders || []).forEach(function (r) {
+    if (r.status === 'paid') { done.push(r); return; }
+    const days = reminderDaysLeft(r.dueDate);
+    if (days < 0) overdue.push(r); else upcoming.push(r);
+  });
+  upcoming.sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate));
+  overdue.sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate));
+  done.sort((a,b) => new Date(b.dueDate) - new Date(a.dueDate));
+  return { upcoming, done, overdue };
+}
+
+function openReminders() {
+  document.getElementById('modal-generic').classList.add('show');
+  document.getElementById('generic-content').innerHTML = renderRemindersSection();
+}
+
+function setReminderTab(tab) {
+  reminderTab = tab;
+  document.getElementById('generic-content').innerHTML = renderRemindersSection();
+}
+
+function reminderCardHtml(r) {
+  const days = reminderDaysLeft(r.dueDate);
+  const statusLabel = r.status === 'paid' ? 'ຈ່າຍແລ້ວ ✅' : (days < 0 ? 'ເກີນກຳນົດ ' + Math.abs(days) + ' ວັນ' : (days === 0 ? 'ຄົບກຳນົດມື້ນີ້!' : 'ອີກ ' + days + ' ວັນ'));
+  const statusColor = r.status === 'paid' ? 'var(--green)' : (days < 0 ? 'var(--red)' : (days <= 3 ? '#EBA92B' : 'var(--text-light)'));
+  return `<div class="link-row" style="align-items:flex-start;">
+    <div style="display:flex;gap:10px;align-items:center;">
+      <div class="icon-badge" style="background:var(--grad-hero);">${r.icon || (r.type==='income'?'💰':'🧾')}</div>
+      <div>
+        <div style="font-weight:800;">${r.title}</div>
+        <div style="font-size:11px;color:var(--text-light);">ຄົບກຳນົດ ${r.dueDate}</div>
+        <div style="font-size:11px;font-weight:700;color:${statusColor};">${statusLabel}</div>
+      </div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-weight:800;color:${r.type==='income'?'var(--green)':'var(--red)'};">${r.type==='income'?'+':'-'}${fmt(r.amount)} ${CURRENCY_SYMBOLS[r.currency||'LAK']||''}</div>
+      <div style="display:flex;gap:6px;margin-top:6px;">
+        <button class="icon-pick-btn" style="height:30px;padding:0 10px;font-size:12px;" onclick="event.stopPropagation();toggleReminderPaid('${r.id}')">${r.status==='paid'?'↩️':'✔️'}</button>
+        <button class="icon-pick-btn" style="height:30px;padding:0 10px;font-size:12px;" onclick="event.stopPropagation();editReminderUI('${r.id}')">✏️</button>
+        <button class="del-x" onclick="event.stopPropagation();removeReminderUI('${r.id}')">🗑️</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderRemindersSection() {
+  const groups = classifyReminders();
+  const listMap = { upcoming: groups.upcoming, done: groups.done, overdue: groups.overdue };
+  const list = listMap[reminderTab];
+  const listHtml = list.length ? list.map(reminderCardHtml).join('') : '<div class="empty-hint">ບໍ່ມີລາຍການ</div>';
+
+  return `<div class="modal-title">🔔 ຕັ້ງເຕືອນ ຮັບ-ຈ່າຍ</div>
+    <div class="report-tabs">
+      <button class="${reminderTab==='upcoming'?'active':''}" onclick="setReminderTab('upcoming')">ທີ່ຈະຮອດ (${groups.upcoming.length})</button>
+      <button class="${reminderTab==='done'?'active':''}" onclick="setReminderTab('done')">ທີ່ສຳເລັດແລ້ວ (${groups.done.length})</button>
+      <button class="${reminderTab==='overdue'?'active':''}" onclick="setReminderTab('overdue')">ທີ່ເກີນກຳນົດ (${groups.overdue.length})</button>
+    </div>
+    <div class="card" style="padding:6px 8px;">${listHtml}</div>
+
+    <div class="card">
+      <div style="font-weight:800;margin-bottom:8px;" id="reminder-form-hint">➕ ເພີ່ມລາຍການແຈ້ງເຕືອນ</div>
+      <div class="seg">
+        <button id="rem-type-expense" class="active" onclick="setReminderType('expense')">ລາຍຈ່າຍ</button>
+        <button id="rem-type-income" onclick="setReminderType('income')">ລາຍຮັບ</button>
+      </div>
+      <div class="icon-pick-row" style="margin-bottom:12px;">
+        <input id="rem-icon" placeholder="emoji" value="🧾">
+        <button type="button" class="icon-pick-btn" onclick="openEmojiPicker('rem-icon')">🙂</button>
+      </div>
+      <input id="rem-title" placeholder="ຊື່ລາຍການ (ເຊັ່ນ ຄ່າໄຟຟ້າ)">
+      <div style="display:flex;gap:10px;">
+        <input id="rem-amount" type="number" placeholder="ຈຳນວນເງິນ" style="flex:2;">
+        <select id="rem-currency" style="flex:1;">
+          <option value="LAK">ກີບ</option><option value="THB">฿ ບາດ</option><option value="USD">$ ໂດລາ</option>
+        </select>
+      </div>
+      <input id="rem-duedate" type="date" value="${todayStr()}">
+      <input id="rem-note" placeholder="ໝາຍເຫດ (ບໍ່ບັງຄັບ)">
+      <input id="rem-edit-id" type="hidden">
+      <button class="btn-primary" id="rem-submit-btn" onclick="saveReminderUI()">ບັນທຶກລາຍການແຈ້ງເຕືອນ</button>
+    </div>`;
+}
+
+function setReminderType(type) {
+  window._reminderType = type;
+  document.getElementById('rem-type-expense').classList.toggle('active', type==='expense');
+  document.getElementById('rem-type-income').classList.toggle('active', type==='income');
+}
+
+function editReminderUI(id) {
+  const r = STATE.reminders.find(x => x.id === id);
+  if (!r) return;
+  setReminderType(r.type || 'expense');
+  document.getElementById('rem-icon').value = r.icon || '🧾';
+  document.getElementById('rem-title').value = r.title || '';
+  document.getElementById('rem-amount').value = r.amount || '';
+  document.getElementById('rem-currency').value = r.currency || 'LAK';
+  document.getElementById('rem-duedate').value = r.dueDate || todayStr();
+  document.getElementById('rem-note').value = r.note || '';
+  document.getElementById('rem-edit-id').value = r.id;
+  document.getElementById('reminder-form-hint').innerText = '✏️ ກຳລັງແກ້ໄຂ "' + r.title + '"';
+  document.getElementById('rem-submit-btn').innerText = '💾 ບັນທຶກການແກ້ໄຂ';
+}
+
+function saveReminderUI() {
+  const title = document.getElementById('rem-title').value.trim();
+  const amount = parseFloat(document.getElementById('rem-amount').value);
+  const currency = document.getElementById('rem-currency').value;
+  const dueDate = document.getElementById('rem-duedate').value;
+  const note = document.getElementById('rem-note').value.trim();
+  const icon = document.getElementById('rem-icon').value.trim() || '🧾';
+  const editId = document.getElementById('rem-edit-id').value;
+  const type = window._reminderType || 'expense';
+  if (!title || !amount || !dueDate) { showToast('ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບ'); return; }
+
+  showLoading(true);
+  const obj = editId
+    ? { id: editId, title, amount, currency, dueDate, note, icon, type }
+    : { title, amount, currency, dueDate, note, icon, type, status: 'pending' };
+  callApi('saveReminder', { obj: obj, userId: CURRENT_USER.id })
+    .then(function (saved) {
+      showLoading(false);
+      const idx = STATE.reminders.findIndex(x => x.id === saved.id);
+      if (idx > -1) STATE.reminders[idx] = saved; else STATE.reminders.push(saved);
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      showToast('✅ ບັນທຶກແລ້ວ');
+      reminderTab = 'upcoming';
+      openReminders();
+      updateReminderSummaryLine();
+    })
+    .catch(function () { showLoading(false); });
+}
+
+function toggleReminderPaid(id) {
+  showLoading(true);
+  callApi('markReminderPaid', { id: id, userId: CURRENT_USER.id })
+    .then(function (res) {
+      showLoading(false);
+      const idx = STATE.reminders.findIndex(x => x.id === id);
+      if (idx > -1) STATE.reminders[idx] = res.item;
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      document.getElementById('generic-content').innerHTML = renderRemindersSection();
+      updateReminderSummaryLine();
+    })
+    .catch(function () { showLoading(false); });
+}
+
+function removeReminderUI(id) {
+  if (!confirm('ລົບລາຍການແຈ້ງເຕືອນນີ້?')) return;
+  showLoading(true);
+  callApi('deleteReminder', { id: id, userId: CURRENT_USER.id })
+    .then(function () {
+      showLoading(false);
+      STATE.reminders = STATE.reminders.filter(x => x.id !== id);
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      document.getElementById('generic-content').innerHTML = renderRemindersSection();
+      updateReminderSummaryLine();
+    })
+    .catch(function () { showLoading(false); });
+}
+
+function updateReminderSummaryLine() {
+  const el = document.getElementById('reminder-summary-line');
+  if (!el) return;
+  const groups = classifyReminders();
+  if (groups.overdue.length) el.innerText = '⚠️ ເກີນກຳນົດ ' + groups.overdue.length + ' ລາຍການ!';
+  else if (groups.upcoming.length) el.innerText = 'ໃກ້ຮອດກຳນົດ ' + groups.upcoming.length + ' ລາຍການ';
+  else el.innerText = 'ບໍ່ມີລາຍການໃກ້ຮອດກຳນົດ';
+}
+
+// ---------------- ລະບົບແຈ້ງເຕືອນ + ສຽງ ----------------
+function playReminderBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = 880;
+    o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.15, ctx.currentTime);
+    o.start(); o.stop(ctx.currentTime + 0.35);
+  } catch (e) {}
+}
+
+function checkDueReminders() {
+  if (!CURRENT_USER || !STATE.reminders) return;
+  const today = todayStr();
+  const dueToday = STATE.reminders.filter(r => r.status !== 'paid' && r.dueDate === today);
+  const overdue = STATE.reminders.filter(r => r.status !== 'paid' && r.dueDate < today);
+  if (dueToday.length || overdue.length) {
+    playReminderBeep();
+    const msg = overdue.length
+      ? '⚠️ ມີ ' + overdue.length + ' ລາຍການເກີນກຳນົດຈ່າຍ!'
+      : '🔔 ມີ ' + dueToday.length + ' ລາຍການຄົບກຳນົດມື້ນີ້!';
+    showToast(msg);
+    if (window.Notification && Notification.permission === 'granted') {
+      new Notification('ຕັ້ງເຕືອນ ຮັບ-ຈ່າຍ', { body: msg, icon: 'https://i.postimg.cc/W3K6dFRh/Logo.png' });
+    }
+  }
+  updateReminderSummaryLine();
 }
 
 // ---------------- TAGS ----------------
