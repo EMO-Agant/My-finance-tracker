@@ -874,6 +874,33 @@ button:active{transform:scale(.965);}
     </div>
   </div>
 
+  <!-- ===================== MODAL: REMINDER FORM ===================== -->
+  <div class="modal-overlay" id="modal-reminder-form">
+    <div class="modal-sheet">
+      <button class="modal-close" onclick="closeModal('modal-reminder-form')">✕</button>
+      <div style="font-weight:800;margin-bottom:8px;font-size:18px;" id="reminder-form-hint">➕ ເພີ່ມລາຍການແຈ້ງເຕືອນ</div>
+      <div class="seg">
+        <button id="rem-type-expense" class="active" onclick="setReminderType('expense')">ລາຍຈ່າຍ</button>
+        <button id="rem-type-income" onclick="setReminderType('income')">ລາຍຮັບ</button>
+      </div>
+      <div class="icon-pick-row" style="margin-bottom:12px;">
+        <input id="rem-icon" placeholder="emoji" value="🧾">
+        <button type="button" class="icon-pick-btn" onclick="openEmojiPicker('rem-icon')">🙂</button>
+      </div>
+      <input id="rem-title" placeholder="ຊື່ລາຍການ (ເຊັ່ນ ຄ່າໄຟຟ້າ)">
+      <div style="display:flex;gap:10px;">
+        <input id="rem-amount" type="number" placeholder="ຈຳນວນເງິນ" style="flex:2;">
+        <select id="rem-currency" style="flex:1;">
+          <option value="LAK">ກີບ</option><option value="THB">฿ ບາດ</option><option value="USD">$ ໂດລາ</option>
+        </select>
+      </div>
+      <input id="rem-duedate" type="date">
+      <input id="rem-note" placeholder="ໝາຍເຫດ (ບໍ່ບັງຄັບ)">
+      <input id="rem-edit-id" type="hidden">
+      <button class="btn-primary" id="rem-submit-btn" onclick="saveReminderUI()">ບັນທຶກລາຍການແຈ້ງເຕືອນ</button>
+    </div>
+  </div>
+
   <!-- ===================== MODAL: GENERIC ===================== -->
   <div class="modal-overlay" id="modal-generic">
     <div class="modal-sheet" id="generic-sheet">
@@ -2946,23 +2973,37 @@ function reminderCardHtml(r) {
   const days = reminderDaysLeft(r.dueDate);
   const statusLabel = r.status === 'paid' ? 'ຈ່າຍແລ້ວ ✅' : (days < 0 ? 'ເກີນກຳນົດ ' + Math.abs(days) + ' ວັນ' : (days === 0 ? 'ຄົບກຳນົດມື້ນີ້!' : 'ອີກ ' + days + ' ວັນ'));
   const statusColor = r.status === 'paid' ? 'var(--green)' : (days < 0 ? 'var(--red)' : (days <= 3 ? '#EBA92B' : 'var(--text-light)'));
-  return `<div class="link-row" style="align-items:flex-start;">
-    <div style="display:flex;gap:10px;align-items:center;">
-      <div class="icon-badge" style="background:var(--grad-hero);">${r.icon || (r.type==='income'?'💰':'🧾')}</div>
-      <div>
-        <div style="font-weight:800;">${r.title}</div>
-        <div style="font-size:11px;color:var(--text-light);">ຄົບກຳນົດ ${r.dueDate}</div>
-        <div style="font-size:11px;font-weight:700;color:${statusColor};">${statusLabel}</div>
+
+  // 🆕 ຄິດໄລ່ % ຄວາມໃກ້ຄົບກຳນົດ (window ປະມານ 15 ວັນກ່ອນຄົບກຳນົດ) ສຳລັບແທບຄວາມຄືບໜ້າ
+  const WINDOW_DAYS = 15;
+  let barPct, barColor;
+  if (r.status === 'paid') { barPct = 100; barColor = 'linear-gradient(90deg,#8FE3C6,#7FD0EA)'; }
+  else if (days < 0) { barPct = 100; barColor = 'linear-gradient(90deg,#F0637C,#F0637C)'; }
+  else {
+    barPct = Math.max(4, Math.min(100, Math.round(((WINDOW_DAYS - days) / WINDOW_DAYS) * 100)));
+    barColor = days <= 3 ? 'linear-gradient(90deg,#FFD98E,#F0637C)' : (days <= 7 ? 'linear-gradient(90deg,#8FE3C6,#FFD98E)' : 'linear-gradient(90deg,#8FE3C6,#8FB8F6)');
+  }
+
+  return `<div style="padding:10px 4px 14px;border-bottom:1px solid var(--line);">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:8px;">
+      <div style="display:flex;gap:10px;align-items:center;">
+        <div class="icon-badge" style="background:var(--grad-hero);">${r.icon || (r.type==='income'?'💰':'🧾')}</div>
+        <div>
+          <div style="font-weight:800;">${r.title}</div>
+          <div style="font-size:11px;color:var(--text-light);">ຄົບກຳນົດ ${dayKey(r.dueDate)}</div>
+          <div style="font-size:11px;font-weight:700;color:${statusColor};">${statusLabel}</div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-weight:800;color:${r.type==='income'?'var(--green)':'var(--red)'};">${r.type==='income'?'+':'-'}${fmt(r.amount)} ${CURRENCY_SYMBOLS[r.currency||'LAK']||''}</div>
+        <div style="display:flex;gap:6px;margin-top:6px;">
+          <button class="icon-pick-btn" style="height:30px;padding:0 10px;font-size:12px;" onclick="event.stopPropagation();toggleReminderPaid('${r.id}')">${r.status==='paid'?'↩️':'✔️'}</button>
+          <button class="icon-pick-btn" style="height:30px;padding:0 10px;font-size:12px;" onclick="event.stopPropagation();editReminderUI('${r.id}')">✏️</button>
+          <button class="del-x" onclick="event.stopPropagation();removeReminderUI('${r.id}')">🗑️</button>
+        </div>
       </div>
     </div>
-    <div style="text-align:right;">
-      <div style="font-weight:800;color:${r.type==='income'?'var(--green)':'var(--red)'};">${r.type==='income'?'+':'-'}${fmt(r.amount)} ${CURRENCY_SYMBOLS[r.currency||'LAK']||''}</div>
-      <div style="display:flex;gap:6px;margin-top:6px;">
-        <button class="icon-pick-btn" style="height:30px;padding:0 10px;font-size:12px;" onclick="event.stopPropagation();toggleReminderPaid('${r.id}')">${r.status==='paid'?'↩️':'✔️'}</button>
-        <button class="icon-pick-btn" style="height:30px;padding:0 10px;font-size:12px;" onclick="event.stopPropagation();editReminderUI('${r.id}')">✏️</button>
-        <button class="del-x" onclick="event.stopPropagation();removeReminderUI('${r.id}')">🗑️</button>
-      </div>
-    </div>
+    <div class="goal-bar-track" style="margin:0 2px;"><div class="goal-bar-fill" style="width:${barPct}%;background:${barColor};"></div></div>
   </div>`;
 }
 
@@ -2972,36 +3013,31 @@ function renderRemindersSection() {
   const list = listMap[reminderTab];
   const listHtml = list.length ? list.map(reminderCardHtml).join('') : '<div class="empty-hint">ບໍ່ມີລາຍການ</div>';
 
-  return `<div class="modal-title">🔔 ຕັ້ງເຕືອນ ຮັບ-ຈ່າຍ</div>
+  return `<div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="modal-title" style="margin:8px 0;">🔔 ຕັ້ງເຕືອນ ຮັບ-ຈ່າຍ</div>
+      <button class="btn-outline" style="width:auto;padding:10px 18px;font-size:14px;font-weight:800;" onclick="openReminderFormModal()">➕ ເພີ່ມ</button>
+    </div>
     <div class="report-tabs">
       <button class="${reminderTab==='upcoming'?'active':''}" onclick="setReminderTab('upcoming')">ທີ່ຈະຮອດ (${groups.upcoming.length})</button>
       <button class="${reminderTab==='done'?'active':''}" onclick="setReminderTab('done')">ທີ່ສຳເລັດແລ້ວ (${groups.done.length})</button>
       <button class="${reminderTab==='overdue'?'active':''}" onclick="setReminderTab('overdue')">ທີ່ເກີນກຳນົດ (${groups.overdue.length})</button>
     </div>
-    <div class="card" style="padding:6px 8px;">${listHtml}</div>
+    <div class="card" style="padding:6px 8px;">${listHtml}</div>`;
+}
 
-    <div class="card">
-      <div style="font-weight:800;margin-bottom:8px;" id="reminder-form-hint">➕ ເພີ່ມລາຍການແຈ້ງເຕືອນ</div>
-      <div class="seg">
-        <button id="rem-type-expense" class="active" onclick="setReminderType('expense')">ລາຍຈ່າຍ</button>
-        <button id="rem-type-income" onclick="setReminderType('income')">ລາຍຮັບ</button>
-      </div>
-      <div class="icon-pick-row" style="margin-bottom:12px;">
-        <input id="rem-icon" placeholder="emoji" value="🧾">
-        <button type="button" class="icon-pick-btn" onclick="openEmojiPicker('rem-icon')">🙂</button>
-      </div>
-      <input id="rem-title" placeholder="ຊື່ລາຍການ (ເຊັ່ນ ຄ່າໄຟຟ້າ)">
-      <div style="display:flex;gap:10px;">
-        <input id="rem-amount" type="number" placeholder="ຈຳນວນເງິນ" style="flex:2;">
-        <select id="rem-currency" style="flex:1;">
-          <option value="LAK">ກີບ</option><option value="THB">฿ ບາດ</option><option value="USD">$ ໂດລາ</option>
-        </select>
-      </div>
-      <input id="rem-duedate" type="date" value="${todayStr()}">
-      <input id="rem-note" placeholder="ໝາຍເຫດ (ບໍ່ບັງຄັບ)">
-      <input id="rem-edit-id" type="hidden">
-      <button class="btn-primary" id="rem-submit-btn" onclick="saveReminderUI()">ບັນທຶກລາຍການແຈ້ງເຕືອນ</button>
-    </div>`;
+// 🆕 ເປີດ popup ຟອມ ເພື່ອເພີ່ມລາຍການແຈ້ງເຕືອນໃໝ່
+function openReminderFormModal() {
+  document.getElementById('reminder-form-hint').innerText = '➕ ເພີ່ມລາຍການແຈ້ງເຕືອນ';
+  document.getElementById('rem-submit-btn').innerText = 'ບັນທຶກລາຍການແຈ້ງເຕືອນ';
+  setReminderType('expense');
+  document.getElementById('rem-icon').value = '🧾';
+  document.getElementById('rem-title').value = '';
+  document.getElementById('rem-amount').value = '';
+  document.getElementById('rem-currency').value = 'LAK';
+  document.getElementById('rem-duedate').value = todayStr();
+  document.getElementById('rem-note').value = '';
+  document.getElementById('rem-edit-id').value = '';
+  document.getElementById('modal-reminder-form').classList.add('show');
 }
 
 function setReminderType(type) {
@@ -3023,6 +3059,7 @@ function editReminderUI(id) {
   document.getElementById('rem-edit-id').value = r.id;
   document.getElementById('reminder-form-hint').innerText = '✏️ ກຳລັງແກ້ໄຂ "' + r.title + '"';
   document.getElementById('rem-submit-btn').innerText = '💾 ບັນທຶກການແກ້ໄຂ';
+  document.getElementById('modal-reminder-form').classList.add('show');
 }
 
 function saveReminderUI() {
@@ -3048,7 +3085,8 @@ function saveReminderUI() {
       localStorage.setItem('cachedState', JSON.stringify(STATE));
       showToast('✅ ບັນທຶກແລ້ວ');
       reminderTab = 'upcoming';
-      openReminders();
+      closeModal('modal-reminder-form');
+      document.getElementById('reminders-content').innerHTML = renderRemindersSection();
       updateReminderSummaryLine();
     })
     .catch(function () { showLoading(false); });
