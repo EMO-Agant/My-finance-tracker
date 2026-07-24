@@ -698,7 +698,7 @@ button:active{transform:scale(.965);}
 
     <!-- ---------- TRANSACTIONS ---------- -->
     <div class="page" id="page-transactions">
-      <div class="card" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="openReminders()">
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="showPage('reminders')">
         <div style="display:flex;align-items:center;gap:10px;">
           <div class="icon-badge" style="background:var(--grad-hero);">🔔</div>
           <div>
@@ -751,6 +751,11 @@ button:active{transform:scale(.965);}
     <!-- ---------- REPORTS ---------- -->
     <div class="page" id="page-reports">
       <div id="reports-content"></div>
+    </div>
+
+    <!-- ---------- REMINDERS ---------- -->
+    <div class="page" id="page-reminders">
+      <div id="reminders-content"></div>
     </div>
 
     <!-- ---------- MENU ---------- -->
@@ -2928,13 +2933,13 @@ function classifyReminders() {
 }
 
 function openReminders() {
-  document.getElementById('modal-generic').classList.add('show');
-  document.getElementById('generic-content').innerHTML = renderRemindersSection();
+  showPage('reminders');
+  document.getElementById('reminders-content').innerHTML = renderRemindersSection();
 }
 
 function setReminderTab(tab) {
   reminderTab = tab;
-  document.getElementById('generic-content').innerHTML = renderRemindersSection();
+  document.getElementById('reminders-content').innerHTML = renderRemindersSection();
 }
 
 function reminderCardHtml(r) {
@@ -3057,7 +3062,7 @@ function toggleReminderPaid(id) {
       const idx = STATE.reminders.findIndex(x => x.id === id);
       if (idx > -1) STATE.reminders[idx] = res.item;
       localStorage.setItem('cachedState', JSON.stringify(STATE));
-      document.getElementById('generic-content').innerHTML = renderRemindersSection();
+      document.getElementById('reminders-content').innerHTML = renderRemindersSection();
       updateReminderSummaryLine();
     })
     .catch(function () { showLoading(false); });
@@ -3071,7 +3076,7 @@ function removeReminderUI(id) {
       showLoading(false);
       STATE.reminders = STATE.reminders.filter(x => x.id !== id);
       localStorage.setItem('cachedState', JSON.stringify(STATE));
-      document.getElementById('generic-content').innerHTML = renderRemindersSection();
+      document.getElementById('reminders-content').innerHTML = renderRemindersSection();
       updateReminderSummaryLine();
     })
     .catch(function () { showLoading(false); });
