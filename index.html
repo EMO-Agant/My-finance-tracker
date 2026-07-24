@@ -257,7 +257,8 @@ button:active{transform:scale(.965);}
 }
 .mascot-bubble{
   background:rgba(255,255,255,.85);border:1px solid #fff;border-radius:14px;padding:6px 11px;
-  font-size:11.5px;font-weight:600;display:inline-block;box-shadow:var(--sh-1);white-space:nowrap;
+  font-size:11.5px;font-weight:600;display:inline-block;box-shadow:var(--sh-1);
+  white-space:normal;word-break:break-word;text-align:right;max-width:130px;flex-shrink:0;
 }
 .progress-track{background:rgba(255,255,255,.6);border-radius:20px;height:12px;overflow:hidden;display:flex;
   margin-top:8px;box-shadow:inset 0 1px 3px rgba(84,71,140,.12);}
@@ -645,13 +646,13 @@ button:active{transform:scale(.965);}
     <div class="page active" id="page-overview">
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;">
-          <div>
+          <div style="flex:1;min-width:0;">
             <div style="font-size:12.5px;color:var(--text-light);font-weight:600;">ຍອດຄົງເຫຼືອ</div>
             <div class="balance-amount" id="ov-balance">0 ກີບ</div>
-            <div id="ov-other-currencies" style="font-size:12px;color:var(--text-light);font-weight:600;"></div>
-          </div>
-          <div class="mascot-bubble" id="ov-mascot-msg">ສູ້ໆນະ 💪</div>
+            <div id="ov-other-currencies" ...></div>
         </div>
+        <div class="mascot-bubble" id="ov-mascot-msg">ສູ້ໆນະ 💪</div>
+      </div>
         <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-light);margin-top:16px;font-weight:600;">
           <span>ຄ່າໃຊ້ຈ່າຍລາຍວັນ <span id="ov-daily-pct"></span></span>
           <span id="ov-daily-fraction"></span>
