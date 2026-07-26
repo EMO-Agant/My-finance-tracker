@@ -1194,6 +1194,13 @@ function logout() {
   location.reload();
 }
 
+// 🆕 Auto-sync ຂໍ້ມູນຈາກ server ທຸກ 15 ວິນາທີ ໂດຍອັດຕະໂນມັດ (realtime-like)
+  if (!window._autoSyncInterval) {
+    window._autoSyncInterval = setInterval(function () {
+      if (!document.hidden) syncInBackground();
+    }, 15000);
+  }
+
 // ---------------- RELOAD HELPER ----------------
 function reloadData(cb) {
   showLoading(true);
@@ -1212,6 +1219,11 @@ function syncInBackground() {
     renderAll();
   }).catch(function () {});
 }
+
+// 🆕 ເມື່ອຜູ້ໃຊ້ສະຫຼັບກັບມາເປີດແທັບ/ແອັບນີ້ຄືນ (ຈາກແອັບອື່ນ ຫຼື ຈາກໜ້າຈໍລັອກ) ໃຫ້ດຶງຂໍ້ມູນໃໝ່ທັນທີ
+document.addEventListener('visibilitychange', function () {
+  if (!document.hidden && CURRENT_USER) syncInBackground();
+});
 
 // ---------------- NAV ----------------
 function showPage(name) {
