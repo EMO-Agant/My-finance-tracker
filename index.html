@@ -352,7 +352,7 @@ button:active{transform:scale(.965);}
 .slip-image-wrap img{max-width:100%;border-radius:20px;box-shadow:var(--sh-2);max-height:340px;object-fit:contain;}
 .slip-detail-card{background:rgba(255,255,255,.6);border:1px solid var(--stroke);border-radius:20px;padding:4px 16px;}
 .slip-detail-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;
-  border-bottom:1px solid var(--line);font-size:13px;gap:10px;}
+  border-bottom:1px solid var(--line);font-size:15px;gap:10px;}
 .slip-detail-row:last-child{border-bottom:none;}
 .slip-detail-row span:first-child{color:var(--text-light);}
 .slip-type-badge{padding:4px 13px;border-radius:11px;color:#fff;font-size:12px;font-weight:700;}
@@ -490,14 +490,14 @@ button:active{transform:scale(.965);}
   color:#2E2846;border:none;font-weight:800;font-size:13px;box-shadow:var(--sh-1);}
 .cat-legend{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px 0 4px;}
 .cat-legend-item{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.75);border-radius:15px;
-  padding:7px 13px;font-size:12px;border:1px solid var(--stroke);font-weight:600;}
-.cat-legend-item .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block;}
+  padding:7px 13px;font-size:15px;border:1px solid var(--stroke);font-weight:600;}
+.cat-legend-item .dot{width:15px;height:15px;border-radius:50%;flex-shrink:0;display:inline-block;}
 .report-donut-wrap{position:relative;display:flex;justify-content:center;align-items:center;}
 .report-donut-center{position:absolute;text-align:center;pointer-events:none;}
-.report-donut-center .amt{font-weight:800;font-size:20px;letter-spacing:-.6px;}
-.report-donut-center .lbl{font-size:11px;color:var(--text-light);}
+.report-donut-center .amt{font-weight:800;font-size:25px;letter-spacing:-.6px;}
+.report-donut-center .lbl{font-size:15px;color:var(--text-light);}
 .report-table-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;
-  border-bottom:1px solid var(--line);font-size:13px;gap:8px;}
+  border-bottom:1px solid var(--line);font-size:15px;gap:8px;}
 .report-table-row:last-child{border-bottom:none;}
 .report-table-row .rt-left{display:flex;align-items:center;gap:8px;flex-direction:column;align-items:flex-start;}
 .report-table-row .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
@@ -625,7 +625,11 @@ button:active{transform:scale(.965);}
     <h1 id="login-app-name">ບັນທຶກລາຍຈ່າຍດ້ວຍໃບເສັດ</h1>
     <p>ຕິດຕາມລາຍຮັບ-ລາຍຈ່າຍແບບໜ້າຮັກ 💛</p>
 
-    <div class="login-users-grid" id="login-users-grid"></div>
+    <div class="login-users-grid hidden" id="login-users-grid"></div>
+    <div id="login-welcome-avatar" class="hidden" style="margin-top:18px;text-align:center;">
+      <div class="login-user-avatar" id="login-welcome-avatar-img" style="width:74px;height:74px;margin:0 auto;"></div>
+      <div style="margin-top:8px;font-weight:800;" id="login-welcome-name"></div>
+    </div>
 
     <div class="login-box">
       <input id="login-pin" placeholder="• • • •" type="password" maxlength="6" inputmode="numeric" onkeydown="if(event.key==='Enter'){doLogin();}">
@@ -794,7 +798,6 @@ button:active{transform:scale(.965);}
       <div class="modal-title" id="add-tx-title">➕ ເພີ່ມທຸລະກຳ</div>
       <div class="seg">
         <button id="seg-manual" class="active" onclick="switchAddTab('manual')">✍️ ບັນທຶກເອງ</button>
-        <button id="seg-scan" onclick="switchAddTab('scan')">📷 ສະແກນໃບເສັດ</button>
         <button id="seg-attach" onclick="switchAddTab('attach')">📎 upload ໃບເສັດ</button>
       </div>
 
@@ -1061,7 +1064,6 @@ window.onload = function () {
     STATE = data;
     localStorage.setItem('cachedState', JSON.stringify(data));
     applyTheme();
-    renderUserChips();
 
     if (saved) {
       try {
@@ -1098,6 +1100,14 @@ function renderUserChips() {
       '<div class="login-user-avatar">' + avatarHtml + '</div>' +
       '<div class="login-user-name">' + u.name + '</div></div>';
   }).join('');
+}
+
+function showLoginWelcome(user) {
+  const box = document.getElementById('login-welcome-avatar');
+  const imgWrap = document.getElementById('login-welcome-avatar-img');
+  imgWrap.innerHTML = user.avatarUrl ? '<img src="' + user.avatarUrl + '" alt="">' : (user.avatar || '🐱');
+  document.getElementById('login-welcome-name').innerText = 'ຍິນດີຕ້ອນຮັບ, ' + user.name + ' 💛';
+  box.classList.remove('hidden');
 }
 
 let selectedLoginUserId = null;
@@ -1148,15 +1158,18 @@ function doLogin() {
     CURRENT_USER = res.user;
     localStorage.setItem('savedSession', JSON.stringify(CURRENT_USER));
 
-    enterApp();
+    showLoginWelcome(CURRENT_USER); // 🆕 ໂຊຮູບເຈົ້າຂອງ PIN ນີ້ກ່ອນ
 
-    fetchAllData().then(function (data) {
-      STATE = data;
-      localStorage.setItem('cachedState', JSON.stringify(STATE));
-      renderAll();
-    }).catch(function () {
-      showToast('ໂຫຼດຂໍ້ມູນລົ້ມເຫລວ, ກະລຸນາລອງໃໝ່');
-    });
+    setTimeout(function () {
+      enterApp();
+      fetchAllData().then(function (data) {
+        STATE = data;
+        localStorage.setItem('cachedState', JSON.stringify(STATE));
+        renderAll();
+      }).catch(function () {
+        showToast('ໂຫຼດຂໍ້ມູນລົ້ມເຫລວ, ກະລຸນາລອງໃໝ່');
+      });
+    }, 900); // ໜ່ວງໃຫ້ເຫັນຮູບກ່ອນ 0.9 ວິນາທີ ຈຶ່ງເຂົ້າແອັບ
   }).catch(function () {});
 }
 function enterApp() {
@@ -1402,7 +1415,7 @@ function renderFinancialHealthGauge(score){
     <line x1="${cx}" y1="${cy}" x2="${needleP.x}" y2="${needleP.y}" stroke="${color}" stroke-width="4.5" stroke-linecap="round"/>
   </svg>
   <div style="text-align:center;margin-top:-2px;">
-    <div style="font-size:28px;font-weight:800;color:${color};letter-spacing:-1px;">${score.toFixed(1)} <span style="font-size:13px;color:var(--text-light);font-weight:600;">/10</span></div>
+    <div style="font-size:32px;font-weight:800;color:${color};letter-spacing:-1px;">${score.toFixed(1)} <span style="font-size:15px;color:var(--text-light);font-weight:600;">/10</span></div>
     <div style="font-weight:800;color:${color};">${label}</div>
   </div>`;
 }
@@ -1691,7 +1704,6 @@ let pendingSlipBase64 = null, pendingSlipMime = null, pendingSlipExistingUrl = n
 function openAddTx() {
   editingTxId = null;
   switchAddTab('manual');
-  document.getElementById('seg-scan').classList.remove('hidden');
   document.getElementById('add-tx-title').innerText = '➕ ເພີ່ມທຸລະກຳ';
   resetManualForm();
   document.getElementById('modal-add-tx').classList.add('show');
@@ -1748,10 +1760,8 @@ function resetManualForm() {
 
 function switchAddTab(tab) {
   document.getElementById('seg-manual').classList.toggle('active', tab === 'manual');
-  document.getElementById('seg-scan').classList.toggle('active', tab === 'scan');
   document.getElementById('seg-attach').classList.toggle('active', tab === 'attach');
   document.getElementById('tab-manual').classList.toggle('hidden', tab !== 'manual');
-  document.getElementById('tab-scan').classList.toggle('hidden', tab !== 'scan');
   document.getElementById('tab-attach').classList.toggle('hidden', tab !== 'attach');
   if (tab === 'attach') populateAttachTxSelect();
 }
