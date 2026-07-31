@@ -3028,6 +3028,36 @@ function classifyReminders() {
   return { upcoming, done, overdue };
 }
 
+function renderReminderSummaryCard() {
+  const groups = classifyReminders();
+  const unpaid = [...groups.upcoming, ...groups.overdue];
+  const sums = {};
+  unpaid.forEach(r => {
+    const curr = r.currency || 'LAK';
+    if (!sums[curr]) sums[curr] = { income: 0, expense: 0 };
+    if (r.type === 'income') sums[curr].income += Number(r.amount) || 0;
+    else sums[curr].expense += Number(r.amount) || 0;
+  });
+  const currencies = Object.keys(sums);
+  if (!currencies.length) {
+    return `<div class="card"><div class="empty-hint">🎉 ບໍ່ມີລາຍການທີ່ຍັງບໍ່ສຳເລັດ</div></div>`;
+  }
+  const rows = currencies.map(c => {
+    const s = sums[c];
+    const net = s.income - s.expense;
+    const symbol = CURRENCY_SYMBOLS[c] || c;
+    return `<div class="report-summary-row">
+      <div><div class="num" style="color:var(--green);">+${fmt(s.income)}</div><div class="label">ຈະໄດ້ຮັບ (${symbol})</div></div>
+      <div><div class="num" style="color:var(--red);">-${fmt(s.expense)}</div><div class="label">ຕ້ອງຈ່າຍ (${symbol})</div></div>
+      <div><div class="num" style="color:${net>=0?'var(--green)':'var(--red)'};">${net>=0?'+':''}${fmt(net)}</div><div class="label">ສຸດທິ (${symbol})</div></div>
+    </div>`;
+  }).join('');
+  return `<div class="card">
+    <div style="font-weight:800;margin-bottom:6px;">📊 ສະຫຼຸບລາຍການທີ່ຍັງບໍ່ສຳເລັດ</div>
+    ${rows}
+  </div>`;
+}
+
 function openReminders() {
   showPage('reminders');
   document.getElementById('reminders-content').innerHTML = renderRemindersSection();
@@ -3085,6 +3115,7 @@ function renderRemindersSection() {
       <div class="modal-title" style="margin:8px 0;">🔔 ຕັ້ງເຕືອນ ຮັບ-ຈ່າຍ</div>
       <button class="btn-outline" style="width:auto;padding:10px 18px;font-size:14px;font-weight:800;" onclick="openReminderFormModal()">➕ ເພີ່ມ</button>
     </div>
+    ${renderReminderSummaryCard()}
     <div class="report-tabs">
       <button class="${reminderTab==='upcoming'?'active':''}" onclick="setReminderTab('upcoming')">ທີ່ຈະຮອດ (${groups.upcoming.length})</button>
       <button class="${reminderTab==='done'?'active':''}" onclick="setReminderTab('done')">ທີ່ສຳເລັດແລ້ວ (${groups.done.length})</button>
