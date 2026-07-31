@@ -697,7 +697,7 @@ button:active{transform:scale(.965);}
         </div>
         <div class="tx-cal-grid" id="tx-cal-grid"></div>
       </div>
-      <div class="section-title">📋 ທຸລະກຳທັງໝົດ</div>
+      <div class="section-title" id="tx-list-title">📋 ທຸລະກຳທັງໝົດ</div>
       <div class="card" style="padding:8px;"><div id="tx-list"></div></div>
     </div>
 
@@ -803,7 +803,15 @@ button:active{transform:scale(.965);}
       </div>
 
       <div id="tab-scan" class="hidden">
-        <input type="file" id="receipt-file" accept="image/*" capture="environment" multiple onchange="handleReceiptFiles(event)">
+        <div class="seg" style="margin-bottom:12px;">
+          <button id="scan-type-expense" class="active" onclick="setScanType('expense')">ລາຍຈ່າຍ</button>
+          <button id="scan-type-income" onclick="setScanType('income')">ລາຍຮັບ</button>
+        </div>
+        <div class="slip-upload-row" id="scan-drop-zone">
+          <span class="slip-upload-icon">🤖</span>
+          <label class="slip-upload-label" for="receipt-file">ກົດເພື່ອເລືອກ ຫຼື ຖ່າຍຮູບໃບເສັດ (ຫຼາຍໃບພ້ອມກັນໄດ້)</label>
+          <input type="file" id="receipt-file" accept="image/*" capture="environment" multiple onchange="handleReceiptFiles(event)">
+        </div>
         <div id="scan-status" class="empty-hint">ເລືອກ ຫຼື ຖ່າຍຮູບໃບເສັດ (ຮອງຮັບຫຼາຍໃບພ້ອມກັນ)</div>
         <div id="scan-results"></div>
         <select id="scan-wallet" style="margin-top:8px;"></select>
@@ -1004,6 +1012,12 @@ let STATE = { wallets:[], categories:[], transactions:[], budgets:[], goals:[], 
 let CURRENT_USER = null;
 let addTxType = 'expense';
 let pendingScanItems = [];
+let scanTxType = 'expense';
+function setScanType(type) {
+  scanTxType = type;
+  document.getElementById('scan-type-expense').classList.toggle('active', type === 'expense');
+  document.getElementById('scan-type-income').classList.toggle('active', type === 'income');
+}
 
 function fetchAllData() {
   return callApi('getAllData', { userId: CURRENT_USER ? CURRENT_USER.id : '' });
@@ -1586,8 +1600,14 @@ function txCalOpenDay(dk) {
 
 function renderTransactions() {
   renderTxCalendar();
-  const list = [...STATE.transactions].sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
-  document.getElementById('tx-list').innerHTML = list.map(txRowHtml).join('') || '<div class="empty-hint">ຍັງບໍ່ມີລາຍການ</div>';
+  const y = txCalDate.getFullYear(), m = txCalDate.getMonth();
+  const ym = y + '-' + String(m + 1).padStart(2, '0');
+  const list = [...STATE.transactions]
+    .filter(t => ymKey(t.date) === ym)
+    .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+  const titleEl = document.getElementById('tx-list-title');
+  if (titleEl) titleEl.innerText = '📋 ທຸລະກຳເດືອນ ' + LAO_MONTHS_CAL[m] + ' ' + y;
+  document.getElementById('tx-list').innerHTML = list.map(txRowHtml).join('') || '<div class="empty-hint">ບໍ່ມີລາຍການໃນເດືອນນີ້</div>';
 }
 
 function renderWalletsPage() {
@@ -1681,6 +1701,7 @@ let pendingSlipBase64 = null, pendingSlipMime = null, pendingSlipExistingUrl = n
 
 function resetScanForm() {
   pendingScanItems = [];
+  setScanType('expense');
   const resEl = document.getElementById('scan-results');
   if (resEl) resEl.innerHTML = '';
   const statusEl = document.getElementById('scan-status');
@@ -1927,7 +1948,7 @@ function saveScannedItems() {
   const catMap = {};
   STATE.categories.forEach(c => catMap[c.name] = c.id);
   const txs = pendingScanItems.map(it => ({
-    date: new Date().toISOString(), type: 'expense', walletId,
+    date: new Date().toISOString(), type: scanTxType, walletId,
     categoryId: catMap[it.category] || '', amount: it.amount, note: it.name,
     tagId: '', createdBy: CURRENT_USER.id,
     receiptPoto: it._receiptImgUrl || ''
