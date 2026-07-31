@@ -1527,7 +1527,7 @@ const LAO_DOW_CAL = ['ອາທິດ','ຈັນ','ຄານ','ພຸດ','ພ�
 
 function txCalMonthShift(n) {
   txCalDate = new Date(txCalDate.getFullYear(), txCalDate.getMonth() + n, 1);
-  renderTxCalendar();
+  renderTransactions();
 }
 function txCalGoToday() {
   txCalDate = new Date();
