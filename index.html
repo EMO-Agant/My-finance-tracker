@@ -31,12 +31,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
-/* =====================================================================
-   🎨 AURORA SORBET — Design system
-   ພາດເທວ + ກະຈົກຝ້າ (glass) + ແສງອໍໂຣຣາ
-   ===================================================================== */
 :root{
-  /* ສີພາດເທວຫຼັກ */
   --mint:#A9E5CF;
   --lav:#C9BCF5;
   --peach:#FFC9B5;
@@ -44,7 +39,6 @@
   --sky:#B9D9F8;
   --rose:#FFB3C8;
 
-  /* ຕົວແປທີ່ແອັບ (JS) ອາດຂຽນທັບ */
   --primary:#A9E5CF;
   --primary-dark:#6D5BD0;
   --bg:#FAF8FF;
@@ -93,7 +87,6 @@ body{
   letter-spacing:.1px;
 }
 
-/* ຕົວເລກໃຊ້ Outfit ໃຫ້ຄົມ ແລະ ຄວາມກວ້າງເທົ່າກັນ */
 .balance-amount,.num,.val,.amt,.tx-cal-daynum,.tx-cal-inc,.tx-cal-exp,
 .report-donut-center .amt,.goal-contrib-amt,.goal-contrib-cum,.install-dot{
   font-family:'Outfit','Noto Sans Lao',sans-serif;
@@ -101,7 +94,6 @@ body{
   letter-spacing:-.2px;
 }
 
-/* ---------- ພື້ນຫຼັງອໍໂຣຣາ (ອັນນີ້ຄືລາຍເຊັນຂອງແອັບ) ---------- */
 .bg-decor{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none;}
 .bg-decor .blob{
   position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;
@@ -132,7 +124,6 @@ body{
   padding-bottom:112px;
 }
 
-/* ---------- ພື້ນຖານ card ແບບກະຈົກ ---------- */
 .card{
   background:var(--glass);
   -webkit-backdrop-filter:blur(18px) saturate(165%);
@@ -147,7 +138,6 @@ body{
 }
 @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
 
-/* ---------- ຟອມ ---------- */
 input, select, textarea{
   width:100%;padding:14px 16px;border-radius:var(--radius-xs);
   border:1.5px solid rgba(255,255,255,.9);
@@ -186,7 +176,6 @@ button:active{transform:scale(.965);}
 .user-chip{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.75);
   padding:8px 14px;border-radius:20px;margin:4px;font-size:14px;border:1px solid var(--stroke);}
 
-/* ---------- LOGIN ---------- */
 #login-screen{padding:44px 22px 40px;text-align:center;animation:rise .6s cubic-bezier(.22,1,.36,1) both;}
 #login-screen h1{font-size:25px;margin:14px 0 2px;font-weight:800;letter-spacing:-.3px;}
 #login-screen p{color:var(--text-light);margin-top:0;font-size:13.5px;}
@@ -214,7 +203,6 @@ button:active{transform:scale(.965);}
 .login-user-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
 .login-user-name{font-size:11.5px;color:var(--text);max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;}
 
-/* ---------- TOPBAR ---------- */
 .topbar{
   display:flex;align-items:center;justify-content:space-between;
   padding:max(28px, calc(14px + env(safe-area-inset-top))) 18px 10px;
@@ -228,12 +216,10 @@ button:active{transform:scale(.965);}
 .hamburger{background:rgba(255,255,255,.75);border:1px solid var(--stroke);font-size:17px;
   width:42px;height:42px;border-radius:14px;box-shadow:var(--sh-1);color:var(--text);}
 
-/* ---------- PAGES ---------- */
 .page{display:none;padding:0 16px 20px;}
 .page.active{display:block;}
 .section-title{font-size:15px;font-weight:800;margin:22px 0 10px;letter-spacing:-.2px;display:flex;align-items:center;gap:6px;}
 
-/* ---------- HERO ຍອດເງິນ (signature) ---------- */
 #page-overview > .card:first-child{
   background:var(--grad-hero);
   border:1px solid rgba(255,255,255,.9);
@@ -270,11 +256,9 @@ button:active{transform:scale(.965);}
 .stat-row .num{font-weight:800;font-size:16px;letter-spacing:-.4px;}
 .stat-row .label{font-size:11px;color:var(--text-light);margin-top:2px;}
 
-/* Dashboard card ໃຫ້ຊ່ອງເປັນ tile ນ້ອຍໆ */
 #page-overview .card .stat-row{flex-wrap:wrap;}
 #page-overview .card .stat-row > div{background:rgba(255,255,255,.6);}
 
-/* ---------- WALLET ---------- */
 .wallet-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:6px;}
 .wallet-card{
   border-radius:22px;padding:15px;color:var(--text);position:relative;overflow:hidden;
@@ -291,7 +275,6 @@ button:active{transform:scale(.965);}
 .wallet-card .del{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.85);border:none;
   border-radius:50%;width:26px;height:26px;font-size:12px;z-index:2;box-shadow:var(--sh-1);}
 
-/* ---------- ລາຍການທຸລະກຳ ---------- */
 .tx-item{display:flex;align-items:center;gap:11px;padding:12px 10px;border-radius:var(--radius-sm);
   cursor:pointer;transition:background .18s,transform .18s;margin-bottom:2px;
   border-bottom:1px solid var(--line);}
@@ -307,7 +290,6 @@ button:active{transform:scale(.965);}
 .tx-item .amt.income{color:var(--green);}
 .tx-item .del-x{background:none;border:none;color:var(--red);font-size:14px;padding:6px;flex-shrink:0;opacity:.7;}
 
-/* ---------- ສະຫຼຸບ + ປະຕິທິນ ---------- */
 .tx-summary-row{display:flex;gap:9px;margin-bottom:16px;flex-wrap:wrap;}
 .tx-summary-row .tx-summary-card{flex:1 1 40%;min-width:120px;}
 .tx-summary-card{flex:1;border-radius:20px;padding:13px 8px;text-align:center;border:1px solid rgba(255,255,255,.85);
@@ -342,7 +324,6 @@ button:active{transform:scale(.965);}
 .tx-cal-cell .tx-cal-inc{font-size:9px;color:var(--green);line-height:1.35;font-weight:700;}
 .tx-cal-cell .tx-cal-exp{font-size:9px;color:var(--red);line-height:1.35;font-weight:700;}
 
-/* ---------- SLIP ---------- */
 .slip-thumb{width:38px;height:38px;border-radius:13px;border:1px solid var(--stroke);padding:0;overflow:hidden;
   background:rgba(255,255,255,.8);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;
   box-shadow:var(--sh-1);}
@@ -366,7 +347,6 @@ button:active{transform:scale(.965);}
 .slip-upload-label{font-size:13px;color:var(--text-light);display:block;font-weight:600;}
 #manual-slip-preview img{max-width:100%;border-radius:14px;margin-top:10px;max-height:180px;object-fit:contain;}
 
-/* ---------- TABS / ໝວດໝູ່ ---------- */
 .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;}
 .tabs button{background:rgba(255,255,255,.7);border:1px solid var(--stroke);border-radius:16px;padding:9px 15px;
   font-size:13px;white-space:nowrap;color:var(--text);}
@@ -382,7 +362,6 @@ button:active{transform:scale(.965);}
   transform:translateY(-3px);box-shadow:0 10px 22px rgba(169,229,207,.45);
   box-shadow:0 10px 22px color-mix(in srgb,var(--primary) 45%,transparent);}
 
-/* ---------- GOAL / INSTALLMENT ---------- */
 .goal-bar-track{background:rgba(122,108,168,.12);border-radius:12px;height:11px;overflow:hidden;margin-top:8px;}
 .goal-bar-fill{background:linear-gradient(90deg,#8FE3C6,#8FB8F6);height:100%;border-radius:12px;
   transition:width .7s cubic-bezier(.22,1,.36,1);}
@@ -392,7 +371,6 @@ button:active{transform:scale(.965);}
 .install-dot.paid{background:linear-gradient(140deg,#8FE3C6,#7FD0EA);color:#fff;
   box-shadow:0 4px 10px rgba(127,208,234,.4);}
 
-/* ---------- NAV ລອຍ ---------- */
 .fab-nav{
   position:fixed;bottom:14px;left:12px;right:12px;max-width:456px;margin:0 auto;
   background:rgba(255,255,255,.78);
@@ -416,7 +394,6 @@ button:active{transform:scale(.965);}
 }
 .fab-nav .fab-add:active{transform:scale(.9) rotate(90deg);}
 
-/* ---------- MODAL ---------- */
 .modal-overlay{position:fixed;inset:0;background:rgba(58,51,80,.38);
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
   display:none;align-items:flex-end;z-index:100;}
@@ -464,7 +441,6 @@ button:active{transform:scale(.965);}
   color:var(--primary-dark);font-weight:800;border-bottom-color:transparent;}
 .role-tag{font-size:10.5px;background:rgba(122,108,168,.12);padding:3px 9px;border-radius:9px;font-weight:700;}
 
-/* ---------- REPORTS ---------- */
 .report-tabs{display:flex;gap:7px;overflow-x:auto;margin-bottom:12px;scroll-behavior:smooth;padding:2px 0 6px;}
 .report-tabs::-webkit-scrollbar,.month-scroll::-webkit-scrollbar,.report-filter-row::-webkit-scrollbar,
 .tabs::-webkit-scrollbar{height:0;}
@@ -511,7 +487,6 @@ button:active{transform:scale(.965);}
   white-space:nowrap;max-width:90%;}
 .tag-bubble .tb-amt{opacity:.72;line-height:1.1;font-weight:600;}
 
-/* ---------- PROFILE ---------- */
 .profile-avatar-big{width:96px;height:96px;border-radius:50%;background:var(--grad-hero);margin:0 auto 12px;
   display:flex;align-items:center;justify-content:center;overflow:hidden;border:3px solid #fff;
   box-shadow:0 12px 28px rgba(122,108,168,.25);}
@@ -523,7 +498,6 @@ button:active{transform:scale(.965);}
 .wallpaper-preview{width:100%;border-radius:18px;margin-bottom:10px;max-height:150px;object-fit:cover;display:block;
   box-shadow:var(--sh-1);}
 
-/* ---------- GOAL DETAIL ---------- */
 .goal-detail-card{background:var(--glass);border:1px solid var(--stroke);border-radius:var(--radius);
   padding:16px;cursor:pointer;transition:.2s cubic-bezier(.22,1,.36,1);}
 .goal-detail-card:active{transform:scale(.985);}
@@ -533,7 +507,6 @@ button:active{transform:scale(.965);}
 .goal-contrib-amt{color:var(--green);font-weight:800;text-align:right;}
 .goal-contrib-cum{font-size:11px;color:var(--text-light);text-align:right;}
 
-/* ---------- LOADING / TOAST ---------- */
 #global-loading{position:fixed;inset:0;background:rgba(250,248,255,.72);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
   display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:9999;
@@ -553,13 +526,11 @@ button:active{transform:scale(.965);}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(22px) scale(.94);}
   to{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}}
 
-/* ---------- ຮອງຮັບຄົນທີ່ບໍ່ຢາກໃຫ້ມີເຄື່ອນໄຫວ ---------- */
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
     transition-duration:.001ms !important;}
 }
 
-/* ================= 📱➡️💻 TABLET & DESKTOP ================= */
 @media (min-width: 768px){
   #app{max-width:720px;}
   .wallet-grid{grid-template-columns:repeat(3,1fr);}
@@ -798,6 +769,7 @@ button:active{transform:scale(.965);}
       <div class="modal-title" id="add-tx-title">➕ ເພີ່ມທຸລະກຳ</div>
       <div class="seg">
         <button id="seg-manual" class="active" onclick="switchAddTab('manual')">✍️ ບັນທຶກເອງ</button>
+        <button id="seg-scan" onclick="switchAddTab('scan')">🤖 ສະແກນໃບເສັດ AI</button>
         <button id="seg-attach" onclick="switchAddTab('attach')">📎 upload ໃບເສັດ</button>
       </div>
 
@@ -988,7 +960,6 @@ button:active{transform:scale(.965);}
 const API_URL = 'https://script.google.com/macros/s/AKfycbyLR_IZOCDmENoGXzJuftHlVuSCxwMRF4z2fnJs52_kwv2SaKyNQa7KxPsH9WkR3w8v/exec';
 const CURRENCY_SYMBOLS = { LAK: 'ກີບ', THB: '฿', USD: '$' };
 
-// 🎨 ຕັ້ງຄ່າຮູບແບບກຣາຟໃຫ້ເຂົ້າກັບໂຕນສີໃໝ່ຂອງແອັບ
 if (window.Chart) {
   Chart.defaults.font.family = "'Noto Sans Lao','Outfit',sans-serif";
   Chart.defaults.font.size = 11;
@@ -1008,7 +979,6 @@ function callApi(action, payload, _retry) {
     .then(function (res) { return res.json(); })
     .then(function (json) {
       if (!json.success) {
-        // 🆕 ຖ້າຜິດພາດຈາກບັນຫາ Google redirect (ບໍ່ພົບ action) ໃຫ້ລອງໃໝ່ອັດຕະໂນມັດ 1 ຄັ້ງແບບງຽບໆ ບໍ່ຕ້ອງລົບກວນຜູ້ໃຊ້
         if (!_retry && json.error && json.error.indexOf('ກະລຸນາລະບຸ action') > -1) {
           return callApi(action, payload, true);
         }
@@ -1162,7 +1132,7 @@ function doLogin() {
     CURRENT_USER = res.user;
     localStorage.setItem('savedSession', JSON.stringify(CURRENT_USER));
 
-    showLoginWelcome(CURRENT_USER); // 🆕 ໂຊຮູບເຈົ້າຂອງ PIN ນີ້ກ່ອນ
+    showLoginWelcome(CURRENT_USER);
 
     setTimeout(function () {
       enterApp();
@@ -1173,7 +1143,7 @@ function doLogin() {
       }).catch(function () {
         showToast('ໂຫຼດຂໍ້ມູນລົ້ມເຫລວ, ກະລຸນາລອງໃໝ່');
       });
-    }, 900); // ໜ່ວງໃຫ້ເຫັນຮູບກ່ອນ 0.9 ວິນາທີ ຈຶ່ງເຂົ້າແອັບ
+    }, 900);
   }).catch(function () {});
 }
 function enterApp() {
@@ -1217,7 +1187,6 @@ function syncInBackground() {
   }).catch(function () {});
 }
 
-// 🆕 ເມື່ອຜູ້ໃຊ້ສະຫຼັບກັບມາເປີດແທັບ/ແອັບນີ້ຄືນ (ຈາກແອັບອື່ນ ຫຼື ຈາກໜ້າຈໍລັອກ) ໃຫ້ດຶງຂໍ້ມູນໃໝ່ທັນທີ
 document.addEventListener('visibilitychange', function () {
   if (!document.hidden && CURRENT_USER) syncInBackground();
 });
@@ -1710,11 +1679,24 @@ function selectCategory(id) {
 let editingTxId = null;
 let pendingSlipBase64 = null, pendingSlipMime = null, pendingSlipExistingUrl = null;
 
+function resetScanForm() {
+  pendingScanItems = [];
+  const resEl = document.getElementById('scan-results');
+  if (resEl) resEl.innerHTML = '';
+  const statusEl = document.getElementById('scan-status');
+  if (statusEl) statusEl.innerText = 'ເລືອກ ຫຼື ຖ່າຍຮູບໃບເສັດ (ຮອງຮັບຫຼາຍໃບພ້ອມກັນ)';
+  const fileEl = document.getElementById('receipt-file');
+  if (fileEl) fileEl.value = '';
+  const btn = document.getElementById('btn-save-scan');
+  if (btn) btn.classList.add('hidden');
+}
+
 function openAddTx() {
   editingTxId = null;
   switchAddTab('manual');
   document.getElementById('add-tx-title').innerText = '➕ ເພີ່ມທຸລະກຳ';
   resetManualForm();
+  resetScanForm();
   document.getElementById('modal-add-tx').classList.add('show');
 }
 
@@ -1724,7 +1706,6 @@ function openEditTx(id) {
   if (t.type === 'transfer') { showToast('ລາຍການໂອນເງິນບໍ່ສາມາດແກ້ໄຂຜ່ານໜ້ານີ້ໄດ້'); return; }
   editingTxId = id;
   switchAddTab('manual');
-  document.getElementById('seg-scan').classList.add('hidden');
   document.getElementById('add-tx-title').innerText = '✏️ ແກ້ໄຂທຸລະກຳ';
 
   setTxType(t.type === 'income' ? 'income' : 'expense');
@@ -1769,8 +1750,10 @@ function resetManualForm() {
 
 function switchAddTab(tab) {
   document.getElementById('seg-manual').classList.toggle('active', tab === 'manual');
+  document.getElementById('seg-scan').classList.toggle('active', tab === 'scan');
   document.getElementById('seg-attach').classList.toggle('active', tab === 'attach');
   document.getElementById('tab-manual').classList.toggle('hidden', tab !== 'manual');
+  document.getElementById('tab-scan').classList.toggle('hidden', tab !== 'scan');
   document.getElementById('tab-attach').classList.toggle('hidden', tab !== 'attach');
   if (tab === 'attach') populateAttachTxSelect();
 }
@@ -1954,10 +1937,7 @@ function saveScannedItems() {
     STATE.transactions.push(Object.assign({}, tx, { id: 'tmp' + Date.now() + Math.random().toString(36).slice(2) }));
   });
   localStorage.setItem('cachedState', JSON.stringify(STATE));
-  pendingScanItems = [];
-  document.getElementById('scan-results').innerHTML = '';
-  document.getElementById('scan-status').innerText = 'ເລືອກ ຫຼື ຖ່າຍຮູບໃບເສັດ (ຮອງຮັບຫຼາຍໃບພ້ອມກັນ)';
-  document.getElementById('btn-save-scan').classList.add('hidden');
+  resetScanForm();
   renderAll();
   closeModal('modal-add-tx');
   showToast('✅ ບັນທຶກລາຍການແລ້ວ');
@@ -2069,14 +2049,28 @@ function doTransfer() {
   showLoading(true);
   callApi('transferBetweenWallets', { fromId: from, toId: to, amount: amount, note: '', userId: CURRENT_USER.id })
     .then(function (res) {
-      return fetchAllData().then(function (data) {
-        showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); renderAll();
+      showLoading(false);
+      if (res && res.fromWallet && res.toWallet) {
+        const fi = STATE.wallets.findIndex(w => w.id === res.fromWallet.id);
+        if (fi > -1) STATE.wallets[fi] = res.fromWallet;
+        const ti = STATE.wallets.findIndex(w => w.id === res.toWallet.id);
+        if (ti > -1) STATE.wallets[ti] = res.toWallet;
+        if (res.transaction) STATE.transactions.push(res.transaction);
+        localStorage.setItem('cachedState', JSON.stringify(STATE));
+        renderAll();
         document.getElementById('tr-amount').value = '';
         document.getElementById('tr-preview').innerHTML = '';
-        if (res && res.convertedAmount !== undefined) {
+        if (res.convertedAmount !== undefined) {
           showToast('✅ ໂອນສຳເລັດ ໄດ້ຮັບ ' + fmt(res.convertedAmount) + ' ' + (CURRENCY_SYMBOLS[res.toCurrency] || ''));
         }
-      });
+        syncInBackground();
+      } else {
+        // ຖ້າ backend ບໍ່ໄດ້ສົ່ງຂໍ້ມູນກັບມາຄົບ (ຮຸ້ນເກົ່າ) ຈຶ່ງໂຫຼດຂໍ້ມູນທັງໝົດຄືນເປັນທາງເລືອກສຳຮອງ
+        reloadData(function () {
+          document.getElementById('tr-amount').value = '';
+          document.getElementById('tr-preview').innerHTML = '';
+        });
+      }
     })
     .catch(function () { showLoading(false); });
 }
@@ -2085,7 +2079,6 @@ function doTransfer() {
 let reportState = { tab:'category', period:'month', walletId:'all', type:'expense', month:new Date().toISOString().slice(0,7) };
 const LAO_MONTHS_SHORT = ['ມ.ກ','ກ.ພ','ມີ.ນ','ເມ.ສ','ພ.ພ','ມິ.ຖ','ກ.ລ','ສ.ຫ','ກ.ຍ','ຕ.ລ','ພ.ຈ','ທ.ວ'];
 const LAO_MONTHS_FULL  = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
-// 🎨 ຊຸດສີພາດເທວ ໃຊ້ຮ່ວມກັນທຸກກຣາຟ
 const PASTEL_CHART = ['#FF9BAE','#FFC98E','#A9E5CF','#C9BCF5','#9FCDF7','#FFB8D9','#8FE3C6','#FFD98E','#B5C7F5','#F7B7A3'];
 let _reportChartInstance=null, _timeChartInstance=null, _networthChartInstance=null;
 
@@ -2656,8 +2649,14 @@ function saveDailyBudget() {
   const val = parseFloat(document.getElementById('budget-daily').value);
   showLoading(true);
   callApi('saveSettings', { settingsObj: { dailyBudget: val }, requesterRole: CURRENT_USER.role })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); renderAll(); closeModal('modal-generic'); })
+    .then(function () {
+      showLoading(false);
+      STATE.settings.dailyBudget = val;
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      renderAll();
+      closeModal('modal-generic');
+      showToast('✅ ບັນທຶກງົບປະຈຳວັນແລ້ວ');
+    })
     .catch(function () { showLoading(false); });
 }
 
@@ -2771,15 +2770,27 @@ function addLoanUI() {
   if (!name || !principal) return;
   showLoading(true);
   callApi('saveInstallment', { obj: { name, loanType, principal, currency, interestRate: rate, totalInstallments: total, paidInstallments: 0, startDate: todayStr(), status: 'ກຳລັງຜ່ອນຊຳລະ' }, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('installments'); })
+    .then(function (savedLoan) {
+      showLoading(false);
+      const idx = STATE.installments.findIndex(x => x.id === savedLoan.id);
+      if (idx > -1) STATE.installments[idx] = savedLoan; else STATE.installments.push(savedLoan);
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      openMenu('installments');
+    })
     .catch(function () { showLoading(false); });
 }
 function payInstallmentUI(id) {
   showLoading(true);
   callApi('payInstallment', { id: id, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('installments'); })
+    .then(function (res) {
+      showLoading(false);
+      if (res && res.item) {
+        const idx = STATE.installments.findIndex(x => x.id === res.item.id);
+        if (idx > -1) STATE.installments[idx] = res.item;
+        localStorage.setItem('cachedState', JSON.stringify(STATE));
+      }
+      openMenu('installments');
+    })
     .catch(function () { showLoading(false); });
 }
 
@@ -2976,7 +2987,7 @@ function removeInstallmentPaymentUI(id, loanId) {
 }
 
 // ---------------- REMINDERS (ຕັ້ງເຕືອນ ຮັບ-ຈ່າຍ) ----------------
-let reminderTab = 'upcoming'; // upcoming | done | overdue
+let reminderTab = 'upcoming';
 
 function reminderDaysLeft(dueDate) {
   const d1 = new Date(todayStr()); const d2 = new Date(dueDate);
@@ -3011,7 +3022,6 @@ function reminderCardHtml(r) {
   const statusLabel = r.status === 'paid' ? 'ຈ່າຍແລ້ວ ✅' : (days < 0 ? 'ເກີນກຳນົດ ' + Math.abs(days) + ' ວັນ' : (days === 0 ? 'ຄົບກຳນົດມື້ນີ້!' : 'ອີກ ' + days + ' ວັນ'));
   const statusColor = r.status === 'paid' ? 'var(--green)' : (days < 0 ? 'var(--red)' : (days <= 3 ? '#EBA92B' : 'var(--text-light)'));
 
-  // 🆕 ຄິດໄລ່ % ຄວາມໃກ້ຄົບກຳນົດ (window ປະມານ 15 ວັນກ່ອນຄົບກຳນົດ) ສຳລັບແທບຄວາມຄືບໜ້າ
   const WINDOW_DAYS = 15;
   let barPct, barColor;
   if (r.status === 'paid') { barPct = 100; barColor = 'linear-gradient(90deg,#8FE3C6,#7FD0EA)'; }
@@ -3062,7 +3072,6 @@ function renderRemindersSection() {
     <div class="card" style="padding:6px 8px;">${listHtml}</div>`;
 }
 
-// 🆕 ເປີດ popup ຟອມ ເພື່ອເພີ່ມລາຍການແຈ້ງເຕືອນໃໝ່
 function openReminderFormModal() {
   document.getElementById('reminder-form-hint').innerText = '➕ ເພີ່ມລາຍການແຈ້ງເຕືອນ';
   document.getElementById('rem-submit-btn').innerText = 'ບັນທຶກລາຍການແຈ້ງເຕືອນ';
@@ -3241,16 +3250,27 @@ function addTagUI() {
   showLoading(true);
   const obj = editId ? { id: editId, name, icon } : { name, icon, startDate: todayStr(), endDate: '' };
   callApi('saveTag', { obj: obj, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('tags'); })
+    .then(function (savedTag) {
+      showLoading(false);
+      const idx = STATE.tags.findIndex(x => x.id === savedTag.id);
+      if (idx > -1) STATE.tags[idx] = savedTag; else STATE.tags.push(savedTag);
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      populateTagSelect();
+      openMenu('tags');
+    })
     .catch(function () { showLoading(false); });
 }
 function removeTagUI(id) {
   if (!confirm('ລົບແທັກນີ້?')) return;
   showLoading(true);
   callApi('deleteTag', { id: id, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('tags'); })
+    .then(function () {
+      showLoading(false);
+      STATE.tags = STATE.tags.filter(x => x.id !== id);
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      populateTagSelect();
+      openMenu('tags');
+    })
     .catch(function () { showLoading(false); });
 }
 
@@ -3308,16 +3328,27 @@ function addCategoryUI() {
   showLoading(true);
   const obj = editId ? { id: editId, name, icon, color } : { name, icon, color, isDefault: false };
   callApi('saveCategory', { obj: obj, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('categories'); renderAll(); })
+    .then(function (savedCat) {
+      showLoading(false);
+      const idx = STATE.categories.findIndex(x => x.id === savedCat.id);
+      if (idx > -1) STATE.categories[idx] = savedCat; else STATE.categories.push(savedCat);
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      openMenu('categories');
+      renderAll();
+    })
     .catch(function () { showLoading(false); });
 }
 function removeCategoryUI(id) {
   if (!confirm('ລົບໝວດໝູ່ນີ້?')) return;
   showLoading(true);
   callApi('deleteCategory', { id: id, userId: CURRENT_USER.id })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('categories'); renderAll(); })
+    .then(function () {
+      showLoading(false);
+      STATE.categories = STATE.categories.filter(x => x.id !== id);
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      openMenu('categories');
+      renderAll();
+    })
     .catch(function () { showLoading(false); });
 }
 
@@ -3611,8 +3642,14 @@ function saveAdminTheme() {
   };
   showLoading(true);
   callApi('saveSettings', { settingsObj: s, requesterRole: CURRENT_USER.role })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); applyTheme(); closeModal('modal-generic'); })
+    .then(function () {
+      showLoading(false);
+      Object.assign(STATE.settings, s);
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      applyTheme();
+      closeModal('modal-generic');
+      showToast('✅ ບັນທຶກການປັບແຕ່ງແລ້ວ');
+    })
     .catch(function () { showLoading(false); });
 }
 
@@ -3621,8 +3658,13 @@ function saveExchangeRates() {
   const rateUSD = parseFloat(document.getElementById('admin-rate-usd').value) || 1;
   showLoading(true);
   callApi('saveSettings', { settingsObj: { rateTHB, rateUSD }, requesterRole: CURRENT_USER.role })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); showToast('✅ ບັນທຶກອັດຕາແລກປ່ຽນແລ້ວ'); })
+    .then(function () {
+      showLoading(false);
+      STATE.settings.rateTHB = rateTHB;
+      STATE.settings.rateUSD = rateUSD;
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      showToast('✅ ບັນທຶກອັດຕາແລກປ່ຽນແລ້ວ');
+    })
     .catch(function () { showLoading(false); });
 }
 
@@ -3637,20 +3679,28 @@ function addUserUI() {
   const obj = editId ? { id: editId, name, role } : { name, pin, role, avatar: '🐱' };
   if (editId && pin) obj.pin = pin;
   callApi('saveUser', { obj: obj, requesterRole: CURRENT_USER.role })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('admin'); })
+    .then(function (savedUser) {
+      showLoading(false);
+      const idx = STATE.users.findIndex(x => x.id === savedUser.id);
+      if (idx > -1) STATE.users[idx] = savedUser; else STATE.users.push(savedUser);
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      openMenu('admin');
+    })
     .catch(function () { showLoading(false); });
 }
 function removeUserUI(id) {
   if (!confirm('ລົບຜູ້ໃຊ້ນີ້? (ຂໍ້ມູນທຸລະກຳ/ກະເປົາເງິນທີ່ເຄີຍບັນທຶກໄວ້ຂອງຄົນນີ້ຈະຍັງຄ້າງຢູ່ໃນ Sheet ແຕ່ຈະບໍ່ມີໃຜເຂົ້າເຖິງໄດ້ອີກ)')) return;
   showLoading(true);
   callApi('deleteUser', { id: id, requesterRole: CURRENT_USER.role })
-    .then(function () { return fetchAllData(); })
-    .then(function (data) { showLoading(false); STATE = data; localStorage.setItem('cachedState', JSON.stringify(STATE)); openMenu('admin'); })
+    .then(function () {
+      showLoading(false);
+      STATE.users = STATE.users.filter(x => x.id !== id);
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      openMenu('admin');
+    })
     .catch(function () { showLoading(false); });
 }
 
-// ປິດ modal ເມື່ອກົດພື້ນຫຼັງນອກກ່ອງ
 document.querySelectorAll('.modal-overlay').forEach(function (ov) {
   ov.addEventListener('click', function (e) { if (e.target === ov) closeModal(ov.id); });
 });
