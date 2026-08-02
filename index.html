@@ -1348,12 +1348,16 @@ function savingsWalletBalance(currency) {
 
 // ---------------- ສຸຂະພາບທາງການເງິນ ----------------
 function calcFinancialHealthScore(){
-  const totalAssets = STATE.wallets.reduce((s,w)=>s+Number(w.balance||0),0);
+  const rates = getExchangeRates(); // {LAK:1, THB:650, USD:21000}
+  const toLAK = (amount, currency) => Number(amount||0) * (rates[currency || 'LAK'] || 1);
+
+  // 🩹 ແປງທຸກກະເປົາເປັນກີບກາງກ່ອນບວກ
+  const totalAssets = STATE.wallets.reduce((s,w)=> s + toLAK(w.balance, w.currency), 0);
 
   const totalDebtRemaining = STATE.installments.reduce((s,l)=>{
     const payments = paymentsForInstallment(l.id);
     const d = calcInstallmentDetails(l, payments);
-    return s + d.remainingAmount;
+    return s + toLAK(d.remainingAmount, l.currency); // 🩹 ແປງໜີ້ຕາມສະກຸນຂອງລາຍການຜ່ອນ
   }, 0);
   const debtRatio = totalAssets > 0 ? Math.min(1, totalDebtRemaining/totalAssets) : (totalDebtRemaining>0?1:0);
   const debtScore = (1 - debtRatio) * 4;
@@ -1361,13 +1365,13 @@ function calcFinancialHealthScore(){
   const now = new Date();
   const ym = now.toISOString().slice(0,7);
   const txThisMonth = STATE.transactions.filter(t=>ymKey(t.date)===ym);
-  const inc = txThisMonth.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
-  const exp = txThisMonth.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
+  const inc = txThisMonth.filter(t=>t.type==='income').reduce((s,t)=>s+toLAK(t.amount, t.currency),0);
+  const exp = txThisMonth.filter(t=>t.type==='expense').reduce((s,t)=>s+toLAK(t.amount, t.currency),0);
   const savingsRate = inc>0 ? Math.max(-1, Math.min(1,(inc-exp)/inc)) : (exp>0? -1:0);
   const savingsScore = ((savingsRate+1)/2) * 3;
 
   const liquidAssets = STATE.wallets.filter(w=>w.type==='cash'||w.type==='bank'||w.type==='savings')
-    .reduce((s,w)=>s+Number(w.balance||0),0);
+    .reduce((s,w)=>s+toLAK(w.balance, w.currency),0);
   const avgMonthlyExpense = exp > 0 ? exp : 1;
   const monthsCovered = liquidAssets/avgMonthlyExpense;
   const emergencyScore = Math.min(1, monthsCovered/6) * 3;
@@ -2320,7 +2324,17 @@ function drawNetWorthChart(){
   const centerEl = document.getElementById('networth-center');
   const tableEl = document.getElementById('networth-table');
   if (!centerEl || !tableEl) return;
-  const total = STATE.wallets.reduce((s,w)=>s+Number(w.balance||0),0);
+
+  const rates = getExchangeRates();
+  const toLAK = (amount, currency) => Number(amount||0) * (rates[currency || 'LAK'] || 1);
+
+  const totalAssets = STATE.wallets.reduce((s,w)=>s+toLAK(w.balance, w.currency),0);
+  const totalDebt = STATE.installments.reduce((s,l)=>{
+    const d = calcInstallmentDetails(l, paymentsForInstallment(l.id));
+    return s + toLAK(d.remainingAmount, l.currency);
+  }, 0);
+  const netWorth = totalAssets - totalDebt;
+
   const colors = PASTEL_CHART;
   const ctx = document.getElementById('networth-chart');
   if (_networthChartInstance){ _networthChartInstance.destroy(); _networthChartInstance=null; }
@@ -2329,10 +2343,16 @@ function drawNetWorthChart(){
       data:{ labels: STATE.wallets.map(w=>w.name), datasets:[{ data: STATE.wallets.map(w=>Number(w.balance||0)), backgroundColor: STATE.wallets.map((_,i)=>colors[i%colors.length]), borderWidth:3, borderColor:'#fff', hoverOffset:8 }] },
       options:{ cutout:'70%', plugins:{ legend:{ display:false } } } });
   }
-  centerEl.innerHTML = `<div class="amt">${fmt(total)}</div><div class="lbl">ຊັບສິນສຸດທິ</div>`;
+
+  centerEl.innerHTML = `<div class="amt">${fmt(netWorth)}</div><div class="lbl">ຊັບສິນສຸດທິ (ຫັກໜີ້ແລ້ວ)</div>`;
+
   tableEl.innerHTML = STATE.wallets.map((w,i)=>
-    `<div class="report-table-row"><div class="rt-left" style="flex-direction:row;align-items:center;"><span class="dot" style="background:${colors[i%colors.length]};"></span>${w.icon} ${w.name}</div><div>${total?Math.round(Number(w.balance||0)/total*100):0}% · ${fmt(w.balance)}</div></div>`
-  ).join('') || '<div class="empty-hint">ຍັງບໍ່ມີກະເປົາເງິນ</div>';
+    `<div class="report-table-row"><div class="rt-left" style="flex-direction:row;align-items:center;"><span class="dot" style="background:${colors[i%colors.length]};"></span>${w.icon} ${w.name}</div><div>${fmt(w.balance)}</div></div>`
+  ).join('') +
+  `<div class="report-table-row" style="border-top:2px solid var(--line);margin-top:6px;padding-top:12px;">
+     <div class="rt-left" style="flex-direction:row;align-items:center;"><span class="dot" style="background:#F0637C;"></span>ໜີ້ສິນຄົງເຫຼືອທັງໝົດ</div>
+     <div style="color:var(--red);font-weight:800;">-${fmt(totalDebt)}</div>
+   </div>`;
 }
 
 function openMenu(section) {
