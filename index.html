@@ -1195,6 +1195,11 @@ function reloadData(cb) {
 
 function syncInBackground() {
   fetchAllData().then(function (data) {
+    // 🩹 ຖ້າຂໍ້ມູນທີ່ດຶງມາໃໝ່ ຄືກັນກັບຂໍ້ມູນເກົ່າທຸກຢ່າງ ບໍ່ຕ້ອງ render ຊ້ຳເລີຍ
+    // (ກັນອາການ "ໜ້າຈໍກະພິບ/ຣີເຟຣຊ" ທັງທີ່ບໍ່ມີຫຍັງປ່ຽນແປງ)
+    const newStr = JSON.stringify(data);
+    const oldStr = JSON.stringify(STATE);
+    if (newStr === oldStr) return;
     STATE = data;
     localStorage.setItem('cachedState', JSON.stringify(STATE));
     renderAll();
@@ -1211,6 +1216,7 @@ function showPage(name) {
   document.getElementById('page-' + name).classList.add('active');
   document.querySelectorAll('.fab-nav button[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === name));
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (name === 'reports') renderReportsPage(); // 🩹 ອັບເດດລາຍງານໃໝ່ສະເພາະຕອນເປີດເຂົ້າມາ
 }
 
 function closeModal(id) {
@@ -1226,7 +1232,12 @@ function renderAll() {
   renderDashboard();
   renderTransactions();
   renderWalletsPage();
-  renderReportsPage();
+  // 🩹 ວາດໜ້າ "ລາຍງານ" ຊ້ຳ ສະເພາະຕອນຜູ້ໃຊ້ເປີດໜ້ານີ້ຢູ່ເທົ່ານັ້ນ
+  // ເພື່ອບໍ່ໃຫ້ chart ຖືກທຳລາຍ+ວາດໃໝ່ (ຄືກັບ "ຣີເຟຣຊ") ທຸກຄັ້ງທີ່ sync ພື້ນຫຼັງ
+  const reportsPageEl = document.getElementById('page-reports');
+  if (reportsPageEl && reportsPageEl.classList.contains('active')) {
+    renderReportsPage();
+  }
   populateCategoryGrid();
   populateWalletSelects();
   populateTagSelect();
@@ -1348,32 +1359,58 @@ function savingsWalletBalance(currency) {
 
 // ---------------- ສຸຂະພາບທາງການເງິນ ----------------
 function calcFinancialHealthScore(){
-  const totalAssets = STATE.wallets.reduce((s,w)=>s+Number(w.balance||0),0);
+  const rates = getExchangeRates(); // {LAK:1, THB:.., USD:..}
+  const toLAK = (amount, curr) => Number(amount||0) * (rates[curr||'LAK'] || 1);
 
-  const totalDebtRemaining = STATE.installments.reduce((s,l)=>{
+  // ຊັບສິນລວມທັງໝົດ (ແປງທຸກສະກຸນເປັນກີບກ່ອນລວມ)
+  const totalAssetsLAK = STATE.wallets.reduce((s,w)=> s + toLAK(w.balance, w.currency), 0);
+
+  // ໜີ້ສິນຄົງເຫຼືອທັງໝົດ (ແປງເປັນກີບເຊັ່ນກັນ)
+  const totalDebtRemainingLAK = STATE.installments.reduce((s,l)=>{
     const payments = paymentsForInstallment(l.id);
     const d = calcInstallmentDetails(l, payments);
-    return s + d.remainingAmount;
+    return s + toLAK(d.remainingAmount, l.currency);
   }, 0);
-  const debtRatio = totalAssets > 0 ? Math.min(1, totalDebtRemaining/totalAssets) : (totalDebtRemaining>0?1:0);
-  const debtScore = (1 - debtRatio) * 4;
 
+  // ຊັບສິນສຸດທິ = ຊັບສິນ - ໜີ້ສິນ
+  const netWorthLAK = totalAssetsLAK - totalDebtRemainingLAK;
+
+  // ລາຍຮັບທັງໝົດຕະຫຼອດການ (ບໍ່ຈຳກັດສະເພາະເດືອນນີ້) ແປງເປັນກີບ
+  const totalIncomeLAK = STATE.transactions
+    .filter(t => t.type === 'income')
+    .reduce((s,t) => s + toLAK(t.amount, t.currency), 0);
+
+  // 1) ຄະແນນ "ອັດຕາການຮັກສາຊັບສິນ" 0-4
+  //    = ຊັບສິນສຸດທິ ທຽບໃສ່ລາຍຮັບທັງໝົດທີ່ເຄີຍໄດ້ຮັບ
+  //    (ຖ້າໄດ້ຮັບເງິນມາຫຼາຍແຕ່ຊັບສິນສຸດທິນ້ອຍ/ຕິດລົບ = ໃຊ້ຈ່າຍເກີນຕົວ)
+  const retentionRatio = totalIncomeLAK > 0
+    ? Math.max(-1, Math.min(1, netWorthLAK / totalIncomeLAK))
+    : (netWorthLAK > 0 ? 1 : (netWorthLAK < 0 ? -1 : 0));
+  const retentionScore = ((retentionRatio + 1) / 2) * 4;
+
+  // 2) ຄະແນນໜີ້ສິນ 0-3 (ໜີ້ຍິ່ງນ້ອຍທຽບຊັບສິນ ຄະແນນຍິ່ງສູງ)
+  const debtRatio = totalAssetsLAK > 0
+    ? Math.min(1, totalDebtRemainingLAK / totalAssetsLAK)
+    : (totalDebtRemainingLAK > 0 ? 1 : 0);
+  const debtScore = (1 - debtRatio) * 3;
+
+  // 3) ຄະແນນເງິນສຳຮອງສຸກເສີນ 0-3 (ຄາດຫວັງໃຫ້ມີພຽງພໍ 6 ເດືອນ)
   const now = new Date();
   const ym = now.toISOString().slice(0,7);
   const txThisMonth = STATE.transactions.filter(t=>ymKey(t.date)===ym);
-  const inc = txThisMonth.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
-  const exp = txThisMonth.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
-  const savingsRate = inc>0 ? Math.max(-1, Math.min(1,(inc-exp)/inc)) : (exp>0? -1:0);
-  const savingsScore = ((savingsRate+1)/2) * 3;
+  const expThisMonthLAK = txThisMonth.filter(t=>t.type==='expense')
+    .reduce((s,t)=> s + toLAK(t.amount, t.currency), 0);
 
-  const liquidAssets = STATE.wallets.filter(w=>w.type==='cash'||w.type==='bank'||w.type==='savings')
-    .reduce((s,w)=>s+Number(w.balance||0),0);
-  const avgMonthlyExpense = exp > 0 ? exp : 1;
-  const monthsCovered = liquidAssets/avgMonthlyExpense;
+  const liquidAssetsLAK = STATE.wallets
+    .filter(w=>w.type==='cash'||w.type==='bank'||w.type==='savings')
+    .reduce((s,w)=> s + toLAK(w.balance, w.currency), 0);
+
+  const avgMonthlyExpenseLAK = expThisMonthLAK > 0 ? expThisMonthLAK : 1;
+  const monthsCovered = liquidAssetsLAK / avgMonthlyExpenseLAK;
   const emergencyScore = Math.min(1, monthsCovered/6) * 3;
 
-  const total = Math.max(0, Math.min(10, debtScore+savingsScore+emergencyScore));
-  return { total, debtRatio, savingsRate, monthsCovered };
+  const total = Math.max(0, Math.min(10, retentionScore + debtScore + emergencyScore));
+  return { total, netWorthLAK, totalIncomeLAK, retentionRatio, debtRatio, monthsCovered };
 }
 
 function fhLabelColor(score){
@@ -1418,8 +1455,10 @@ function renderFinancialHealthSection(){
     <div style="font-weight:800;margin-bottom:8px;text-align:center;">💗 ສຸຂະພາບທາງການເງິນ</div>
     ${renderFinancialHealthGauge(s.total)}
     <div class="slip-detail-card" style="margin-top:16px;">
+      <div class="slip-detail-row"><span>💰 ລາຍຮັບທັງໝົດ (ຕະຫຼອດການ)</span><span>${fmt(s.totalIncomeLAK)} ກີບ</span></div>
+      <div class="slip-detail-row"><span>🐷 ຊັບສິນສຸດທິປັດຈຸບັນ</span><span>${fmt(s.netWorthLAK)} ກີບ</span></div>
+      <div class="slip-detail-row"><span>📈 ອັດຕາການຮັກສາຊັບສິນ</span><span>${Math.round(s.retentionRatio*100)}%</span></div>
       <div class="slip-detail-row"><span>📉 ອັດຕາໜີ້ສິນ/ຊັບສິນ</span><span>${Math.round(s.debtRatio*100)}%</span></div>
-      <div class="slip-detail-row"><span>💰 ອັດຕາການອອມເດືອນນີ້</span><span>${Math.round(s.savingsRate*100)}%</span></div>
       <div class="slip-detail-row"><span>🛟 ເງິນສຳຮອງໄດ້</span><span>${s.monthsCovered.toFixed(1)} ເດືອນ</span></div>
     </div>
   </div>`;
