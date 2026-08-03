@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>My tracker ບັນທຶກລາຍຮັບ-ລາຍຈ່າຍ</title>
 
-<meta name="description" content="ຕິດຕາມລາຍຮັບ-ລາຍຈ່າຍແບບໜ້າຮັກ ດ້ວຍການສະແກນໃບເສັດ">
+<meta name="description" content="ຕິດຕາມລາຍຮັບ-ລາຍຈ່າຍແບບໜ້າຮັກ>
 <meta name="theme-color" content="#FAF8FF">
 
 <link rel="manifest" href="manifest.json">
@@ -593,7 +593,7 @@ button:active{transform:scale(.965);}
     <div class="mascot">
       <img src="https://i.postimg.cc/W3K6dFRh/Logo.png" alt="Logo" style="width:120px;height:120px;border-radius:30px;">
     </div>
-    <h1 id="login-app-name">ບັນທຶກລາຍຈ່າຍດ້ວຍໃບເສັດ</h1>
+    <h1 id="login-app-name">ບັນທຶກລາຍຮັບ-ຈ່າຍ</h1>
     <p>ຕິດຕາມລາຍຮັບ-ລາຍຈ່າຍແບບໜ້າຮັກ 💛</p>
 
     <div class="login-users-grid hidden" id="login-users-grid"></div>
@@ -1113,7 +1113,7 @@ function applyTheme() {
   document.documentElement.style.setProperty('--bg', s.bgColor || '#FAF8FF');
   document.documentElement.style.setProperty('--text', s.textColor || '#3A3350');
   document.getElementById('topbar-name').innerText = s.appName || 'ບັນທຶກລາຍຈ່າຍ';
-  document.getElementById('login-app-name').innerText = s.appName || 'ບັນທຶກລາຍຈ່າຍດ້ວຍໃບເສັດ';
+  document.getElementById('login-app-name').innerText = s.appName || 'ບັນທຶກລາຍຮັບ-ຈ່າຍ';
 }
 
 function applyPersonalTheme() {
@@ -2136,7 +2136,7 @@ function doTransfer() {
 }
 
 // ---------------- REPORTS ----------------
-let reportState = { tab:'category', period:'month', walletId:'all', type:'expense', month:new Date().toISOString().slice(0,7) };
+let reportState = { tab:'category', period:'month', walletId:'all', type:'expense', month:new Date().toISOString().slice(0,7), networthCurrency:'LAK' };
 const LAO_MONTHS_SHORT = ['ມ.ກ','ກ.ພ','ມີ.ນ','ເມ.ສ','ພ.ພ','ມິ.ຖ','ກ.ລ','ສ.ຫ','ກ.ຍ','ຕ.ລ','ພ.ຈ','ທ.ວ'];
 const LAO_MONTHS_FULL  = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
 const PASTEL_CHART = ['#FF9BAE','#FFC98E','#A9E5CF','#C9BCF5','#9FCDF7','#FFB8D9','#8FE3C6','#FFD98E','#B5C7F5','#F7B7A3'];
@@ -2235,6 +2235,11 @@ function renderReportsSection(){
     html += `<div class="card"><div style="font-weight:800;margin-bottom:10px;">ລາຍຈ່າຍ-ລາຍຮັບ 6 ເດືອນຫຼ້າສຸດ</div><canvas id="time-chart" height="220"></canvas></div>`;
   } else if (reportState.tab === 'networth'){
     html += renderFinancialHealthSection();
+    html += `<div class="seg" style="margin-bottom:10px;">
+      <button class="${reportState.networthCurrency==='LAK'?'active':''}" onclick="reportState.networthCurrency='LAK';renderAndRefreshReports();">ກີບ (LAK)</button>
+      <button class="${reportState.networthCurrency==='THB'?'active':''}" onclick="reportState.networthCurrency='THB';renderAndRefreshReports();">฿ ບາດ (THB)</button>
+      <button class="${reportState.networthCurrency==='USD'?'active':''}" onclick="reportState.networthCurrency='USD';renderAndRefreshReports();">$ ໂດລາ (USD)</button>
+    </div>`;
     html += `<div class="card"><div class="report-donut-wrap"><canvas id="networth-chart" height="240"></canvas>
       <div class="report-donut-center" id="networth-center"></div></div></div>
       <div class="card" id="networth-table"></div>`;
@@ -2360,16 +2365,17 @@ function drawNetWorthChart(){
   const tableEl = document.getElementById('networth-table');
   if (!centerEl || !tableEl) return;
 
-  // 🩹 ອີງຕາມ "ຍອດຄົງເຫຼືອ" ໜ້າຫຼັກ: ຍອດຫຼັກລວມສະເພາະກະເປົາສະກຸນ LAK ເທົ່ານັ້ນ
-  // (ບໍ່ບວກທັບ THB/USD ດິບໆເຂົ້າກັບ LAK ຄືເມື່ອກ່ອນ ເຊິ່ງເຮັດໃຫ້ຕົວເລກຜິດ)
-  const lakWallets = STATE.wallets.filter(w => (w.currency || 'LAK') === 'LAK');
-  const total = lakWallets.reduce((s,w)=>s+Number(w.balance||0),0);
+  // 🩹 ດຽວນີ້ອີງໃສ່ສະກຸນເງິນທີ່ຜູ້ໃຊ້ເລືອກ (reportState.networthCurrency)
+  // ແທນທີ່ຈະລັອກໄວ້ສະເພາະ LAK ຄືເກົ່າ, ໃຫ້ສະຫຼັບເບິ່ງ ກີບ/ບາດ/ໂດລາ ໄດ້ແຍກກັນ
+  const selCurrency = reportState.networthCurrency || 'LAK';
+  const selWallets = STATE.wallets.filter(w => (w.currency || 'LAK') === selCurrency);
+  const total = selWallets.reduce((s,w)=>s+Number(w.balance||0),0);
 
-  // ຍອດສະກຸນອື່ນ ສະແດງແຍກຕ່າງຫາກ (ຄືກັນກັບໜ້າ "ພາບລວມ")
+  // ຍອດສະກຸນອື່ນທີ່ບໍ່ໄດ້ຖືກເລືອກ ສະແດງແຍກຕ່າງຫາກ
   const otherTotals = {};
   STATE.wallets.forEach(w => {
     const c = w.currency || 'LAK';
-    if (c === 'LAK') return;
+    if (c === selCurrency) return;
     otherTotals[c] = (otherTotals[c] || 0) + Number(w.balance || 0);
   });
   const otherLine = Object.keys(otherTotals)
@@ -2379,22 +2385,20 @@ function drawNetWorthChart(){
   const colors = PASTEL_CHART;
   const ctx = document.getElementById('networth-chart');
   if (_networthChartInstance){ _networthChartInstance.destroy(); _networthChartInstance=null; }
-  // 🩹 chart ວາດສະເພາະກະເປົາ LAK ເທົ່ານັ້ນ ເພື່ອບໍ່ໃຫ້ອັດຕາສ່ວນປົນລະຫວ່າງສະກຸນເງິນ
-  if (ctx && lakWallets.length){
+  if (ctx && selWallets.length){
     _networthChartInstance = new Chart(ctx,{ type:'doughnut',
-      data:{ labels: lakWallets.map(w=>w.name), datasets:[{ data: lakWallets.map(w=>Number(w.balance||0)), backgroundColor: lakWallets.map((_,i)=>colors[i%colors.length]), borderWidth:3, borderColor:'#fff', hoverOffset:8 }] },
+      data:{ labels: selWallets.map(w=>w.name), datasets:[{ data: selWallets.map(w=>Number(w.balance||0)), backgroundColor: selWallets.map((_,i)=>colors[i%colors.length]), borderWidth:3, borderColor:'#fff', hoverOffset:8 }] },
       options:{ cutout:'70%', plugins:{ legend:{ display:false } } } });
   }
-  centerEl.innerHTML = `<div class="amt">${fmt(total)}</div><div class="lbl">ຊັບສິນສຸດທິ (ກີບ)</div>`;
+  centerEl.innerHTML = `<div class="amt">${fmt(total)}</div><div class="lbl">ຊັບສິນສຸດທິ (${CURRENCY_SYMBOLS[selCurrency] || selCurrency})</div>`;
 
   tableEl.innerHTML =
-    lakWallets.map((w,i)=>
+    (selWallets.map((w,i)=>
       `<div class="report-table-row"><div class="rt-left" style="flex-direction:row;align-items:center;"><span class="dot" style="background:${colors[i%colors.length]};"></span>${w.icon} ${w.name}</div><div>${total?Math.round(Number(w.balance||0)/total*100):0}% · ${fmt(w.balance)}</div></div>`
-    ).join('') +
+    ).join('') || '<div class="empty-hint">ບໍ່ມີກະເປົາເງິນສະກຸນນີ້</div>') +
     (otherLine ? `<div class="report-table-row" style="border-top:1.5px dashed var(--line);margin-top:6px;padding-top:12px;">
         <span style="color:var(--text-light);">ສະກຸນອື່ນ (ບໍ່ນັບລວມ)</span><span style="font-weight:700;">${otherLine}</span>
-      </div>` : '') ||
-    '<div class="empty-hint">ຍັງບໍ່ມີກະເປົາເງິນ</div>';
+      </div>` : '');
 }
 
 function openMenu(section) {
