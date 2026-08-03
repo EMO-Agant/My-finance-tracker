@@ -1413,15 +1413,6 @@ function calcFinancialHealthScore(){
   return { total, netWorthLAK, totalIncomeLAK, retentionRatio, debtRatio, monthsCovered };
 }
 
-function walletTotalsByCurrency(){
-  const totals = {};
-  STATE.wallets.forEach(w => {
-    const c = w.currency || 'LAK';
-    totals[c] = (totals[c] || 0) + Number(w.balance || 0);
-  });
-  return totals;
-}
-
 function fhLabelColor(score){
   if (score < 2) return {label:'ອ່ອນແອ', color:'#F0637C'};
   if (score < 4) return {label:'ຄວນປັບປຸງ', color:'#F5A97F'};
@@ -1430,8 +1421,7 @@ function fhLabelColor(score){
   return {label:'ດີເລີດ', color:'#17AE8B'};
 }
 
-function renderFinancialHealthGauge(score, currencyTotals){
-  currencyTotals = currencyTotals || {};
+function renderFinancialHealthGauge(score){
   const cx=100, cy=100, r=80;
   const zones = [
     {from:0,to:2,color:'#FFAFBE'},{from:2,to:4,color:'#FFCBA8'},
@@ -1448,25 +1438,11 @@ function renderFinancialHealthGauge(score, currencyTotals){
   }).join('');
   const needleP = pt(score);
   const {label,color} = fhLabelColor(score);
-
-  // 🆕 ກ່ອງສະແດງຍອດລວມ THB / USD (ຄ່າດິບ ບໍ່ແປງເປັນກີບ)
-  const currencyBoxHtml = function(curr, symbol){
-    const amt = currencyTotals[curr] || 0;
-    return `<div style="flex:1;min-width:0;background:rgba(255,255,255,.6);border:1px solid var(--stroke);border-radius:16px;padding:10px 4px;text-align:center;">
-      <div style="font-size:11px;color:var(--text-light);font-weight:700;">${symbol} ${curr}</div>
-      <div style="font-weight:800;font-size:14px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${fmt(amt)}</div>
-    </div>`;
-  };
-
-  return `<div style="display:flex;align-items:center;gap:8px;">
-    ${currencyBoxHtml('THB','฿')}
-    <svg viewBox="0 0 200 112" style="width:100%;max-width:210px;flex-shrink:0;display:block;margin:0 auto;">
-      ${arcs}
-      <circle cx="${cx}" cy="${cy}" r="7" fill="${color}"/>
-      <line x1="${cx}" y1="${cy}" x2="${needleP.x}" y2="${needleP.y}" stroke="${color}" stroke-width="4.5" stroke-linecap="round"/>
-    </svg>
-    ${currencyBoxHtml('USD','$')}
-  </div>
+  return `<svg viewBox="0 0 200 112" style="width:100%;max-width:270px;display:block;margin:0 auto;">
+    ${arcs}
+    <circle cx="${cx}" cy="${cy}" r="7" fill="${color}"/>
+    <line x1="${cx}" y1="${cy}" x2="${needleP.x}" y2="${needleP.y}" stroke="${color}" stroke-width="4.5" stroke-linecap="round"/>
+  </svg>
   <div style="text-align:center;margin-top:-2px;">
     <div style="font-size:32px;font-weight:800;color:${color};letter-spacing:-1px;">${score.toFixed(1)} <span style="font-size:15px;color:var(--text-light);font-weight:600;">/10</span></div>
     <div style="font-weight:800;color:${color};">${label}</div>
@@ -1477,7 +1453,7 @@ function renderFinancialHealthSection(){
   const s = calcFinancialHealthScore();
   return `<div class="card">
     <div style="font-weight:800;margin-bottom:8px;text-align:center;">💗 ສຸຂະພາບທາງການເງິນ</div>
-    ${renderFinancialHealthGauge(s.total, walletTotalsByCurrency())}
+    ${renderFinancialHealthGauge(s.total)}
     <div class="slip-detail-card" style="margin-top:16px;">
       <div class="slip-detail-row"><span>💰 ລາຍຮັບທັງໝົດ (ຕະຫຼອດການ)</span><span>${fmt(s.totalIncomeLAK)} ກີບ</span></div>
       <div class="slip-detail-row"><span>🐷 ຊັບສິນສຸດທິປັດຈຸບັນ</span><span>${fmt(s.netWorthLAK)} ກີບ</span></div>
