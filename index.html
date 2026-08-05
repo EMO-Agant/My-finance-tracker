@@ -619,6 +619,16 @@ button:active{transform:scale(.965);}
 
     <!-- ---------- OVERVIEW ---------- -->
     <div class="page active" id="page-overview">
+      <div class="card hidden" id="checkin-badge-card" style="background:var(--grad-hero);cursor:pointer;" onclick="openCheckinPage()">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="icon-badge" style="background:rgba(255,255,255,.65);">📍</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:800;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="checkin-badge-place">-</div>
+            <div style="font-size:11px;color:var(--text-light);" id="checkin-badge-time">-</div>
+          </div>
+          <span style="font-size:18px;color:var(--text-light);">›</span>
+        </div>
+      </div>
       <div class="card">
         <div>
           <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
@@ -740,6 +750,7 @@ button:active{transform:scale(.965);}
       <div class="section-title">🌸 ເມນູທັງໝົດ</div>
       <div class="card">
         <div class="link-row" id="menu-row-profile" onclick="openMenu('profile')">👤 ໂປຣໄຟລ໌ຂອງຂ້ອຍ <span>›</span></div>
+        <div class="link-row" id="menu-row-checkin" onclick="openCheckinPage()">📍 ເຊັກອິນ / ເຊັກເອົາ <span>›</span></div>
         <div class="link-row" id="menu-row-mytheme" onclick="openMenu('mytheme')">🎨 ແຕ່ງໜ້າແອັບຂອງຂ້ອຍ <span>›</span></div>
         <div class="link-row" id="menu-row-categories" onclick="openMenu('categories')">🍰 ໝວດໝູ່ຂອງຂ້ອຍ <span>›</span></div>
         <div class="link-row" id="menu-row-budget" onclick="openMenu('budget')">💰 ງົບປະມານ <span>›</span></div>
@@ -1008,7 +1019,7 @@ function showToast(msg) {
   t._timer = setTimeout(function () { t.classList.remove('show'); }, 2500);
 }
 
-let STATE = { wallets:[], categories:[], transactions:[], budgets:[], goals:[], goalContributions:[], installments:[], installmentPayments:[], tags:[], reminders:[], users:[], settings:{} };
+let STATE = { wallets:[], categories:[], transactions:[], budgets:[], goals:[], goalContributions:[], installments:[], installmentPayments:[], tags:[], reminders:[], checkIns:[], users:[], settings:{} };
 let CURRENT_USER = null;
 let addTxType = 'expense';
 let pendingScanItems = [];
@@ -1228,6 +1239,7 @@ function closeModal(id) {
 
 // ---------------- RENDER ALL ----------------
 function renderAll() {
+  renderCheckinBadge();
   renderOverview();
   renderDashboard();
   renderTransactions();
@@ -1874,6 +1886,8 @@ function saveManualTx() {
       receiptUrl: receiptUrl || '',
       createdBy: CURRENT_USER.id
     };
+    const activeCI = getActiveCheckIn();
+    if (activeCI) tx.checkInId = activeCI.id;
     const localEditId = editingTxId;
     const call = localEditId
       ? callApi('updateTransaction', { obj: Object.assign({}, tx, { id: localEditId }), userId: CURRENT_USER.id })
@@ -2003,11 +2017,13 @@ function saveScannedItems() {
   if (!pendingScanItems.length) { showToast('ບໍ່ມີລາຍການໃຫ້ບັນທຶກ'); return; }
   const catMap = {};
   STATE.categories.forEach(c => catMap[c.name] = c.id);
+  const activeCIScan = getActiveCheckIn();
   const txs = pendingScanItems.map(it => ({
     date: new Date().toISOString(), type: scanTxType, walletId,
     categoryId: catMap[it.category] || '', amount: it.amount, note: it.name,
     tagId: '', createdBy: CURRENT_USER.id,
-    receiptPoto: it._receiptImgUrl || ''
+    receiptPoto: it._receiptImgUrl || '',
+    checkInId: activeCIScan ? activeCIScan.id : ''
   }));
 
   txs.forEach(function (tx) {
@@ -3782,6 +3798,184 @@ function removeCategoryUI(id) {
       renderAll();
     })
     .catch(function () { showLoading(false); });
+}
+
+// ---------------- CHECK-IN / CHECK-OUT (GPS + Google Maps) ----------------
+function getActiveCheckIn() {
+  return (STATE.checkIns || []).find(function (c) { return c.status === 'active'; }) || null;
+}
+
+function fmtDuration_(ms) {
+  const totalMin = Math.max(0, Math.floor(ms / 60000));
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return (h > 0 ? h + ' ຊມ ' : '') + m + ' ນາທີ';
+}
+
+function renderCheckinBadge() {
+  const card = document.getElementById('checkin-badge-card');
+  if (!card) return;
+  const active = getActiveCheckIn();
+  if (!active) { card.classList.add('hidden'); return; }
+  card.classList.remove('hidden');
+  const elapsed = Date.now() - new Date(active.checkInTime).getTime();
+  document.getElementById('checkin-badge-place').innerText = '📍 ' + (active.name || active.address || 'ບໍ່ຮູ້ຊື່ສະຖານທີ່');
+  document.getElementById('checkin-badge-time').innerText = 'ເຊັກອິນມາແລ້ວ ' + fmtDuration_(elapsed) + ' · ກົດເພື່ອເບິ່ງ/ເຊັກເອົາ';
+}
+if (!window._checkinBadgeInterval) window._checkinBadgeInterval = setInterval(renderCheckinBadge, 30000);
+
+function reverseGeocode_(lat, lng) {
+  return fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1&accept-language=lo')
+    .then(function (r) { return r.json(); })
+    .then(function (d) { return d && d.display_name ? d.display_name : ('ພິກັດ ' + lat.toFixed(5) + ', ' + lng.toFixed(5)); })
+    .catch(function () { return 'ພິກັດ ' + lat.toFixed(5) + ', ' + lng.toFixed(5); });
+}
+
+function checkinTotalSpent_(checkInId) {
+  return STATE.transactions.filter(function (t) { return t.checkInId === checkInId && t.type === 'expense'; })
+    .reduce(function (s, t) { return s + Number(t.amount); }, 0);
+}
+function checkinTxList_(checkInId) {
+  return STATE.transactions.filter(function (t) { return t.checkInId === checkInId; })
+    .sort(function (a, b) { return new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date); });
+}
+
+function openCheckinPage() {
+  document.getElementById('modal-generic').classList.add('show');
+  document.getElementById('generic-content').innerHTML = renderCheckinSection();
+  document.querySelectorAll('#page-menu .link-row').forEach(el => el.classList.remove('menu-active'));
+  const row = document.getElementById('menu-row-checkin');
+  if (row) row.classList.add('menu-active');
+}
+
+function renderCheckinSection() {
+  const active = getActiveCheckIn();
+  const history = (STATE.checkIns || []).filter(function (c) { return c.status !== 'active'; })
+    .sort(function (a, b) { return new Date(b.checkInTime) - new Date(a.checkInTime); });
+
+  let html = '<div class="modal-title">📍 ເຊັກອິນ / ເຊັກເອົາ</div>';
+
+  if (active) {
+    const elapsed = Date.now() - new Date(active.checkInTime).getTime();
+    const spent = checkinTotalSpent_(active.id);
+    html += `<div class="card" style="background:var(--grad-hero);">
+      <div style="font-weight:800;font-size:15px;">📍 ${active.name || 'ກຳລັງເຊັກອິນຢູ່'}</div>
+      <div style="font-size:12px;color:var(--text-light);margin-top:4px;">${active.address || ''}</div>
+      <div style="font-size:12px;margin-top:8px;">🕐 ເລີ່ມ: ${new Date(active.checkInTime).toLocaleString('lo-LA')}</div>
+      <div style="font-size:12px;font-weight:700;color:var(--primary-dark);">⏱️ ${fmtDuration_(elapsed)}</div>
+      <div style="font-size:13px;margin-top:8px;">💸 ໃຊ້ຈ່າຍລະຫວ່າງເຊັກອິນ: <b>${fmt(spent)} ກີບ</b></div>
+      <button class="btn-primary" style="margin-top:12px;" onclick="doCheckOut('${active.id}')">🚪 ເຊັກເອົາ</button>
+      <button class="btn-outline" style="margin-top:8px;" onclick="openCheckinDetail('${active.id}')">🗺️ ເບິ່ງແຜນທີ່ / ລາຍລະອຽດ</button>
+    </div>`;
+  } else {
+    html += `<div class="card">
+      <div style="font-size:13px;color:var(--text-light);margin-bottom:10px;">ກົດເພື່ອຈັບພິກັດ GPS ປັດຈຸບັນ ແລະ ເລີ່ມເຊັກອິນ</div>
+      <input id="checkin-name" placeholder="ຊື່ສະຖານທີ່ (ບໍ່ບັງຄັບ, ຖ້າບໍ່ໃສ່ຈະໃຊ້ທີ່ຢູ່ອັດຕະໂນມັດ)">
+      <input id="checkin-note" placeholder="ໝາຍເຫດ (ບໍ່ບັງຄັບ)">
+      <div id="checkin-location-preview" style="font-size:12px;color:var(--text-light);margin-bottom:10px;min-height:16px;"></div>
+      <button class="btn-primary" onclick="startCheckInUI()">📍 ຈັບພິກັດ ແລະ ເຊັກອິນ</button>
+    </div>`;
+  }
+
+  html += '<div class="section-title">📋 ປະຫວັດການເຊັກອິນ</div>';
+  html += history.map(checkinHistoryRowHtml).join('') || '<div class="card"><div class="empty-hint">ຍັງບໍ່ມີປະຫວັດ</div></div>';
+
+  return html;
+}
+
+function checkinHistoryRowHtml(c) {
+  const spent = checkinTotalSpent_(c.id);
+  const dur = c.checkOutTime ? fmtDuration_(new Date(c.checkOutTime) - new Date(c.checkInTime)) : '-';
+  return `<div class="card" style="cursor:pointer;" onclick="openCheckinDetail('${c.id}')">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+      <div style="min-width:0;">
+        <div style="font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📍 ${c.name || 'ບໍ່ຮູ້ຊື່ສະຖານທີ່'}</div>
+        <div style="font-size:11px;color:var(--text-light);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.address || ''}</div>
+        <div style="font-size:11px;color:var(--text-light);margin-top:4px;">${dayKey(c.checkInTime)} · ⏱️ ${dur}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-weight:800;color:var(--red);">${fmt(spent)}</div>
+        <div style="font-size:10px;color:var(--text-light);">ກີບ</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function startCheckInUI() {
+  if (!navigator.geolocation) { showToast('ອຸປະກອນ/ບຣາວເຊີນີ້ບໍ່ຮອງຮັບ GPS'); return; }
+  const preview = document.getElementById('checkin-location-preview');
+  preview.innerText = '📡 ກຳລັງຈັບພິກັດ...';
+  navigator.geolocation.getCurrentPosition(function (pos) {
+    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+    preview.innerText = '📡 ພິກັດ: ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ' · ກຳລັງຄົ້ນຫາຊື່ສະຖານທີ່...';
+    reverseGeocode_(lat, lng).then(function (address) {
+      preview.innerText = '✅ ' + address;
+      const name = document.getElementById('checkin-name').value.trim();
+      const note = document.getElementById('checkin-note').value.trim();
+      showLoading(true);
+      callApi('startCheckIn', { obj: { name: name || address, address: address, lat: lat, lng: lng, note: note }, userId: CURRENT_USER.id })
+        .then(function (saved) {
+          showLoading(false);
+          STATE.checkIns = STATE.checkIns || [];
+          STATE.checkIns.push(saved);
+          localStorage.setItem('cachedState', JSON.stringify(STATE));
+          renderAll();
+          openCheckinPage();
+          showToast('✅ ເຊັກອິນສຳເລັດ');
+        })
+        .catch(function () { showLoading(false); });
+    });
+  }, function (err) {
+    preview.innerText = '❌ ຈັບພິກັດບໍ່ໄດ້: ' + err.message + ' (ກະລຸນາອະນຸຍາດສິດ GPS)';
+  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+}
+
+function doCheckOut(id) {
+  if (!confirm('ຢືນຢັນເຊັກເອົາ?')) return;
+  showLoading(true);
+  callApi('endCheckIn', { id: id, userId: CURRENT_USER.id })
+    .then(function (saved) {
+      showLoading(false);
+      const idx = STATE.checkIns.findIndex(function (c) { return c.id === saved.id; });
+      if (idx > -1) STATE.checkIns[idx] = saved;
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      renderAll();
+      openCheckinPage();
+      showToast('✅ ເຊັກເອົາແລ້ວ');
+    })
+    .catch(function () { showLoading(false); });
+}
+
+function openCheckinDetail(id) {
+  const c = (STATE.checkIns || []).find(function (x) { return x.id === id; });
+  if (!c) return;
+  document.getElementById('modal-generic').classList.add('show');
+  const spent = checkinTotalSpent_(c.id);
+  const txs = checkinTxList_(c.id);
+  const mapUrl = 'https://www.google.com/maps?q=' + c.lat + ',' + c.lng + '&hl=lo&z=16&output=embed';
+  const dur = c.checkOutTime ? fmtDuration_(new Date(c.checkOutTime) - new Date(c.checkInTime)) : 'ຍັງເຊັກອິນຄ້າງຢູ່';
+
+  document.getElementById('generic-content').innerHTML = `
+    <div class="modal-title">📍 ${c.name || 'ບໍ່ຮູ້ຊື່ສະຖານທີ່'}</div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <iframe src="${mapUrl}" width="100%" height="220" style="border:0;display:block;" loading="lazy"></iframe>
+    </div>
+    <div class="card">
+      <div class="slip-detail-card">
+        <div class="slip-detail-row"><span>ທີ່ຢູ່</span><span style="text-align:right;max-width:60%;">${c.address || '-'}</span></div>
+        <div class="slip-detail-row"><span>ເຊັກອິນ</span><span>${new Date(c.checkInTime).toLocaleString('lo-LA')}</span></div>
+        <div class="slip-detail-row"><span>ເຊັກເອົາ</span><span>${c.checkOutTime ? new Date(c.checkOutTime).toLocaleString('lo-LA') : '-'}</span></div>
+        <div class="slip-detail-row"><span>ໄລຍະເວລາ</span><span>${dur}</span></div>
+        <div class="slip-detail-row"><span>ໝາຍເຫດ</span><span>${c.note || '-'}</span></div>
+        <div class="slip-detail-row"><span>ໃຊ້ຈ່າຍລວມ</span><span style="font-weight:800;color:var(--red);">${fmt(spent)} ກີບ</span></div>
+      </div>
+      <a href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}" target="_blank" class="btn-outline" style="display:block;text-align:center;text-decoration:none;margin-top:12px;">🔗 ເປີດໃນ Google Maps</a>
+      ${c.status === 'active' ? `<button class="btn-primary" style="margin-top:10px;" onclick="doCheckOut('${c.id}')">🚪 ເຊັກເອົາ</button>` : ''}
+    </div>
+    <div class="section-title">🧾 ລາຍການທຸລະກຳຢູ່ບ່ອນນີ້</div>
+    <div class="card" style="padding:8px;">${txs.map(txRowHtml).join('') || '<div class="empty-hint">ຍັງບໍ່ມີລາຍການທຸລະກຳຜູກກັບຈຸດນີ້</div>'}</div>
+    <button class="btn-outline" style="margin-top:6px;" onclick="openCheckinPage()">‹ ກັບຄືນ</button>
+  `;
 }
 
 // ---------------- EMOJI PICKER ----------------
