@@ -973,6 +973,16 @@ button:active{transform:scale(.965);}
     </div>
   </div>
 
+  <!-- ===================== MODAL: TX PICKER (ຜູກທຸລະກຳກັບຈຸດເຊັກອິນ) ===================== -->
+  <div class="modal-overlay" id="modal-tx-picker">
+    <div class="modal-sheet">
+      <button class="modal-close" onclick="closeModal('modal-tx-picker')">✕</button>
+      <div class="modal-title">🧾 ເລືອກລາຍການທຸລະກຳ</div>
+      <div style="font-size:12px;color:var(--text-light);margin-bottom:10px;">ກົດເລືອກລາຍການທີ່ໃຊ້ຈ່າຍຢູ່ບ່ອນນີ້ (ກົດອີກຄັ້ງເພື່ອຖອດອອກ)</div>
+      <div id="tx-picker-list"></div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -3972,10 +3982,61 @@ function openCheckinDetail(id) {
       <a href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}" target="_blank" class="btn-outline" style="display:block;text-align:center;text-decoration:none;margin-top:12px;">🔗 ເປີດໃນ Google Maps</a>
       ${c.status === 'active' ? `<button class="btn-primary" style="margin-top:10px;" onclick="doCheckOut('${c.id}')">🚪 ເຊັກເອົາ</button>` : ''}
     </div>
-    <div class="section-title">🧾 ລາຍການທຸລະກຳຢູ່ບ່ອນນີ້</div>
+    <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>🧾 ລາຍການທຸລະກຳຢູ່ບ່ອນນີ້</span>
+      <button class="btn-outline" style="width:auto;padding:8px 14px;font-size:12px;" onclick="openTxPicker('${c.id}')">➕ ເລືອກລາຍການ</button>
+    </div>
     <div class="card" style="padding:8px;">${txs.map(txRowHtml).join('') || '<div class="empty-hint">ຍັງບໍ່ມີລາຍການທຸລະກຳຜູກກັບຈຸດນີ້</div>'}</div>
     <button class="btn-outline" style="margin-top:6px;" onclick="openCheckinPage()">‹ ກັບຄືນ</button>
   `;
+}
+
+// ---------------- TX PICKER (ຜູກ/ຖອດ ລາຍການທຸລະກຳກັບຈຸດເຊັກອິນ) ----------------
+let _txPickerCheckInId = null;
+
+function openTxPicker(checkInId) {
+  _txPickerCheckInId = checkInId;
+  renderTxPickerList();
+  document.getElementById('modal-tx-picker').classList.add('show');
+}
+
+function renderTxPickerList() {
+  const list = [...STATE.transactions]
+    .filter(function (t) { return t.type !== 'transfer'; })
+    .sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+
+  document.getElementById('tx-picker-list').innerHTML = list.map(function (t) {
+    const cat = catById(t.categoryId);
+    const w = walletById(t.walletId);
+    const linked = t.checkInId === _txPickerCheckInId;
+    const sign = t.type === 'income' ? '+' : '-';
+    const amtColor = t.type === 'income' ? 'var(--green)' : 'var(--red)';
+    return `<div class="link-row" style="${linked ? 'background:var(--grad-hero);border-radius:16px;padding-left:12px;padding-right:12px;' : ''}" onclick="toggleTxCheckIn('${t.id}')">
+      <span style="display:flex;flex-direction:column;">
+        <span>${linked ? '✅' : '⬜'} ${cat ? cat.icon : '💸'} ${t.note || (cat ? cat.name : 'ລາຍການ')}</span>
+        <span style="font-size:11px;color:var(--text-light);font-weight:400;">${w ? w.name : ''} · ${dayKey(t.date)}</span>
+      </span>
+      <span style="font-weight:800;color:${amtColor};">${sign}${fmt(t.amount)}</span>
+    </div>`;
+  }).join('') || '<div class="empty-hint">ຍັງບໍ່ມີລາຍການທຸລະກຳ</div>';
+}
+
+function toggleTxCheckIn(txId) {
+  const t = STATE.transactions.find(function (x) { return x.id === txId; });
+  if (!t) return;
+  const newCheckInId = t.checkInId === _txPickerCheckInId ? '' : _txPickerCheckInId;
+  showLoading(true);
+  callApi('linkTransactionCheckIn', { id: txId, checkInId: newCheckInId, userId: CURRENT_USER.id })
+    .then(function (updated) {
+      showLoading(false);
+      const idx = STATE.transactions.findIndex(function (x) { return x.id === updated.id; });
+      if (idx > -1) STATE.transactions[idx] = updated;
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      renderTxPickerList();
+      openCheckinDetail(_txPickerCheckInId); // ອັບເດດໜ້າລາຍລະອຽດເບື້ອງຫຼັງໃຫ້ໃໝ່ນຳ
+      renderAll();
+    })
+    .catch(function () { showLoading(false); });
 }
 
 // ---------------- EMOJI PICKER ----------------
