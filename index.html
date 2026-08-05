@@ -2136,7 +2136,7 @@ function doTransfer() {
 }
 
 // ---------------- REPORTS ----------------
-let reportState = { tab:'category', period:'month', walletId:'all', type:'expense', month:new Date().toISOString().slice(0,7), networthCurrency:'LAK', dailyCategoryId:'all', dailyType:'expense' };
+let reportState = { tab:'category', period:'month', walletId:'all', type:'expense', month:new Date().toISOString().slice(0,7), networthCurrency:'LAK', dailyCategoryId:'all', timeView:'monthly', showPrevMonth:false, showMA:false };
 const LAO_MONTHS_SHORT = ['ມ.ກ','ກ.ພ','ມີ.ນ','ເມ.ສ','ພ.ພ','ມິ.ຖ','ກ.ລ','ສ.ຫ','ກ.ຍ','ຕ.ລ','ພ.ຈ','ທ.ວ'];
 const LAO_MONTHS_FULL  = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
 const PASTEL_CHART = ['#FF9BAE','#FFC98E','#A9E5CF','#C9BCF5','#9FCDF7','#FFB8D9','#8FE3C6','#FFD98E','#B5C7F5','#F7B7A3'];
@@ -2168,11 +2168,10 @@ function drawActiveReportChart(){
   try {
     if (reportState.tab === 'category') drawCategoryChart();
     else if (reportState.tab === 'tag') { drawTagBubbles(); drawTagTable(); }
-    else if (reportState.tab === 'time') drawTimeChart();
+    else if (reportState.tab === 'time') { if (reportState.timeView === 'daily') drawDailyChart(); else drawTimeChart(); }
     else if (reportState.tab === 'networth') drawNetWorthChart();
     else if (reportState.tab === 'goals') drawGoalsReport();
     else if (reportState.tab === 'installments') drawInstallmentsReport();
-    else if (reportState.tab === 'daily') drawDailyChart();
   } catch (err) {
     console.error('ວາດລາຍງານຜິດພາດ:', err);
   }
@@ -2190,7 +2189,6 @@ function renderReportsSection(){
     <button class="${reportState.tab==='networth'?'active':''}" onclick="setReportTab('networth')">ຊັບສິນສຸດທິ</button>
     <button class="${reportState.tab==='time'?'active':''}" onclick="setReportTab('time')">ຕາມຊ່ວງເວລາ</button>
     <button class="${reportState.tab==='tag'?'active':''}" onclick="setReportTab('tag')">ຕາມແທັກ</button>
-    <button class="${reportState.tab==='daily'?'active':''}" onclick="setReportTab('daily')">📅 ລາຍວັນ</button>
     <button class="${reportState.tab==='goals'?'active':''}" onclick="setReportTab('goals')">🚩 ເປົ້າໝາຍ</button>
     <button class="${reportState.tab==='installments'?'active':''}" onclick="setReportTab('installments')">🏷️ ຜ່ອນຊຳລະ</button>
   </div>`;
@@ -2234,7 +2232,48 @@ function renderReportsSection(){
     html += `<div class="card"><div class="tag-bubble-wrap" id="tag-bubble-wrap"></div></div>
       <div class="card"><div style="font-weight:800;margin-bottom:6px;">ແຍກຕາມແທັກ</div><div id="tag-table"></div></div>`;
   } else if (reportState.tab === 'time'){
-    html += `<div class="card"><div style="font-weight:800;margin-bottom:10px;">ລາຍຈ່າຍ-ລາຍຮັບ 6 ເດືອນຫຼ້າສຸດ</div><canvas id="time-chart" height="220"></canvas></div>`;
+    html += `<div class="seg" style="margin-bottom:10px;">
+      <button class="${reportState.timeView!=='daily'?'active':''}" onclick="reportState.timeView='monthly';renderAndRefreshReports();">📊 ລາຍເດືອນ (6 ເດືອນ)</button>
+      <button class="${reportState.timeView==='daily'?'active':''}" onclick="reportState.timeView='daily';renderAndRefreshReports();">📅 ລາຍວັນ</button>
+    </div>`;
+
+    if (reportState.timeView === 'daily') {
+      const catOpts = '<option value="all">ທຸກໝວດໝູ່</option>' +
+        STATE.categories.map(c=>`<option value="${c.id}" ${reportState.dailyCategoryId===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('');
+
+      html += `<div class="month-scroll">` + monthsAvail.map(m=>{
+        const d = new Date(m+'-01');
+        return `<div class="month-pill ${m===reportState.month?'active':''}" onclick="reportState.month='${m}';renderAndRefreshReports();">
+          <span>${LAO_MONTHS_SHORT[d.getMonth()]}</span><span style="font-size:9px;">${d.getFullYear()}</span></div>`;
+      }).join('') + `</div>`;
+
+      html += `<div class="report-filter-row">
+        <select onchange="reportState.dailyCategoryId=this.value;renderAndRefreshReports();">${catOpts}</select>
+      </div>`;
+
+      html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.7);border:1px solid var(--stroke);border-radius:16px;padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:var(--sh-1);">
+          <input type="checkbox" ${reportState.showPrevMonth?'checked':''} onchange="reportState.showPrevMonth=this.checked;renderAndRefreshReports();" style="width:auto;margin:0;">
+          📊 ປຽບທຽບເດືອນກ່ອນ
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.7);border:1px solid var(--stroke);border-radius:16px;padding:9px 14px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:var(--sh-1);">
+          <input type="checkbox" ${reportState.showMA?'checked':''} onchange="reportState.showMA=this.checked;renderAndRefreshReports();" style="width:auto;margin:0;">
+          📈 ເສັ້ນສະເລ່ຍ 7 ວັນ
+        </label>
+      </div>`;
+
+      html += `<div class="card">
+        <div id="daily-max-badge" style="display:inline-block;background:linear-gradient(135deg,#6D5BD0,#8FB8F6);color:#fff;font-size:12px;font-weight:800;padding:9px 14px;border-radius:14px;margin-bottom:14px;box-shadow:var(--sh-1);line-height:1.7;"></div>
+        <canvas id="daily-chart" height="230"></canvas>
+      </div>
+      <div class="card">
+        <div style="font-weight:800;margin-bottom:10px;">🗓️ ໃຊ້ຈ່າຍສະເລ່ຍຕາມວັນທຳມະດາ</div>
+        <div id="weekday-heatmap"></div>
+      </div>
+      <div class="card" id="daily-table"></div>`;
+    } else {
+      html += `<div class="card"><div style="font-weight:800;margin-bottom:10px;">ລາຍຈ່າຍ-ລາຍຮັບ 6 ເດືອນຫຼ້າສຸດ</div><canvas id="time-chart" height="220"></canvas></div>`;
+    }
   } else if (reportState.tab === 'networth'){
     html += `<div class="seg" style="margin-bottom:10px;">
       <button class="${reportState.networthCurrency==='LAK'?'active':''}" onclick="reportState.networthCurrency='LAK';renderAndRefreshReports();">ກີບ (LAK)</button>
@@ -2249,29 +2288,6 @@ function renderReportsSection(){
     html += `<div id="goals-report-wrap"></div>`;
   } else if (reportState.tab === 'installments'){
     html += `<div id="installments-report-wrap"></div>`;
-  } else if (reportState.tab === 'daily'){
-    const catOpts = '<option value="all">ທຸກໝວດໝູ່</option>' +
-      STATE.categories.map(c=>`<option value="${c.id}" ${reportState.dailyCategoryId===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('');
-
-    html += `<div class="month-scroll">` + monthsAvail.map(m=>{
-      const d = new Date(m+'-01');
-      return `<div class="month-pill ${m===reportState.month?'active':''}" onclick="reportState.month='${m}';renderAndRefreshReports();">
-        <span>${LAO_MONTHS_SHORT[d.getMonth()]}</span><span style="font-size:9px;">${d.getFullYear()}</span></div>`;
-    }).join('') + `</div>`;
-
-    html += `<div class="report-filter-row">
-      <select onchange="reportState.dailyType=this.value;renderAndRefreshReports();">
-        <option value="expense" ${reportState.dailyType==='expense'?'selected':''}>ລາຍຈ່າຍ</option>
-        <option value="income" ${reportState.dailyType==='income'?'selected':''}>ລາຍຮັບ</option>
-      </select>
-      <select onchange="reportState.dailyCategoryId=this.value;renderAndRefreshReports();">${catOpts}</select>
-    </div>`;
-
-    html += `<div class="card">
-      <div id="daily-max-badge" style="display:inline-block;background:linear-gradient(135deg,#6D5BD0,#8FB8F6);color:#fff;font-size:12px;font-weight:800;padding:7px 14px;border-radius:14px;margin-bottom:14px;box-shadow:var(--sh-1);"></div>
-      <canvas id="daily-chart" height="230"></canvas>
-    </div>
-    <div class="card" id="daily-table"></div>`;
   }
   return html;
 }
@@ -2386,66 +2402,147 @@ function drawTimeChart(){
 }
 
 let _dailyChartInstance = null;
+
+function movingAverage_(arr, window) {
+  const out = [];
+  for (let i = 0; i < arr.length; i++) {
+    const start = Math.max(0, i - window + 1);
+    const slice = arr.slice(start, i + 1);
+    out.push(slice.reduce((a,b)=>a+b,0) / slice.length);
+  }
+  return out;
+}
+
+function getMonthDailyTotals_(ym, catFilter) {
+  const [y, m] = ym.split('-').map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const expTotals = {}, incTotals = {};
+  for (let d = 1; d <= daysInMonth; d++) { expTotals[d] = 0; incTotals[d] = 0; }
+  STATE.transactions.forEach(t => {
+    if (ymKey(t.date) !== ym) return;
+    if (t.type !== 'expense' && t.type !== 'income') return;
+    if (catFilter !== 'all' && t.categoryId !== catFilter) return;
+    const dnum = Number(dayKey(t.date).slice(8, 10));
+    if (t.type === 'expense') expTotals[dnum] += Number(t.amount);
+    else incTotals[dnum] += Number(t.amount);
+  });
+  return { daysInMonth, expTotals, incTotals };
+}
+
 function drawDailyChart(){
   const canvas = document.getElementById('daily-chart');
   if (!canvas) return;
 
-  const [y, m] = reportState.month.split('-').map(Number);
-  const daysInMonth = new Date(y, m, 0).getDate();
   const catFilter = reportState.dailyCategoryId;
-  const typeFilter = reportState.dailyType;
+  const { daysInMonth, expTotals, incTotals } = getMonthDailyTotals_(reportState.month, catFilter);
 
-  const dayTotals = {};
-  for (let d = 1; d <= daysInMonth; d++) dayTotals[d] = 0;
+  const labels = [], expData = [], incData = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    labels.push(String(d).padStart(2, '0'));
+    expData.push(expTotals[d]);
+    incData.push(incTotals[d]);
+  }
 
-  STATE.transactions.forEach(t => {
-    if (t.type !== typeFilter) return;
-    if (ymKey(t.date) !== reportState.month) return;
-    if (catFilter !== 'all' && t.categoryId !== catFilter) return;
-    const dnum = Number(dayKey(t.date).slice(8, 10));
-    dayTotals[dnum] = (dayTotals[dnum] || 0) + Number(t.amount);
-  });
-
-  const labels = [], data = [];
-  for (let d = 1; d <= daysInMonth; d++) { labels.push(String(d).padStart(2, '0')); data.push(dayTotals[d]); }
-
-  const maxVal = Math.max(...data);
-  const minVal = Math.min(...data.filter(v => v >= 0));
-  const maxIdx = data.indexOf(maxVal);
-  const catName = catFilter === 'all' ? (typeFilter === 'income' ? 'ລາຍຮັບ' : 'ລາຍຈ່າຍ') : ((catById(catFilter) || {}).name || '');
-  const catIcon = catFilter === 'all' ? (typeFilter === 'income' ? '💰' : '🧾') : ((catById(catFilter) || {}).icon || '🏷️');
+  const maxExp = Math.max(...expData), maxInc = Math.max(...incData);
+  const maxExpIdx = expData.indexOf(maxExp), maxIncIdx = incData.indexOf(maxInc);
 
   const badge = document.getElementById('daily-max-badge');
   if (badge) {
-    badge.innerText = maxVal
-      ? ('🔝 ຍອດສູງສຸດ: ' + fmt(maxVal) + ' ກີບ (ວັນທີ ' + labels[maxIdx] + ')')
-      : 'ຍັງບໍ່ມີຂໍ້ມູນໃນເດືອນນີ້';
+    const parts = [];
+    if (maxExp) parts.push('🔴 ລາຍຈ່າຍສູງສຸດ: ' + fmt(maxExp) + ' ກີບ (ວັນທີ ' + labels[maxExpIdx] + ')');
+    if (maxInc) parts.push('🟢 ລາຍຮັບສູງສຸດ: ' + fmt(maxInc) + ' ກີບ (ວັນທີ ' + labels[maxIncIdx] + ')');
+    badge.innerHTML = parts.length ? parts.join('<br>') : 'ຍັງບໍ່ມີຂໍ້ມູນໃນເດືອນນີ້';
+  }
+
+  // ---------- datasets ພື້ນຖານ (ຈ່າຍ/ຮັບ ຂອງເດືອນນີ້) ----------
+  const datasets = [
+    {
+      label: '🔴 ລາຍຈ່າຍ',
+      data: expData,
+      borderColor: '#F0637C',
+      backgroundColor: '#F0637C22',
+      fill: true, tension: .35, borderWidth: 2.5,
+      pointRadius: expData.map((v, i) => (i === maxExpIdx && v > 0) ? 7 : 2),
+      pointBackgroundColor: expData.map((v, i) => (i === maxExpIdx && v > 0) ? '#fff' : '#F0637C'),
+      pointBorderColor: '#F0637C', pointBorderWidth: 2,
+      order: 1
+    },
+    {
+      label: '🟢 ລາຍຮັບ',
+      data: incData,
+      borderColor: '#17AE8B',
+      backgroundColor: '#17AE8B22',
+      fill: true, tension: .35, borderWidth: 2.5,
+      pointRadius: incData.map((v, i) => (i === maxIncIdx && v > 0) ? 7 : 2),
+      pointBackgroundColor: incData.map((v, i) => (i === maxIncIdx && v > 0) ? '#fff' : '#17AE8B'),
+      pointBorderColor: '#17AE8B', pointBorderWidth: 2,
+      order: 1
+    }
+  ];
+
+  // ---------- 1) ປຽບທຽບກັບເດືອນກ່ອນ (ເສັ້ນຈາງໆ) ----------
+  if (reportState.showPrevMonth) {
+    const [py, pm] = reportState.month.split('-').map(Number);
+    const prevDate = new Date(py, pm - 2, 1); // เดือนก่อน
+    const prevYm = prevDate.getFullYear() + '-' + String(prevDate.getMonth()+1).padStart(2,'0');
+    const prev = getMonthDailyTotals_(prevYm, catFilter);
+    const prevExpData = [], prevIncData = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      prevExpData.push(d <= prev.daysInMonth ? prev.expTotals[d] : null);
+      prevIncData.push(d <= prev.daysInMonth ? prev.incTotals[d] : null);
+    }
+    datasets.push({
+      label: '🔴 ລາຍຈ່າຍ (' + prevYm + ')',
+      data: prevExpData,
+      borderColor: '#F0637C88',
+      borderDash: [6,4],
+      fill: false, tension: .35, borderWidth: 1.5,
+      pointRadius: 0,
+      order: 2
+    });
+    datasets.push({
+      label: '🟢 ລາຍຮັບ (' + prevYm + ')',
+      data: prevIncData,
+      borderColor: '#17AE8B88',
+      borderDash: [6,4],
+      fill: false, tension: .35, borderWidth: 1.5,
+      pointRadius: 0,
+      order: 2
+    });
+  }
+
+  // ---------- 3) ເສັ້ນສະເລ່ຍເຄື່ອນທີ່ 7 ວັນ ----------
+  if (reportState.showMA) {
+    const maExp = movingAverage_(expData, 7);
+    const maInc = movingAverage_(incData, 7);
+    datasets.push({
+      label: '📈 ສະເລ່ຍ 7 ວັນ (ຈ່າຍ)',
+      data: maExp,
+      borderColor: '#B23A52',
+      borderWidth: 2.5,
+      borderDash: [2,2],
+      fill: false, tension: .4, pointRadius: 0,
+      order: 0
+    });
+    datasets.push({
+      label: '📈 ສະເລ່ຍ 7 ວັນ (ຮັບ)',
+      data: maInc,
+      borderColor: '#0E7A5F',
+      borderWidth: 2.5,
+      borderDash: [2,2],
+      fill: false, tension: .4, pointRadius: 0,
+      order: 0
+    });
   }
 
   if (_dailyChartInstance) { _dailyChartInstance.destroy(); _dailyChartInstance = null; }
-  const lineColor = typeFilter === 'income' ? '#17AE8B' : '#F0637C';
 
   _dailyChartInstance = new Chart(canvas, {
     type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: catIcon + ' ' + catName,
-        data,
-        borderColor: lineColor,
-        backgroundColor: lineColor + '22',
-        fill: true,
-        tension: .35,
-        borderWidth: 2.5,
-        pointRadius: data.map((v, i) => (i === maxIdx && v > 0) ? 7 : 2.5),
-        pointBackgroundColor: data.map((v, i) => (i === maxIdx && v > 0) ? '#fff' : lineColor),
-        pointBorderColor: lineColor,
-        pointBorderWidth: 2.5
-      }]
-    },
+    data: { labels, datasets },
     options: {
       plugins: {
-        legend: { display: false },
+        legend: { display: true, position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 14, font: { size: 10.5 } } },
         tooltip: {
           mode: 'index', intersect: false,
           callbacks: {
@@ -2456,7 +2553,7 @@ function drawDailyChart(){
       },
       scales: {
         y: {
-          suggestedMin: Math.max(0, minVal - (maxVal - minVal) * 0.15),
+          beginAtZero: true,
           grid: { color: 'rgba(122,108,168,.10)' }, border: { display: false },
           ticks: { callback: v => fmt(v) }
         },
@@ -2466,13 +2563,69 @@ function drawDailyChart(){
     }
   });
 
+  // ---------- ຕາຕະລາງ Top 10 ວັນ ----------
   const tableEl = document.getElementById('daily-table');
   if (tableEl) {
-    const sorted = labels.map((l, i) => ({ l, v: data[i] })).filter(x => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 10);
-    tableEl.innerHTML = '<div style="font-weight:800;margin-bottom:6px;">🏆 10 ວັນທີ່ໃຊ້ຈ່າຍ/ໄດ້ຮັບສູງສຸດ</div>' +
-      (sorted.map(x => `<div class="report-table-row"><span>📅 ວັນທີ ${x.l}</span><span style="font-weight:800;color:${lineColor};">${fmt(x.v)}</span></div>`).join('')
-        || '<div class="empty-hint">ຍັງບໍ່ມີຂໍ້ມູນ</div>');
+    const combined = labels.map((l, i) => ({ l, exp: expData[i], inc: incData[i] }))
+      .filter(x => x.exp > 0 || x.inc > 0)
+      .sort((a, b) => (b.exp + b.inc) - (a.exp + a.inc))
+      .slice(0, 10);
+    tableEl.innerHTML = '<div style="font-weight:800;margin-bottom:6px;">🏆 10 ວັນທີ່ມີການເຄື່ອນໄຫວສູງສຸດ</div>' +
+      (combined.map(x => `<div class="report-table-row">
+          <span>📅 ວັນທີ ${x.l}</span>
+          <span style="text-align:right;">
+            ${x.exp ? `<div style="color:var(--red);font-weight:800;">-${fmt(x.exp)}</div>` : ''}
+            ${x.inc ? `<div style="color:var(--green);font-weight:800;">+${fmt(x.inc)}</div>` : ''}
+          </span>
+        </div>`).join('') || '<div class="empty-hint">ຍັງບໍ່ມີຂໍ້ມູນ</div>');
   }
+
+  // ---------- 2) Heatmap ວັນທຳມະດາ ----------
+  drawWeekdayHeatmap_(catFilter);
+}
+
+const LAO_DOW_SHORT_ = ['ອາທິດ','ຈັນ','ອັງຄານ','ພຸດ','ພະຫັດ','ສຸກ','ເສົາ'];
+
+function drawWeekdayHeatmap_(catFilter) {
+  const wrap = document.getElementById('weekday-heatmap');
+  if (!wrap) return;
+
+  // ເກັບລາຍຈ່າຍລວມ + ຈຳນວນຄັ້ງ ຂອງແຕ່ລະວັນທຳມະດາ (0=ອາທິດ..6=ເສົາ) ຈາກ transaction ທັງໝົດ (ບໍ່ຈຳກັດເດືອນດຽວ, ເອົາ 6 ເດືອນຫຼ້າສຸດ)
+  const now = new Date();
+  const cutoff = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const dowTotals = [0,0,0,0,0,0,0];
+  const dowCountDays = [new Set(),new Set(),new Set(),new Set(),new Set(),new Set(),new Set()];
+
+  STATE.transactions.forEach(t => {
+    if (t.type !== 'expense') return;
+    if (catFilter !== 'all' && t.categoryId !== catFilter) return;
+    const d = new Date(t.date);
+    if (isNaN(d) || d < cutoff) return;
+    const dow = d.getDay();
+    dowTotals[dow] += Number(t.amount) || 0;
+    dowCountDays[dow].add(dayKey(t.date));
+  });
+
+  const avgByDow = dowTotals.map((sum, i) => {
+    const days = dowCountDays[i].size || 1;
+    return sum / days;
+  });
+  const maxAvg = Math.max(...avgByDow, 1);
+
+  wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">` +
+    avgByDow.map((avg, i) => {
+      const ratio = avg / maxAvg;
+      const bg = ratio > 0
+        ? `linear-gradient(150deg, rgba(240,99,124,${0.15 + ratio*0.55}), rgba(240,99,124,${0.08 + ratio*0.35}))`
+        : 'rgba(122,108,168,.06)';
+      return `<div style="border-radius:14px;padding:10px 4px;text-align:center;background:${bg};border:1px solid rgba(255,255,255,.7);">
+        <div style="font-size:10.5px;font-weight:700;color:var(--text-light);">${LAO_DOW_SHORT_[i]}</div>
+        <div style="font-size:11.5px;font-weight:800;margin-top:4px;color:${ratio>0.6?'#B23A52':'var(--text)'};">${fmt(Math.round(avg))}</div>
+      </div>`;
+    }).join('') + `</div>
+    <div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:10px;">
+      ຄິດຈາກລາຍຈ່າຍສະເລ່ຍ/ວັນ ຂອງ 6 ເດືອນຫຼ້າສຸດ · ສີເຂັ້ມ = ໃຊ້ຈ່າຍຫຼາຍກວ່າວັນອື່ນ
+    </div>`;
 }
 
 function drawNetWorthChart(){
