@@ -675,6 +675,16 @@ button:active{transform:scale(.965);}
 
     <!-- ---------- TRANSACTIONS ---------- -->
     <div class="page" id="page-transactions">
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="openCheckinPage()">
+        <div style="display:flex;align-items:center;gap:10px;">
+         <div class="icon-badge" style="background:var(--grad-hero);">📍</div>
+         <div>
+           <div style="font-weight:800;font-size:14px;">ເຊັກອິນ / ເຊັກເອົາ</div>
+           <div style="font-size:11px;color:var(--text-light);">ບັນທຶກສະຖານທີ່ ແລະ ຕິດຕາມຄ່າໃຊ້ຈ່າຍ</div>
+         </div>
+        </div>
+        <span style="font-size:18px;color:var(--text-light);">›</span>
+      </div>
       <div class="card hidden" id="checkin-badge-card" style="background:var(--grad-hero);cursor:pointer;" onclick="openCheckinPage()">
         <div style="display:flex;align-items:center;gap:10px;">
           <div class="icon-badge" style="background:rgba(255,255,255,.65);">📍</div>
@@ -750,7 +760,6 @@ button:active{transform:scale(.965);}
       <div class="section-title">🌸 ເມນູທັງໝົດ</div>
       <div class="card">
         <div class="link-row" id="menu-row-profile" onclick="openMenu('profile')">👤 ໂປຣໄຟລ໌ຂອງຂ້ອຍ <span>›</span></div>
-        <div class="link-row" id="menu-row-checkin" onclick="openCheckinPage()">📍 ເຊັກອິນ / ເຊັກເອົາ <span>›</span></div>
         <div class="link-row" id="menu-row-mytheme" onclick="openMenu('mytheme')">🎨 ແຕ່ງໜ້າແອັບຂອງຂ້ອຍ <span>›</span></div>
         <div class="link-row" id="menu-row-categories" onclick="openMenu('categories')">🍰 ໝວດໝູ່ຂອງຂ້ອຍ <span>›</span></div>
         <div class="link-row" id="menu-row-budget" onclick="openMenu('budget')">💰 ງົບປະມານ <span>›</span></div>
