@@ -2847,7 +2847,8 @@ function openGoalDetail(goalId) {
 function renderGoalDetailSection(goalId) {
   const g = STATE.goals.find(x => x.id === goalId);
   if (!g) return '<div class="empty-hint">ບໍ່ພົບເປົ້າໝາຍ</div>';
-  const pct = Math.min(100, Math.round((Number(g.currentAmount) / Number(g.targetAmount)) * 100) || 0);
+  const rawPct = Number(g.targetAmount) ? (Number(g.currentAmount)/Number(g.targetAmount))*100 : 0;
+  const pct = Math.min(100, rawPct);
   const remain = Math.max(0, Number(g.targetAmount) - Number(g.currentAmount));
 
   const listHtml = buildGoalHistoryHtml(goalId);
@@ -3042,6 +3043,7 @@ function renderGoalsSection() {
         <b>${g.icon || '🚩'} ${g.name}</b>
         <div style="display:flex;align-items:center;gap:8px;">
           <button class="icon-pick-btn" style="height:32px;padding:0 10px;font-size:13px;" onclick="event.stopPropagation();editGoalUI('${g.id}')" title="ແກ້ໄຂ">✏️</button>
+          <button class="del-x" onclick="event.stopPropagation();removeGoalUI('${g.id}')" title="ລົບ">🗑️</button>
           <span>›</span>
         </div>
       </div>
@@ -3105,6 +3107,21 @@ function addGoalUI() {
       if (idx > -1) STATE.goals[idx] = savedGoal; else STATE.goals.push(savedGoal);
       localStorage.setItem('cachedState', JSON.stringify(STATE));
       openMenu('goals');
+    })
+    .catch(function () { showLoading(false); });
+}
+
+function removeGoalUI(id) {
+  if (!confirm('ລົບເປົ້າໝາຍນີ້? (ປະຫວັດການອອມທັງໝົດຂອງເປົ້າໝາຍນີ້ຈະຖືກລົບນຳ)')) return;
+  showLoading(true);
+  callApi('deleteGoal', { id: id, userId: CURRENT_USER.id })
+    .then(function () {
+      showLoading(false);
+      STATE.goals = STATE.goals.filter(x => x.id !== id);
+      STATE.goalContributions = STATE.goalContributions.filter(x => x.goalId !== id);
+      localStorage.setItem('cachedState', JSON.stringify(STATE));
+      openMenu('goals');
+      renderAll();
     })
     .catch(function () { showLoading(false); });
 }
