@@ -619,16 +619,6 @@ button:active{transform:scale(.965);}
 
     <!-- ---------- OVERVIEW ---------- -->
     <div class="page active" id="page-overview">
-      <div class="card hidden" id="checkin-badge-card" style="background:var(--grad-hero);cursor:pointer;" onclick="openCheckinPage()">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div class="icon-badge" style="background:rgba(255,255,255,.65);">📍</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:800;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="checkin-badge-place">-</div>
-            <div style="font-size:11px;color:var(--text-light);" id="checkin-badge-time">-</div>
-          </div>
-          <span style="font-size:18px;color:var(--text-light);">›</span>
-        </div>
-      </div>
       <div class="card">
         <div>
           <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
@@ -685,6 +675,16 @@ button:active{transform:scale(.965);}
 
     <!-- ---------- TRANSACTIONS ---------- -->
     <div class="page" id="page-transactions">
+      <div class="card hidden" id="checkin-badge-card" style="background:var(--grad-hero);cursor:pointer;" onclick="openCheckinPage()">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="icon-badge" style="background:rgba(255,255,255,.65);">📍</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:800;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="checkin-badge-place">-</div>
+            <div style="font-size:11px;color:var(--text-light);" id="checkin-badge-time">-</div>
+          </div>
+          <span style="font-size:18px;color:var(--text-light);">›</span>
+        </div>
+      </div>
       <div class="card" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="openReminders()">
         <div style="display:flex;align-items:center;gap:10px;">
           <div class="icon-badge" style="background:var(--grad-hero);">🔔</div>
