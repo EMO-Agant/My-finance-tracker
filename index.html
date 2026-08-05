@@ -443,7 +443,7 @@ button:active{transform:scale(.965);}
 
 .report-tabs{display:flex;gap:7px;overflow-x:auto;margin-bottom:12px;scroll-behavior:smooth;padding:2px 0 6px;}
 .report-tabs::-webkit-scrollbar,.month-scroll::-webkit-scrollbar,.report-filter-row::-webkit-scrollbar,
-.tabs::-webkit-scrollbar{height:0;}
+.tabs::-webkit-scrollbar,.weekday-scroll::-webkit-scrollbar{height:0;}
 .report-tabs button{flex-shrink:0;background:rgba(255,255,255,.7);border:1px solid var(--stroke);border-radius:17px;
   padding:10px 17px;font-size:13px;color:var(--text);font-weight:600;box-shadow:var(--sh-1);}
 .report-tabs button.active{background:var(--grad-btn);color:#2E2846;font-weight:800;border-color:transparent;
@@ -2477,20 +2477,24 @@ function drawDailyChart(){
       label: '🔴 ລາຍຈ່າຍ',
       data: expData,
       borderColor: '#F0637C',
-      backgroundColor: '#F0637C22',
-      fill: true, tension: .35, borderWidth: 2.5,
-      pointRadius: expData.map((v, i) => (i === maxExpIdx && v > 0) ? 7 : 2),
+      backgroundColor: '#F0637C1A',
+      fill: true, tension: .45, cubicInterpolationMode: 'monotone',
+      borderWidth: 2.5, borderCapStyle: 'round', borderJoinStyle: 'round',
+      pointRadius: expData.map((v, i) => (i === maxExpIdx && v > 0) ? 6 : 0),
+      pointHoverRadius: 5,
       pointBackgroundColor: expData.map((v, i) => (i === maxExpIdx && v > 0) ? '#fff' : '#F0637C'),
       pointBorderColor: '#F0637C', pointBorderWidth: 2,
       order: 1
-    },
+},
     {
       label: '🟢 ລາຍຮັບ',
       data: incData,
       borderColor: '#17AE8B',
-      backgroundColor: '#17AE8B22',
-      fill: true, tension: .35, borderWidth: 2.5,
-      pointRadius: incData.map((v, i) => (i === maxIncIdx && v > 0) ? 7 : 2),
+      backgroundColor: '#17AE8B1A',
+      fill: true, tension: .45, cubicInterpolationMode: 'monotone',
+      borderWidth: 2.5, borderCapStyle: 'round', borderJoinStyle: 'round',
+      pointRadius: incData.map((v, i) => (i === maxIncIdx && v > 0) ? 6 : 0),
+      pointHoverRadius: 5,
       pointBackgroundColor: incData.map((v, i) => (i === maxIncIdx && v > 0) ? '#fff' : '#17AE8B'),
       pointBorderColor: '#17AE8B', pointBorderWidth: 2,
       order: 1
@@ -2629,19 +2633,19 @@ function drawWeekdayHeatmap_(catFilter) {
   });
   const maxAvg = Math.max(...avgByDow, 1);
 
-  wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">` +
+  wrap.innerHTML = `<div class="weekday-scroll" style="display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;-webkit-overflow-scrolling:touch;">` +
     avgByDow.map((avg, i) => {
       const ratio = avg / maxAvg;
       const bg = ratio > 0
         ? `linear-gradient(150deg, rgba(240,99,124,${0.15 + ratio*0.55}), rgba(240,99,124,${0.08 + ratio*0.35}))`
         : 'rgba(122,108,168,.06)';
-      return `<div style="border-radius:14px;padding:10px 4px;text-align:center;background:${bg};border:1px solid rgba(255,255,255,.7);">
-        <div style="font-size:10.5px;font-weight:700;color:var(--text-light);">${LAO_DOW_SHORT_[i]}</div>
-        <div style="font-size:11.5px;font-weight:800;margin-top:4px;color:${ratio>0.6?'#B23A52':'var(--text)'};">${fmt(Math.round(avg))}</div>
+      return `<div style="flex:0 0 auto;min-width:78px;border-radius:16px;padding:12px 8px;text-align:center;background:${bg};border:1px solid rgba(255,255,255,.7);">
+        <div style="font-size:11px;font-weight:700;color:var(--text-light);white-space:nowrap;">${LAO_DOW_SHORT_[i]}</div>
+        <div style="font-size:12.5px;font-weight:800;margin-top:6px;color:${ratio>0.6?'#B23A52':'var(--text)'};white-space:nowrap;">${fmt(Math.round(avg))}</div>
       </div>`;
     }).join('') + `</div>
     <div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:10px;">
-      ຄິດຈາກລາຍຈ່າຍສະເລ່ຍ/ວັນ ຂອງ 6 ເດືອນຫຼ້າສຸດ · ສີເຂັ້ມ = ໃຊ້ຈ່າຍຫຼາຍກວ່າວັນອື່ນ
+      ຄິດຈາກລາຍຈ່າຍສະເລ່ຍ/ວັນ ຂອງ 6 ເດືອນຫຼ້າສຸດ · ສີເຂັ້ມ = ໃຊ້ຈ່າຍຫຼາຍກວ່າວັນອື່ນ · ← ເລື່ອນເບິ່ງໄດ້ →
     </div>`;
 }
 
