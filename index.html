@@ -1350,11 +1350,28 @@ function renderDashboard() {
 
 function catById(id) { return STATE.categories.find(c => c.id === id); }
 function walletById(id) { return STATE.wallets.find(w => w.id === id); }
+
 function savingsWalletBalance(currency) {
   const curr = currency || 'LAK';
   return STATE.wallets
     .filter(w => w.type === 'savings' && (w.currency || 'LAK') === curr)
     .reduce((s, w) => s + Number(w.balance || 0), 0);
+}
+
+function goalWalletBalance(g) {
+  if (g.walletId) {
+    const w = walletById(g.walletId);
+    return w ? Number(w.balance || 0) : 0;
+  }
+  return savingsWalletBalance(g.currency);
+}
+
+function goalWalletLabel(g) {
+  if (g.walletId) {
+    const w = walletById(g.walletId);
+    return w ? (w.icon + ' ' + w.name) : 'ກະເປົາທີ່ລົບໄປແລ້ວ';
+  }
+  return 'ກະເປົາເງິນອອມທັງໝົດ';
 }
 
 // ---------------- ສຸຂະພາບທາງການເງິນ ----------------
@@ -2690,13 +2707,15 @@ function drawGoalsReport(){
   if (!wrap) return;
   if (!STATE.goals.length){ wrap.innerHTML = '<div class="card"><div class="empty-hint">ຍັງບໍ່ມີເປົ້າໝາຍອອມເງິນ</div></div>'; return; }
   wrap.innerHTML = STATE.goals.map(g=>{
-    const pct = Math.min(100, Math.round((Number(g.currentAmount)/Number(g.targetAmount))*100));
+    const rawPct = Number(g.targetAmount) ? (Number(g.currentAmount)/Number(g.targetAmount))*100 : 0;
+    const pct = Math.min(100, rawPct); // ໃຊ້ຄ່າຈິງ ບໍ່ຕັດເສດ
+    const pctDisplay = pct < 1 && pct > 0 ? pct.toFixed(2) : Math.round(pct); // ຖ້າໜ້ອຍກວ່າ 1% ໃຫ້ໂຊທົດສະນິຍົມ
     const remain = Math.max(0, Number(g.targetAmount) - Number(g.currentAmount));
     return `<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <b>${g.icon || '🚩'} ${g.name}</b><span style="font-weight:800;color:var(--primary-dark);">${pct}%</span>
+        <b>${g.icon || '🚩'} ${g.name}</b><span style="font-weight:800;color:var(--primary-dark);">${pctDisplay}%</span>
       </div>
-      <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${pct}%;"></div></div>
+      <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${pct > 0 ? Math.max(pct,1) : 0}%;"></div></div>
       <div class="report-summary-row" style="margin-top:12px;">
         <div><div class="num" style="color:var(--green);">${fmt(g.currentAmount)}</div><div class="label">ອອມແລ້ວ (${CURRENCY_SYMBOLS[g.currency||'LAK']})</div></div>
         <div><div class="num" style="color:var(--red);">${fmt(remain)}</div><div class="label">ຄົງເຫຼືອ</div></div>
@@ -2706,12 +2725,12 @@ function drawGoalsReport(){
 
       <div class="slip-detail-card" style="margin-top:12px;">
         <div class="slip-detail-row">
-          <span>👛 ຍອດຈິງໃນກະເປົາອອມ</span>
-          <span style="font-weight:800;color:var(--primary-dark);">${fmt(savingsWalletBalance(g.currency))} ${CURRENCY_SYMBOLS[g.currency||'LAK']}</span>
+          <span>👛 ຍອດຈິງ (${goalWalletLabel(g)})</span>
+          <span style="font-weight:800;color:var(--primary-dark);">${fmt(goalWalletBalance(g))} ${CURRENCY_SYMBOLS[g.currency||'LAK']}</span>
         </div>
         <div class="slip-detail-row">
           <span>ຕ້ອງເພີ່ມອີກ (ຈາກຍອດຈິງ)</span>
-          <span style="font-weight:800;color:var(--red);">${fmt(Math.max(0, Number(g.targetAmount) - savingsWalletBalance(g.currency)))} ${CURRENCY_SYMBOLS[g.currency||'LAK']}</span>
+          <span style="font-weight:800;color:var(--red);">${fmt(Math.max(0, Number(g.targetAmount) - goalWalletBalance(g)))} ${CURRENCY_SYMBOLS[g.currency||'LAK']}</span>
         </div>
       </div>
 
@@ -2844,8 +2863,8 @@ function renderGoalDetailSection(goalId) {
       ${g.targetDate ? `<div style="font-size:11px;color:var(--text-light);text-align:center;margin-top:6px;">ພາຍໃນວັນທີ ${g.targetDate}</div>` : ''}
       <div class="slip-detail-card" style="margin-top:12px;">
         <div class="slip-detail-row">
-          <span>👛 ຍອດຈິງໃນກະເປົາອອມ</span>
-          <span style="font-weight:800;color:var(--primary-dark);">${fmt(savingsWalletBalance(g.currency))} ${CURRENCY_SYMBOLS[g.currency||'LAK']}</span>
+          <span>👛 ຍອດຈິງ (${goalWalletLabel(g)})</span>
+          <span style="font-weight:800;color:var(--primary-dark);">${fmt(goalWalletBalance(g))} ${CURRENCY_SYMBOLS[g.currency||'LAK']}</span>
         </div>
       </div>
     </div>
@@ -3046,6 +3065,10 @@ function renderGoalsSection() {
         </select>
       </div>
       <input id="goal-targetdate" type="date">
+      <select id="goal-wallet">
+        <option value="">ບໍ່ຜູກກະເປົາ (ຄິດຈາກກະເປົາ "ເງິນອອມ" ທັງໝົດລວມກັນ)</option>
+        ${STATE.wallets.map(w => `<option value="${w.id}">${w.icon} ${w.name} (${fmt(w.balance)} ${CURRENCY_SYMBOLS[w.currency]||''})</option>`).join('')}
+      </select>
       <input id="goal-edit-id" type="hidden">
       <button class="btn-primary" id="goal-submit-btn" onclick="addGoalUI()">+ ເພີ່ມເປົ້າໝາຍ</button>
     </div>`;
@@ -3058,6 +3081,7 @@ function editGoalUI(id) {
   document.getElementById('goal-target').value = g.targetAmount || '';
   document.getElementById('goal-currency').value = g.currency || 'LAK';
   document.getElementById('goal-targetdate').value = g.targetDate || '';
+  document.getElementById('goal-wallet').value = g.walletId || '';
   document.getElementById('goal-edit-id').value = g.id;
   const btn = document.getElementById('goal-submit-btn');
   if (btn) btn.innerText = '💾 ບັນທຶກການແກ້ໄຂ';
@@ -3069,10 +3093,11 @@ function addGoalUI() {
   const target = parseFloat(document.getElementById('goal-target').value);
   const currency = document.getElementById('goal-currency').value;
   const targetDate = document.getElementById('goal-targetdate').value;
+  const walletId = document.getElementById('goal-wallet').value;
   const editId = document.getElementById('goal-edit-id').value;
   if (!name || !target) return;
   showLoading(true);
-  const obj = editId ? { id: editId, name, targetAmount: target, icon, targetDate, currency } : { name, targetAmount: target, currentAmount: 0, icon, targetDate, currency };
+  const obj = editId ? { id: editId, name, targetAmount: target, icon, targetDate, currency, walletId } : { name, targetAmount: target, currentAmount: 0, icon, targetDate, currency, walletId };
   callApi('saveGoal', { obj: obj, userId: CURRENT_USER.id })
     .then(function (savedGoal) {
       showLoading(false);
