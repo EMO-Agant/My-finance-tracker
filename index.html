@@ -2136,7 +2136,7 @@ function doTransfer() {
 }
 
 // ---------------- REPORTS ----------------
-let reportState = { tab:'category', period:'month', walletId:'all', type:'expense', month:new Date().toISOString().slice(0,7), networthCurrency:'LAK' };
+let reportState = { tab:'category', period:'month', walletId:'all', type:'expense', month:new Date().toISOString().slice(0,7), networthCurrency:'LAK', dailyCategoryId:'all', dailyType:'expense' };
 const LAO_MONTHS_SHORT = ['ມ.ກ','ກ.ພ','ມີ.ນ','ເມ.ສ','ພ.ພ','ມິ.ຖ','ກ.ລ','ສ.ຫ','ກ.ຍ','ຕ.ລ','ພ.ຈ','ທ.ວ'];
 const LAO_MONTHS_FULL  = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
 const PASTEL_CHART = ['#FF9BAE','#FFC98E','#A9E5CF','#C9BCF5','#9FCDF7','#FFB8D9','#8FE3C6','#FFD98E','#B5C7F5','#F7B7A3'];
@@ -2172,6 +2172,7 @@ function drawActiveReportChart(){
     else if (reportState.tab === 'networth') drawNetWorthChart();
     else if (reportState.tab === 'goals') drawGoalsReport();
     else if (reportState.tab === 'installments') drawInstallmentsReport();
+    else if (reportState.tab === 'daily') drawDailyChart();
   } catch (err) {
     console.error('ວາດລາຍງານຜິດພາດ:', err);
   }
@@ -2189,6 +2190,7 @@ function renderReportsSection(){
     <button class="${reportState.tab==='networth'?'active':''}" onclick="setReportTab('networth')">ຊັບສິນສຸດທິ</button>
     <button class="${reportState.tab==='time'?'active':''}" onclick="setReportTab('time')">ຕາມຊ່ວງເວລາ</button>
     <button class="${reportState.tab==='tag'?'active':''}" onclick="setReportTab('tag')">ຕາມແທັກ</button>
+    <button class="${reportState.tab==='daily'?'active':''}" onclick="setReportTab('daily')">📅 ລາຍວັນ</button>
     <button class="${reportState.tab==='goals'?'active':''}" onclick="setReportTab('goals')">🚩 ເປົ້າໝາຍ</button>
     <button class="${reportState.tab==='installments'?'active':''}" onclick="setReportTab('installments')">🏷️ ຜ່ອນຊຳລະ</button>
   </div>`;
@@ -2247,6 +2249,29 @@ function renderReportsSection(){
     html += `<div id="goals-report-wrap"></div>`;
   } else if (reportState.tab === 'installments'){
     html += `<div id="installments-report-wrap"></div>`;
+  } else if (reportState.tab === 'daily'){
+    const catOpts = '<option value="all">ທຸກໝວດໝູ່</option>' +
+      STATE.categories.map(c=>`<option value="${c.id}" ${reportState.dailyCategoryId===c.id?'selected':''}>${c.icon} ${c.name}</option>`).join('');
+
+    html += `<div class="month-scroll">` + monthsAvail.map(m=>{
+      const d = new Date(m+'-01');
+      return `<div class="month-pill ${m===reportState.month?'active':''}" onclick="reportState.month='${m}';renderAndRefreshReports();">
+        <span>${LAO_MONTHS_SHORT[d.getMonth()]}</span><span style="font-size:9px;">${d.getFullYear()}</span></div>`;
+    }).join('') + `</div>`;
+
+    html += `<div class="report-filter-row">
+      <select onchange="reportState.dailyType=this.value;renderAndRefreshReports();">
+        <option value="expense" ${reportState.dailyType==='expense'?'selected':''}>ລາຍຈ່າຍ</option>
+        <option value="income" ${reportState.dailyType==='income'?'selected':''}>ລາຍຮັບ</option>
+      </select>
+      <select onchange="reportState.dailyCategoryId=this.value;renderAndRefreshReports();">${catOpts}</select>
+    </div>`;
+
+    html += `<div class="card">
+      <div id="daily-max-badge" style="display:inline-block;background:linear-gradient(135deg,#6D5BD0,#8FB8F6);color:#fff;font-size:12px;font-weight:800;padding:7px 14px;border-radius:14px;margin-bottom:14px;box-shadow:var(--sh-1);"></div>
+      <canvas id="daily-chart" height="230"></canvas>
+    </div>
+    <div class="card" id="daily-table"></div>`;
   }
   return html;
 }
@@ -2357,6 +2382,96 @@ function drawTimeChart(){
       options:{ plugins:{ legend:{ position:'bottom', labels:{ font:{ size:11 }, usePointStyle:true, pointStyle:'circle', padding:16 } } },
         scales:{ y:{ grid:{ color:'rgba(122,108,168,.10)' }, border:{ display:false } },
                  x:{ grid:{ display:false }, border:{ display:false } } } } });
+  }
+}
+
+let _dailyChartInstance = null;
+function drawDailyChart(){
+  const canvas = document.getElementById('daily-chart');
+  if (!canvas) return;
+
+  const [y, m] = reportState.month.split('-').map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const catFilter = reportState.dailyCategoryId;
+  const typeFilter = reportState.dailyType;
+
+  const dayTotals = {};
+  for (let d = 1; d <= daysInMonth; d++) dayTotals[d] = 0;
+
+  STATE.transactions.forEach(t => {
+    if (t.type !== typeFilter) return;
+    if (ymKey(t.date) !== reportState.month) return;
+    if (catFilter !== 'all' && t.categoryId !== catFilter) return;
+    const dnum = Number(dayKey(t.date).slice(8, 10));
+    dayTotals[dnum] = (dayTotals[dnum] || 0) + Number(t.amount);
+  });
+
+  const labels = [], data = [];
+  for (let d = 1; d <= daysInMonth; d++) { labels.push(String(d).padStart(2, '0')); data.push(dayTotals[d]); }
+
+  const maxVal = Math.max(...data);
+  const minVal = Math.min(...data.filter(v => v >= 0));
+  const maxIdx = data.indexOf(maxVal);
+  const catName = catFilter === 'all' ? (typeFilter === 'income' ? 'ລາຍຮັບ' : 'ລາຍຈ່າຍ') : ((catById(catFilter) || {}).name || '');
+  const catIcon = catFilter === 'all' ? (typeFilter === 'income' ? '💰' : '🧾') : ((catById(catFilter) || {}).icon || '🏷️');
+
+  const badge = document.getElementById('daily-max-badge');
+  if (badge) {
+    badge.innerText = maxVal
+      ? ('🔝 ຍອດສູງສຸດ: ' + fmt(maxVal) + ' ກີບ (ວັນທີ ' + labels[maxIdx] + ')')
+      : 'ຍັງບໍ່ມີຂໍ້ມູນໃນເດືອນນີ້';
+  }
+
+  if (_dailyChartInstance) { _dailyChartInstance.destroy(); _dailyChartInstance = null; }
+  const lineColor = typeFilter === 'income' ? '#17AE8B' : '#F0637C';
+
+  _dailyChartInstance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: catIcon + ' ' + catName,
+        data,
+        borderColor: lineColor,
+        backgroundColor: lineColor + '22',
+        fill: true,
+        tension: .35,
+        borderWidth: 2.5,
+        pointRadius: data.map((v, i) => (i === maxIdx && v > 0) ? 7 : 2.5),
+        pointBackgroundColor: data.map((v, i) => (i === maxIdx && v > 0) ? '#fff' : lineColor),
+        pointBorderColor: lineColor,
+        pointBorderWidth: 2.5
+      }]
+    },
+    options: {
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          mode: 'index', intersect: false,
+          callbacks: {
+            title: (items) => reportState.month + '-' + items[0].label,
+            label: (item) => item.dataset.label + ': ' + fmt(item.parsed.y) + ' ກີບ'
+          }
+        }
+      },
+      scales: {
+        y: {
+          suggestedMin: Math.max(0, minVal - (maxVal - minVal) * 0.15),
+          grid: { color: 'rgba(122,108,168,.10)' }, border: { display: false },
+          ticks: { callback: v => fmt(v) }
+        },
+        x: { grid: { display: false }, border: { display: false } }
+      },
+      interaction: { mode: 'index', intersect: false }
+    }
+  });
+
+  const tableEl = document.getElementById('daily-table');
+  if (tableEl) {
+    const sorted = labels.map((l, i) => ({ l, v: data[i] })).filter(x => x.v > 0).sort((a, b) => b.v - a.v).slice(0, 10);
+    tableEl.innerHTML = '<div style="font-weight:800;margin-bottom:6px;">🏆 10 ວັນທີ່ໃຊ້ຈ່າຍ/ໄດ້ຮັບສູງສຸດ</div>' +
+      (sorted.map(x => `<div class="report-table-row"><span>📅 ວັນທີ ${x.l}</span><span style="font-weight:800;color:${lineColor};">${fmt(x.v)}</span></div>`).join('')
+        || '<div class="empty-hint">ຍັງບໍ່ມີຂໍ້ມູນ</div>');
   }
 }
 
