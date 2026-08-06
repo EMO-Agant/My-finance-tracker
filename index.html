@@ -1651,6 +1651,7 @@ function renderTxCalendar() {
   txThisMonth.forEach(t => {
     const dk = dayKey(t.date);
     if (!dayTotals[dk]) dayTotals[dk] = { income: 0, expense: 0 };
+    if ((t.currency || 'LAK') !== 'LAK') return;
     if (t.type === 'income') dayTotals[dk].income += Number(t.amount);
     else if (t.type === 'expense') dayTotals[dk].expense += Number(t.amount);
   });
@@ -2474,6 +2475,7 @@ function getMonthDailyTotals_(ym, catFilter) {
     if (ymKey(t.date) !== ym) return;
     if (t.type !== 'expense' && t.type !== 'income') return;
     if (catFilter !== 'all' && t.categoryId !== catFilter) return;
+    if ((t.currency || 'LAK') !== 'LAK') return;   // 🩹 ເພີ່ມແຖວນີ້ - ນັບສະເພາະສະກຸນກີບ
     const dnum = Number(dayKey(t.date).slice(8, 10));
     if (t.type === 'expense') expTotals[dnum] += Number(t.amount);
     else incTotals[dnum] += Number(t.amount);
