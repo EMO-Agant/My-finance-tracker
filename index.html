@@ -1089,7 +1089,6 @@ window.onload = function () {
         if ((STATE.users || []).some(u => u.id === user.id)) {
           CURRENT_USER = user;
           enterApp();
-          renderAll();
           return;
         } else {
           CURRENT_USER = null;
@@ -1235,10 +1234,6 @@ function syncInBackground() {
     renderAll();
   }).catch(function () {});
 }
-
-document.addEventListener('visibilitychange', function () {
-  if (!document.hidden && CURRENT_USER) syncInBackground();
-});
 
 // ---------------- NAV ----------------
 function showPage(name) {
