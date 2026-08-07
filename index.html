@@ -1310,7 +1310,7 @@ function renderOverview() {
     .join(' · ');
 
   const today = todayStr();
-  const txToday = STATE.transactions.filter(t => dayKey(t.date) === today);
+  const txToday = STATE.transactions.filter(t => dayKey(t.date) === today && (t.currency||'LAK')==='LAK'); // 🩹 ນັບສະເພາະ LAK
   const expenseToday = txToday.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
   const incomeToday = txToday.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
   const transferToday = txToday.filter(t => t.type === 'transfer').reduce((s, t) => s + Number(t.amount), 0);
@@ -1345,14 +1345,14 @@ function renderOverview() {
 function renderDashboard() {
   const now = new Date();
   const ym = now.toISOString().slice(0, 7);
-  const txThisMonth = STATE.transactions.filter(t => ymKey(t.date) === ym);
+  const txThisMonth = STATE.transactions.filter(t => ymKey(t.date) === ym && (t.currency||'LAK')==='LAK'); // 🩹 ນັບສະເພາະ LAK
 
   const monthlyIncome = txThisMonth.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
   const monthlyExpense = txThisMonth.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
 
   const today = todayStr();
   const dailyExpense = STATE.transactions
-    .filter(t => t.type === 'expense' && dayKey(t.date) === today)
+    .filter(t => t.type === 'expense' && dayKey(t.date) === today && (t.currency||'LAK')==='LAK')
     .reduce((s, t) => s + Number(t.amount), 0);
 
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
@@ -2189,7 +2189,7 @@ function doTransfer() {
 }
 
 // ---------------- REPORTS ----------------
-let reportState = { tab:'category', period:'month', walletId:'all', type:'expense', month:new Date().toISOString().slice(0,7), networthCurrency:'LAK', dailyCategoryId:'all', timeView:'monthly', showPrevMonth:false, showMA:false };
+let reportState = { tab:'category', period:'month', walletId:'all', type:'expense', month:new Date().toISOString().slice(0,7), networthCurrency:'LAK', dailyCategoryId:'all', timeView:'monthly', showPrevMonth:false, showMA:false, currency:'LAK' };
 const LAO_MONTHS_SHORT = ['ມ.ກ','ກ.ພ','ມີ.ນ','ເມ.ສ','ພ.ພ','ມິ.ຖ','ກ.ລ','ສ.ຫ','ກ.ຍ','ຕ.ລ','ພ.ຈ','ທ.ວ'];
 const LAO_MONTHS_FULL  = ['ມັງກອນ','ກຸມພາ','ມີນາ','ເມສາ','ພຶດສະພາ','ມິຖຸນາ','ກໍລະກົດ','ສິງຫາ','ກັນຍາ','ຕຸລາ','ພະຈິກ','ທັນວາ'];
 const PASTEL_CHART = ['#FF9BAE','#FFC98E','#A9E5CF','#C9BCF5','#9FCDF7','#FFB8D9','#8FE3C6','#FFD98E','#B5C7F5','#F7B7A3'];
@@ -2197,6 +2197,7 @@ let _reportChartInstance=null, _timeChartInstance=null, _networthChartInstance=n
 
 function reportFilteredTx(){
   let list = STATE.transactions.filter(t => t.type !== 'transfer');
+  list = list.filter(t => (t.currency || 'LAK') === (reportState.currency || 'LAK')); // 🩹 ກອງສະເພາະສະກຸນເງິນທີ່ເລືອກ
   if (reportState.walletId !== 'all') list = list.filter(t => t.walletId === reportState.walletId);
   if (reportState.period === 'month') list = list.filter(t => ymKey(t.date) === reportState.month);
   return list;
@@ -2253,6 +2254,11 @@ function renderReportsSection(){
         <option value="all" ${reportState.period==='all'?'selected':''}>ທັງໝົດ</option>
       </select>
       <select onchange="reportState.walletId=this.value;renderAndRefreshReports();">${walletOpts}</select>
+      <select onchange="reportState.currency=this.value;renderAndRefreshReports();">
+        <option value="LAK" ${(reportState.currency||'LAK')==='LAK'?'selected':''}>ກີບ (LAK)</option>
+        <option value="THB" ${reportState.currency==='THB'?'selected':''}>฿ ບາດ (THB)</option>
+        <option value="USD" ${reportState.currency==='USD'?'selected':''}>$ ໂດລາ (USD)</option>
+      </select>
     </div>`;
     if (reportState.period === 'month'){
       html += `<div class="month-scroll">` + monthsAvail.map(m=>{
@@ -2302,6 +2308,11 @@ function renderReportsSection(){
 
       html += `<div class="report-filter-row">
         <select onchange="reportState.dailyCategoryId=this.value;renderAndRefreshReports();">${catOpts}</select>
+        <select onchange="reportState.currency=this.value;renderAndRefreshReports();">
+          <option value="LAK" ${(reportState.currency||'LAK')==='LAK'?'selected':''}>ກີບ (LAK)</option>
+          <option value="THB" ${reportState.currency==='THB'?'selected':''}>฿ ບາດ (THB)</option>
+          <option value="USD" ${reportState.currency==='USD'?'selected':''}>$ ໂດລາ (USD)</option>
+        </select>
       </div>`;
 
       html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
@@ -2325,6 +2336,11 @@ function renderReportsSection(){
       </div>
       <div class="card" id="daily-table"></div>`;
     } else {
+      html += `<div class="seg" style="margin-bottom:10px;">
+        <button class="${(reportState.currency||'LAK')==='LAK'?'active':''}" onclick="reportState.currency='LAK';renderAndRefreshReports();">ກີບ</button>
+        <button class="${reportState.currency==='THB'?'active':''}" onclick="reportState.currency='THB';renderAndRefreshReports();">฿ ບາດ</button>
+        <button class="${reportState.currency==='USD'?'active':''}" onclick="reportState.currency='USD';renderAndRefreshReports();">$ ໂດລາ</button>
+      </div>`;
       html += `<div class="card"><div style="font-weight:800;margin-bottom:10px;">ລາຍຈ່າຍ-ລາຍຮັບ 6 ເດືອນຫຼ້າສຸດ</div><canvas id="time-chart" height="220"></canvas></div>`;
     }
   } else if (reportState.tab === 'networth'){
@@ -2433,11 +2449,12 @@ function drawTagTable(){
 function drawTimeChart(){
   const now = new Date();
   const labels=[], expData=[], incData=[];
+  const curr = reportState.currency || 'LAK'; // 🩹
   for (let i=5;i>=0;i--){
     const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
     const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
     labels.push(LAO_MONTHS_SHORT[d.getMonth()]);
-    const list = STATE.transactions.filter(t=>ymKey(t.date)===ym);
+    const list = STATE.transactions.filter(t=>ymKey(t.date)===ym && (t.currency||'LAK')===curr); // 🩹 ກອງສະກຸນເງິນ
     expData.push(list.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0));
     incData.push(list.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0));
   }
@@ -2471,11 +2488,12 @@ function getMonthDailyTotals_(ym, catFilter) {
   const daysInMonth = new Date(y, m, 0).getDate();
   const expTotals = {}, incTotals = {};
   for (let d = 1; d <= daysInMonth; d++) { expTotals[d] = 0; incTotals[d] = 0; }
+  const curr = reportState.currency || 'LAK'; // 🩹
   STATE.transactions.forEach(t => {
     if (ymKey(t.date) !== ym) return;
     if (t.type !== 'expense' && t.type !== 'income') return;
     if (catFilter !== 'all' && t.categoryId !== catFilter) return;
-    if ((t.currency || 'LAK') !== 'LAK') return;   // 🩹 ເພີ່ມແຖວນີ້ - ນັບສະເພາະສະກຸນກີບ
+    if ((t.currency||'LAK') !== curr) return; // 🩹 ກອງສະກຸນເງິນ
     const dnum = Number(dayKey(t.date).slice(8, 10));
     if (t.type === 'expense') expTotals[dnum] += Number(t.amount);
     else incTotals[dnum] += Number(t.amount);
@@ -2648,15 +2666,16 @@ function drawWeekdayHeatmap_(catFilter) {
   const wrap = document.getElementById('weekday-heatmap');
   if (!wrap) return;
 
-  // ເກັບລາຍຈ່າຍລວມ + ຈຳນວນຄັ້ງ ຂອງແຕ່ລະວັນທຳມະດາ (0=ອາທິດ..6=ເສົາ) ຈາກ transaction ທັງໝົດ (ບໍ່ຈຳກັດເດືອນດຽວ, ເອົາ 6 ເດືອນຫຼ້າສຸດ)
   const now = new Date();
   const cutoff = new Date(now.getFullYear(), now.getMonth() - 5, 1);
   const dowTotals = [0,0,0,0,0,0,0];
   const dowCountDays = [new Set(),new Set(),new Set(),new Set(),new Set(),new Set(),new Set()];
+  const curr = reportState.currency || 'LAK'; // 🩹
 
   STATE.transactions.forEach(t => {
     if (t.type !== 'expense') return;
     if (catFilter !== 'all' && t.categoryId !== catFilter) return;
+    if ((t.currency||'LAK') !== curr) return; // 🩹 ກອງສະກຸນເງິນ
     const d = new Date(t.date);
     if (isNaN(d) || d < cutoff) return;
     const dow = d.getDay();
